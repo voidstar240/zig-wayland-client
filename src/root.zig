@@ -41,6 +41,7 @@ pub fn connectToSocket() !std.net.Stream {
 }
 
 test "functionality" {
+    protocol.Touch.release(protocol.Touch { .inner = .{}});
     const sock = try connectToSocket();
     defer sock.close();
 }

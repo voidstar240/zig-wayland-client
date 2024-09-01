@@ -6,10 +6,13 @@ const Allocator = std.mem.Allocator;
 const Protocol = types.Protocol;
 const Interface = types.Interface;
 const Method = types.Method;
+const Arg = types.Arg;
 const Enum = types.Enum;
+const Entry = types.Entry;
 
 const eql = std.mem.eql;
 
+// TODO use a prefix array or something to allow for multiple prefixes.
 pub fn cleanProtocol(
     protocol: *Protocol,
     prefix: ?[]const u8,
@@ -25,25 +28,75 @@ pub fn cleanInterface(
     prefix: ?[]const u8,
     alloc: Allocator
 ) !void {
-    const tmp = if (prefix) |pre|
-        removePrefix(interface.name, pre)
-    else
-        interface.name;
-    interface.name = try toCamelOrPascalCase(tmp, true, alloc);
+    interface.name = try cleanInterfaceName(interface.name, prefix, alloc);
     for (interface.requests) |*request| {
-        try cleanMethod(request, alloc);
+        try cleanMethod(request, prefix, alloc);
     }
     for (interface.events) |*event| {
-        try cleanMethod(event, alloc);
+        try cleanMethod(event, prefix, alloc);
     }
     for (interface.enums) |*enum_| {
         try cleanEnum(enum_, alloc);
     }
 }
 
-pub fn cleanMethod(method: *Method, alloc: Allocator) !void {
+fn cleanInterfaceName(name: []const u8, prefix: ?[]const u8, alloc: Allocator) ![]const u8 {
+    const no_pre = if (prefix) |pre|
+        // Turns out prefixes are actually really important in wayland protocol,
+        // so we can't just erase them.
+        // TODO create InterfaceType type which contains prefix and name
+        // return that instead of removing prefix completely. This will allow
+        // fancy importing with usingnamespace resulting in syntax like
+        // wl.Display or xdg.Positioner.
+        removePrefix(name, pre)
+    else
+        name;
+    return toCamelOrPascalCase(no_pre, true, alloc);
+}
+
+pub fn cleanMethod(method: *Method, prefix: ?[]const u8, alloc: Allocator) !void {
     const tmp = try toCamelOrPascalCase(method.name, false, alloc);
     method.name = try escapeKeyword(tmp, alloc);
+    for (method.args) |*arg| {
+        try cleanArg(arg, prefix, alloc);
+    }
+}
+
+pub fn cleanArg(arg: *Arg, prefix: ?[]const u8, alloc: Allocator) !void {
+    switch (arg.type) {
+        .new_id => |*meta| {
+            if (meta.interface == null) return;
+            const tmp = if (prefix) |pre|
+                removePrefix(meta.interface.?, pre)
+            else
+                meta.interface.?;
+            meta.interface = try toCamelOrPascalCase(tmp, true, alloc);
+        },
+        .object => |*meta| {
+            if (meta.interface == null) return;
+            const tmp = if (prefix) |pre|
+                removePrefix(meta.interface.?, pre)
+            else
+                meta.interface.?;
+            meta.interface = try toCamelOrPascalCase(tmp, true, alloc);
+        },
+        .enum_ => |*meta| {
+            // TODO this should be its own function
+            if (std.mem.indexOfScalar(u8, meta.enum_name, '.')) |i| {
+                const interface = try cleanInterfaceName(meta.enum_name[0..i], prefix, alloc);
+                const enum_name = try toCamelOrPascalCase(meta.enum_name[(i+1)..], true, alloc);
+                // also this triple allocs. 2 above 1 here. refactor needed
+                var new_name = try alloc.alloc(u8, interface.len + 1 + enum_name.len);
+                @memcpy(new_name[0..interface.len], interface);
+                new_name[interface.len] = '.';
+                @memcpy(new_name[interface.len + 1..], enum_name);
+                meta.enum_name = new_name;
+            } else {
+                meta.enum_name = try toCamelOrPascalCase(meta.enum_name, true, alloc);
+            }
+        },
+        else => {},
+    }
 }
 
 pub fn cleanEnum(enum_: *Enum, alloc: Allocator) !void {

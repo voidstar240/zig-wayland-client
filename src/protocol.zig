@@ -1,6 +1,12 @@
-const std = @import("util.zig");
+const util = @import("util.zig");
+
+const Object = util.Object;
+const Fixed = util.Fixed;
+const FD = util.FD;
 
 pub const Display = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const sync: u16 = 0;
@@ -19,13 +25,21 @@ pub const Display = struct {
         implementation = 3, // implementation error in compositor
     };
 
-    pub fn sync() void {}
+    pub fn sync(self: @This()) Callback {
+        _ = self;
+        return undefined;
+    }
 
-    pub fn getRegistry() void {}
+    pub fn getRegistry(self: @This()) Registry {
+        _ = self;
+        return undefined;
+    }
 
 };
 
 pub const Registry = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const bind: u16 = 0;
@@ -36,11 +50,17 @@ pub const Registry = struct {
         };
     };
 
-    pub fn bind() void {}
+    pub fn bind(self: @This(), name: u32) Object {
+        _ = self;
+        _ = name;
+        return undefined;
+    }
 
 };
 
 pub const Callback = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
         };
@@ -52,6 +72,8 @@ pub const Callback = struct {
 };
 
 pub const Compositor = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const createSurface: u16 = 0;
@@ -61,13 +83,21 @@ pub const Compositor = struct {
         };
     };
 
-    pub fn createSurface() void {}
+    pub fn createSurface(self: @This()) Surface {
+        _ = self;
+        return undefined;
+    }
 
-    pub fn createRegion() void {}
+    pub fn createRegion(self: @This()) Region {
+        _ = self;
+        return undefined;
+    }
 
 };
 
 pub const ShmPool = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const createBuffer: u16 = 0;
@@ -78,15 +108,30 @@ pub const ShmPool = struct {
         };
     };
 
-    pub fn createBuffer() void {}
+    pub fn createBuffer(self: @This(), offset: i32, width: i32, height: i32, stride: i32, format: Shm.Format) Buffer {
+        _ = self;
+        _ = offset;
+        _ = width;
+        _ = height;
+        _ = stride;
+        _ = format;
+        return undefined;
+    }
 
-    pub fn destroy() void {}
+    pub fn destroy(self: @This()) void {
+        _ = self;
+    }
 
-    pub fn resize() void {}
+    pub fn resize(self: @This(), size: i32) void {
+        _ = self;
+        _ = size;
+    }
 
 };
 
 pub const Shm = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const createPool: u16 = 0;
@@ -229,13 +274,22 @@ pub const Shm = struct {
         p030 = 808661072, // 2x2 subsampled Cr:Cb plane 10 bits per channel packed
     };
 
-    pub fn createPool() void {}
+    pub fn createPool(self: @This(), fd: FD, size: i32) ShmPool {
+        _ = self;
+        _ = fd;
+        _ = size;
+        return undefined;
+    }
 
-    pub fn release() void {}
+    pub fn release(self: @This()) void {
+        _ = self;
+    }
 
 };
 
 pub const Buffer = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const destroy: u16 = 0;
@@ -245,11 +299,15 @@ pub const Buffer = struct {
         };
     };
 
-    pub fn destroy() void {}
+    pub fn destroy(self: @This()) void {
+        _ = self;
+    }
 
 };
 
 pub const DataOffer = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const accept: u16 = 0;
@@ -272,19 +330,37 @@ pub const DataOffer = struct {
         invalid_offer = 3, // offer doesn't accept this request
     };
 
-    pub fn accept() void {}
+    pub fn accept(self: @This(), serial: u32, mime_type: ?[:0]const u8) void {
+        _ = self;
+        _ = serial;
+        _ = mime_type;
+    }
 
-    pub fn receive() void {}
+    pub fn receive(self: @This(), mime_type: [:0]const u8, fd: FD) void {
+        _ = self;
+        _ = mime_type;
+        _ = fd;
+    }
 
-    pub fn destroy() void {}
+    pub fn destroy(self: @This()) void {
+        _ = self;
+    }
 
-    pub fn finish() void {}
+    pub fn finish(self: @This()) void {
+        _ = self;
+    }
 
-    pub fn setActions() void {}
+    pub fn setActions(self: @This(), dnd_actions: DataDeviceManager.DndAction, preferred_action: DataDeviceManager.DndAction) void {
+        _ = self;
+        _ = dnd_actions;
+        _ = preferred_action;
+    }
 
 };
 
 pub const DataSource = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const offer: u16 = 0;
@@ -306,15 +382,25 @@ pub const DataSource = struct {
         invalid_source = 1, // source doesn't accept this request
     };
 
-    pub fn offer() void {}
+    pub fn offer(self: @This(), mime_type: [:0]const u8) void {
+        _ = self;
+        _ = mime_type;
+    }
 
-    pub fn destroy() void {}
+    pub fn destroy(self: @This()) void {
+        _ = self;
+    }
 
-    pub fn setActions() void {}
+    pub fn setActions(self: @This(), dnd_actions: DataDeviceManager.DndAction) void {
+        _ = self;
+        _ = dnd_actions;
+    }
 
 };
 
 pub const DataDevice = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const startDrag: u16 = 0;
@@ -336,15 +422,29 @@ pub const DataDevice = struct {
         used_source = 1, // source has already been used
     };
 
-    pub fn startDrag() void {}
+    pub fn startDrag(self: @This(), source: ?DataSource, origin: Surface, icon: ?Surface, serial: u32) void {
+        _ = self;
+        _ = source;
+        _ = origin;
+        _ = icon;
+        _ = serial;
+    }
 
-    pub fn setSelection() void {}
+    pub fn setSelection(self: @This(), source: ?DataSource, serial: u32) void {
+        _ = self;
+        _ = source;
+        _ = serial;
+    }
 
-    pub fn release() void {}
+    pub fn release(self: @This()) void {
+        _ = self;
+    }
 
 };
 
 pub const DataDeviceManager = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const createDataSource: u16 = 0;
@@ -361,13 +461,22 @@ pub const DataDeviceManager = struct {
         ask = 4, // ask action
     };
 
-    pub fn createDataSource() void {}
+    pub fn createDataSource(self: @This()) DataSource {
+        _ = self;
+        return undefined;
+    }
 
-    pub fn getDataDevice() void {}
+    pub fn getDataDevice(self: @This(), seat: Seat) DataDevice {
+        _ = self;
+        _ = seat;
+        return undefined;
+    }
 
 };
 
 pub const Shell = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const getShellSurface: u16 = 0;
@@ -380,11 +489,17 @@ pub const Shell = struct {
         role = 0, // given wl_surface has another role
     };
 
-    pub fn getShellSurface() void {}
+    pub fn getShellSurface(self: @This(), surface: Surface) ShellSurface {
+        _ = self;
+        _ = surface;
+        return undefined;
+    }
 
 };
 
 pub const ShellSurface = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const pong: u16 = 0;
@@ -428,29 +543,73 @@ pub const ShellSurface = struct {
         fill = 3, // no upscaling, center on output and add black borders to compensate size mismatch
     };
 
-    pub fn pong() void {}
+    pub fn pong(self: @This(), serial: u32) void {
+        _ = self;
+        _ = serial;
+    }
 
-    pub fn move() void {}
+    pub fn move(self: @This(), seat: Seat, serial: u32) void {
+        _ = self;
+        _ = seat;
+        _ = serial;
+    }
 
-    pub fn resize() void {}
+    pub fn resize(self: @This(), seat: Seat, serial: u32, edges: Resize) void {
+        _ = self;
+        _ = seat;
+        _ = serial;
+        _ = edges;
+    }
 
-    pub fn setToplevel() void {}
+    pub fn setToplevel(self: @This()) void {
+        _ = self;
+    }
 
-    pub fn setTransient() void {}
+    pub fn setTransient(self: @This(), parent: Surface, x: i32, y: i32, flags: Transient) void {
+        _ = self;
+        _ = parent;
+        _ = x;
+        _ = y;
+        _ = flags;
+    }
 
-    pub fn setFullscreen() void {}
+    pub fn setFullscreen(self: @This(), method: FullscreenMethod, framerate: u32, output: ?Output) void {
+        _ = self;
+        _ = method;
+        _ = framerate;
+        _ = output;
+    }
 
-    pub fn setPopup() void {}
+    pub fn setPopup(self: @This(), seat: Seat, serial: u32, parent: Surface, x: i32, y: i32, flags: Transient) void {
+        _ = self;
+        _ = seat;
+        _ = serial;
+        _ = parent;
+        _ = x;
+        _ = y;
+        _ = flags;
+    }
 
-    pub fn setMaximized() void {}
+    pub fn setMaximized(self: @This(), output: ?Output) void {
+        _ = self;
+        _ = output;
+    }
 
-    pub fn setTitle() void {}
+    pub fn setTitle(self: @This(), title: [:0]const u8) void {
+        _ = self;
+        _ = title;
+    }
 
-    pub fn setClass() void {}
+    pub fn setClass(self: @This(), class_: [:0]const u8) void {
+        _ = self;
+        _ = class_;
+    }
 
 };
 
 pub const Surface = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const destroy: u16 = 0;
@@ -481,31 +640,73 @@ pub const Surface = struct {
         defunct_role_object = 4, // surface was destroyed before its role object
     };
 
-    pub fn destroy() void {}
+    pub fn destroy(self: @This()) void {
+        _ = self;
+    }
 
-    pub fn attach() void {}
+    pub fn attach(self: @This(), buffer: ?Buffer, x: i32, y: i32) void {
+        _ = self;
+        _ = buffer;
+        _ = x;
+        _ = y;
+    }
 
-    pub fn damage() void {}
+    pub fn damage(self: @This(), x: i32, y: i32, width: i32, height: i32) void {
+        _ = self;
+        _ = x;
+        _ = y;
+        _ = width;
+        _ = height;
+    }
 
-    pub fn frame() void {}
+    pub fn frame(self: @This()) Callback {
+        _ = self;
+        return undefined;
+    }
 
-    pub fn setOpaqueRegion() void {}
+    pub fn setOpaqueRegion(self: @This(), region: ?Region) void {
+        _ = self;
+        _ = region;
+    }
 
-    pub fn setInputRegion() void {}
+    pub fn setInputRegion(self: @This(), region: ?Region) void {
+        _ = self;
+        _ = region;
+    }
 
-    pub fn commit() void {}
+    pub fn commit(self: @This()) void {
+        _ = self;
+    }
 
-    pub fn setBufferTransform() void {}
+    pub fn setBufferTransform(self: @This(), transform: Output.Transform) void {
+        _ = self;
+        _ = transform;
+    }
 
-    pub fn setBufferScale() void {}
+    pub fn setBufferScale(self: @This(), scale: i32) void {
+        _ = self;
+        _ = scale;
+    }
 
-    pub fn damageBuffer() void {}
+    pub fn damageBuffer(self: @This(), x: i32, y: i32, width: i32, height: i32) void {
+        _ = self;
+        _ = x;
+        _ = y;
+        _ = width;
+        _ = height;
+    }
 
-    pub fn offset() void {}
+    pub fn offset(self: @This(), x: i32, y: i32) void {
+        _ = self;
+        _ = x;
+        _ = y;
+    }
 
 };
 
 pub const Seat = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const getPointer: u16 = 0;
@@ -529,17 +730,30 @@ pub const Seat = struct {
         missing_capability = 0, // get_pointer, get_keyboard or get_touch called on seat without the matching capability
     };
 
-    pub fn getPointer() void {}
+    pub fn getPointer(self: @This()) Pointer {
+        _ = self;
+        return undefined;
+    }
 
-    pub fn getKeyboard() void {}
+    pub fn getKeyboard(self: @This()) Keyboard {
+        _ = self;
+        return undefined;
+    }
 
-    pub fn getTouch() void {}
+    pub fn getTouch(self: @This()) Touch {
+        _ = self;
+        return undefined;
+    }
 
-    pub fn release() void {}
+    pub fn release(self: @This()) void {
+        _ = self;
+    }
 
 };
 
 pub const Pointer = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const setCursor: u16 = 0;
@@ -586,13 +800,23 @@ pub const Pointer = struct {
         inverted = 1, // physical motion is the inverse of the axis direction
     };
 
-    pub fn setCursor() void {}
+    pub fn setCursor(self: @This(), serial: u32, surface: ?Surface, hotspot_x: i32, hotspot_y: i32) void {
+        _ = self;
+        _ = serial;
+        _ = surface;
+        _ = hotspot_x;
+        _ = hotspot_y;
+    }
 
-    pub fn release() void {}
+    pub fn release(self: @This()) void {
+        _ = self;
+    }
 
 };
 
 pub const Keyboard = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const release: u16 = 0;
@@ -617,11 +841,15 @@ pub const Keyboard = struct {
         pressed = 1, // key is pressed
     };
 
-    pub fn release() void {}
+    pub fn release(self: @This()) void {
+        _ = self;
+    }
 
 };
 
 pub const Touch = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const release: u16 = 0;
@@ -637,11 +865,15 @@ pub const Touch = struct {
         };
     };
 
-    pub fn release() void {}
+    pub fn release(self: @This()) void {
+        _ = self;
+    }
 
 };
 
 pub const Output = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const release: u16 = 0;
@@ -681,11 +913,15 @@ pub const Output = struct {
         preferred = 2, // indicates this is the preferred mode
     };
 
-    pub fn release() void {}
+    pub fn release(self: @This()) void {
+        _ = self;
+    }
 
 };
 
 pub const Region = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const destroy: u16 = 0;
@@ -696,15 +932,31 @@ pub const Region = struct {
         };
     };
 
-    pub fn destroy() void {}
+    pub fn destroy(self: @This()) void {
+        _ = self;
+    }
 
-    pub fn add() void {}
+    pub fn add(self: @This(), x: i32, y: i32, width: i32, height: i32) void {
+        _ = self;
+        _ = x;
+        _ = y;
+        _ = width;
+        _ = height;
+    }
 
-    pub fn subtract() void {}
+    pub fn subtract(self: @This(), x: i32, y: i32, width: i32, height: i32) void {
+        _ = self;
+        _ = x;
+        _ = y;
+        _ = width;
+        _ = height;
+    }
 
 };
 
 pub const Subcompositor = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const destroy: u16 = 0;
@@ -719,13 +971,22 @@ pub const Subcompositor = struct {
         bad_parent = 1, // the to-be sub-surface parent is invalid
     };
 
-    pub fn destroy() void {}
+    pub fn destroy(self: @This()) void {
+        _ = self;
+    }
 
-    pub fn getSubsurface() void {}
+    pub fn getSubsurface(self: @This(), surface: Surface, parent: Surface) Subsurface {
+        _ = self;
+        _ = surface;
+        _ = parent;
+        return undefined;
+    }
 
 };
 
 pub const Subsurface = struct {
+    inner: Object,
+
     pub const opcode = struct {
         pub const request = struct {
             pub const destroy: u16 = 0;
@@ -743,17 +1004,33 @@ pub const Subsurface = struct {
         bad_surface = 0, // wl_surface is not a sibling or the parent
     };
 
-    pub fn destroy() void {}
+    pub fn destroy(self: @This()) void {
+        _ = self;
+    }
 
-    pub fn setPosition() void {}
+    pub fn setPosition(self: @This(), x: i32, y: i32) void {
+        _ = self;
+        _ = x;
+        _ = y;
+    }
 
-    pub fn placeAbove() void {}
+    pub fn placeAbove(self: @This(), sibling: Surface) void {
+        _ = self;
+        _ = sibling;
+    }
 
-    pub fn placeBelow() void {}
+    pub fn placeBelow(self: @This(), sibling: Surface) void {
+        _ = self;
+        _ = sibling;
+    }
 
-    pub fn setSync() void {}
+    pub fn setSync(self: @This()) void {
+        _ = self;
+    }
 
-    pub fn setDesync() void {}
+    pub fn setDesync(self: @This()) void {
+        _ = self;
+    }
 
 };
 

@@ -25,6 +25,8 @@ pub const Object = struct {
     display: ?*anyopaque = null, // TODO store pointer to global wayland object (wl_display)
 };
 
+pub const FD = std.posix.fd_t;
+
 fn msgLength(args: anytype) u16 {
     const args_info = @typeInfo(@TypeOf(args));
     const fields = args_info.Struct.fields;
