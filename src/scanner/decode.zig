@@ -15,6 +15,7 @@ const Method = types.Method;
 const Arg = types.Arg;
 const Enum = types.Enum;
 const Entry = types.Entry;
+const Description = types.Description;
 
 const eql = std.mem.eql;
 
@@ -79,8 +80,12 @@ pub fn decodeCopyright(scanner: *Scanner, token: *Token) ![]const u8 {
     return copyright;
 }
 
-// TODO make description struct that contains body and summary
-pub fn decodeDescription(scanner: *Scanner, token: *Token) ![]const u8 {
+pub fn decodeDescription(scanner: *Scanner, token: *Token) !Description {
+    var desc = Description {
+        .summary = undefined,
+        .body = null,
+    };
+
     var empty_tag = false;
     if (!token.expectStartTagName("description")) {
         if (!token.expectEmptyTagName("description"))
@@ -89,14 +94,13 @@ pub fn decodeDescription(scanner: *Scanner, token: *Token) ![]const u8 {
     }
     token.* = try scanner.next();
 
-    const summary = token.expectAttributeName("summary") orelse
+    desc.summary = token.expectAttributeName("summary") orelse
         return error.NoSummary;
-    _ = summary;
     token.* = try scanner.next();
 
-    if (empty_tag) return "No Text";
+    if (empty_tag) return desc;
 
-    const description = token.expectText() orelse
+    desc.body = token.expectText() orelse
         return error.NoText;
     token.* = try scanner.next();
 
@@ -104,7 +108,7 @@ pub fn decodeDescription(scanner: *Scanner, token: *Token) ![]const u8 {
         return error.NoEndTag;
     token.* = try scanner.next();
 
-    return description;
+    return desc;
 }
 
 pub fn decodeInterface(

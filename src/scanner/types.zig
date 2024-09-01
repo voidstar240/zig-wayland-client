@@ -3,14 +3,14 @@ pub const Version = u8;
 pub const Protocol = struct {
     name: []const u8,
     copyright: ?[]const u8,
-    description: ?[]const u8,
+    description: ?Description,
     interfaces: []Interface,
 };
 
 pub const Interface = struct {
     name: []const u8,
     version: Version,
-    description: ?[]const u8,
+    description: ?Description,
     requests: []Method,
     events: []Method,
     enums: []Enum,
@@ -21,7 +21,7 @@ pub const Method = struct {
     is_destructor: bool,
     since: ?Version,
     dep_since: ?Version,
-    description: ?[]const u8,
+    description: ?Description,
     args: []Arg,
 };
 
@@ -29,7 +29,7 @@ pub const Arg = struct {
     name: []const u8,
     type: Type,
     summary: ?[]const u8,
-    description: ?[]const u8,
+    description: ?Description,
 
     pub const Type = union(enum) {
         int: void,
@@ -66,7 +66,7 @@ pub const Enum = struct {
     name: []const u8,
     since: ?Version,
     is_bit_field: bool,
-    description: ?[]const u8,
+    description: ?Description,
     entries: []Entry,
 };
 
@@ -76,5 +76,10 @@ pub const Entry = struct {
     summary: ?[]const u8,
     since: ?Version,
     dep_since: ?Version,
-    description: ?[]const u8,
+    description: ?Description,
+};
+
+pub const Description = struct {
+    summary: []const u8,
+    body: ?[]const u8,
 };
