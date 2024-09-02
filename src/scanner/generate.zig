@@ -46,27 +46,30 @@ fn generateInterface(interface: *const Interface, writer: anytype) !void {
 }
 
 fn generateOpcodes(interface: *const Interface, writer: anytype) !void {
-    try writer.print(
-        \\    pub const opcode = struct {{
-        \\        pub const request = struct {{
-        \\
-        , .{});
+    try writer.print("    pub const opcode = struct {{\n", .{});
+    if (interface.requests.len > 0) {
+        try writer.print("        pub const request = struct {{\n", .{});
+    }
     for (interface.requests, 0..) |*request, i| {
         try writer.print("            pub const ", .{});
         try writeName(request.name, writer);
         try writer.print(": u16 = {d};\n", .{i});
     }
-    try writer.print(
-        \\        }};
-        \\        pub const event = struct {{
-        \\
-        , .{});
+    if (interface.requests.len > 0) {
+        try writer.print("        }};\n", .{});
+    }
+    if (interface.events.len > 0) {
+        try writer.print("        pub const event = struct {{\n", .{});
+    }
     for (interface.events, 0..) |*event, i| {
         try writer.print("            pub const ", .{});
         try writeName(event.name, writer);
         try writer.print(": u16 = {d};\n", .{i});
     }
-    try writer.print("        }};\n    }};\n\n", .{});
+    if (interface.events.len > 0) {
+        try writer.print("        }};\n", .{});
+    }
+    try writer.print("    }};\n\n", .{});
 }
 
 fn generateRequest(request: *const Method, writer: anytype) !void {

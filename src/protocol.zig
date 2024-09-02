@@ -65,8 +65,6 @@ pub const wl_callback = struct {
     inner: Object,
 
     pub const opcode = struct {
-        pub const request = struct {
-        };
         pub const event = struct {
             pub const done: u16 = 0;
         };
@@ -81,8 +79,6 @@ pub const wl_compositor = struct {
         pub const request = struct {
             pub const create_surface: u16 = 0;
             pub const create_region: u16 = 1;
-        };
-        pub const event = struct {
         };
     };
 
@@ -106,8 +102,6 @@ pub const wl_shm_pool = struct {
             pub const create_buffer: u16 = 0;
             pub const destroy: u16 = 1;
             pub const resize: u16 = 2;
-        };
-        pub const event = struct {
         };
     };
 
@@ -453,8 +447,6 @@ pub const wl_data_device_manager = struct {
             pub const create_data_source: u16 = 0;
             pub const get_data_device: u16 = 1;
         };
-        pub const event = struct {
-        };
     };
 
     pub const DndAction = enum(u32) {
@@ -483,8 +475,6 @@ pub const wl_shell = struct {
     pub const opcode = struct {
         pub const request = struct {
             pub const get_shell_surface: u16 = 0;
-        };
-        pub const event = struct {
         };
     };
 
@@ -931,8 +921,6 @@ pub const wl_region = struct {
             pub const add: u16 = 1;
             pub const subtract: u16 = 2;
         };
-        pub const event = struct {
-        };
     };
 
     pub fn destroy(self: @This()) void {
@@ -965,8 +953,6 @@ pub const wl_subcompositor = struct {
             pub const destroy: u16 = 0;
             pub const get_subsurface: u16 = 1;
         };
-        pub const event = struct {
-        };
     };
 
     pub const Error = enum(u32) {
@@ -998,8 +984,6 @@ pub const wl_subsurface = struct {
             pub const place_below: u16 = 3;
             pub const set_sync: u16 = 4;
             pub const set_desync: u16 = 5;
-        };
-        pub const event = struct {
         };
     };
 
