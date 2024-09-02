@@ -12,7 +12,6 @@ const std = @import("std");
 const types = @import("types.zig");
 const xml = @import("scanner.zig");
 const decode = @import("decode.zig");
-const clean = @import("clean.zig");
 const generate = @import("generate.zig");
 
 pub fn main() !void {
@@ -38,8 +37,6 @@ pub fn main() !void {
         std.posix.exit(1);
     };
 
-    try clean.cleanProtocol(&protocol, "wl_", alloc);
-    
     const out_path = args[2];
     var out_file = try std.fs.cwd().createFile(out_path, .{});
     defer out_file.close();

@@ -56,7 +56,7 @@ pub const Arg = struct {
         };
 
         const EnumMeta = struct {
-            enum_name: []const u8, // this is a type name, potentially <interface>.<enum_name>
+            enum_name: []const u8,
             is_signed: bool,
         };
     };

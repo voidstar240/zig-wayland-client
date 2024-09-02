@@ -1,20 +1,23 @@
 const util = @import("util.zig");
+const ints = struct {
+    usingnamespace @import("protocol.zig");
+};
 
 const Object = util.Object;
 const Fixed = util.Fixed;
 const FD = util.FD;
 
-pub const Display = struct {
+pub const wl_display = struct {
     inner: Object,
 
     pub const opcode = struct {
         pub const request = struct {
             pub const sync: u16 = 0;
-            pub const getRegistry: u16 = 1;
+            pub const get_registry: u16 = 1;
         };
         pub const event = struct {
             pub const @"error": u16 = 0;
-            pub const deleteId: u16 = 1;
+            pub const delete_id: u16 = 1;
         };
     };
 
@@ -25,19 +28,19 @@ pub const Display = struct {
         implementation = 3, // implementation error in compositor
     };
 
-    pub fn sync(self: @This()) Callback {
+    pub fn sync(self: @This()) ints.wl_callback {
         _ = self;
         return undefined;
     }
 
-    pub fn getRegistry(self: @This()) Registry {
+    pub fn getRegistry(self: @This()) ints.wl_registry {
         _ = self;
         return undefined;
     }
 
 };
 
-pub const Registry = struct {
+pub const wl_registry = struct {
     inner: Object,
 
     pub const opcode = struct {
@@ -46,7 +49,7 @@ pub const Registry = struct {
         };
         pub const event = struct {
             pub const global: u16 = 0;
-            pub const globalRemove: u16 = 1;
+            pub const global_remove: u16 = 1;
         };
     };
 
@@ -58,7 +61,7 @@ pub const Registry = struct {
 
 };
 
-pub const Callback = struct {
+pub const wl_callback = struct {
     inner: Object,
 
     pub const opcode = struct {
@@ -71,36 +74,36 @@ pub const Callback = struct {
 
 };
 
-pub const Compositor = struct {
+pub const wl_compositor = struct {
     inner: Object,
 
     pub const opcode = struct {
         pub const request = struct {
-            pub const createSurface: u16 = 0;
-            pub const createRegion: u16 = 1;
+            pub const create_surface: u16 = 0;
+            pub const create_region: u16 = 1;
         };
         pub const event = struct {
         };
     };
 
-    pub fn createSurface(self: @This()) Surface {
+    pub fn createSurface(self: @This()) ints.wl_surface {
         _ = self;
         return undefined;
     }
 
-    pub fn createRegion(self: @This()) Region {
+    pub fn createRegion(self: @This()) ints.wl_region {
         _ = self;
         return undefined;
     }
 
 };
 
-pub const ShmPool = struct {
+pub const wl_shm_pool = struct {
     inner: Object,
 
     pub const opcode = struct {
         pub const request = struct {
-            pub const createBuffer: u16 = 0;
+            pub const create_buffer: u16 = 0;
             pub const destroy: u16 = 1;
             pub const resize: u16 = 2;
         };
@@ -108,7 +111,7 @@ pub const ShmPool = struct {
         };
     };
 
-    pub fn createBuffer(self: @This(), offset: i32, width: i32, height: i32, stride: i32, format: Shm.Format) Buffer {
+    pub fn createBuffer(self: @This(), offset: i32, width: i32, height: i32, stride: i32, format: ints.wl_shm.Format) ints.wl_buffer {
         _ = self;
         _ = offset;
         _ = width;
@@ -129,12 +132,12 @@ pub const ShmPool = struct {
 
 };
 
-pub const Shm = struct {
+pub const wl_shm = struct {
     inner: Object,
 
     pub const opcode = struct {
         pub const request = struct {
-            pub const createPool: u16 = 0;
+            pub const create_pool: u16 = 0;
             pub const release: u16 = 1;
         };
         pub const event = struct {
@@ -274,7 +277,7 @@ pub const Shm = struct {
         p030 = 808661072, // 2x2 subsampled Cr:Cb plane 10 bits per channel packed
     };
 
-    pub fn createPool(self: @This(), fd: FD, size: i32) ShmPool {
+    pub fn createPool(self: @This(), fd: FD, size: i32) ints.wl_shm_pool {
         _ = self;
         _ = fd;
         _ = size;
@@ -287,7 +290,7 @@ pub const Shm = struct {
 
 };
 
-pub const Buffer = struct {
+pub const wl_buffer = struct {
     inner: Object,
 
     pub const opcode = struct {
@@ -305,7 +308,7 @@ pub const Buffer = struct {
 
 };
 
-pub const DataOffer = struct {
+pub const wl_data_offer = struct {
     inner: Object,
 
     pub const opcode = struct {
@@ -314,11 +317,11 @@ pub const DataOffer = struct {
             pub const receive: u16 = 1;
             pub const destroy: u16 = 2;
             pub const finish: u16 = 3;
-            pub const setActions: u16 = 4;
+            pub const set_actions: u16 = 4;
         };
         pub const event = struct {
             pub const offer: u16 = 0;
-            pub const sourceActions: u16 = 1;
+            pub const source_actions: u16 = 1;
             pub const action: u16 = 2;
         };
     };
@@ -350,7 +353,7 @@ pub const DataOffer = struct {
         _ = self;
     }
 
-    pub fn setActions(self: @This(), dnd_actions: DataDeviceManager.DndAction, preferred_action: DataDeviceManager.DndAction) void {
+    pub fn setActions(self: @This(), dnd_actions: ints.wl_data_device_manager.DndAction, preferred_action: ints.wl_data_device_manager.DndAction) void {
         _ = self;
         _ = dnd_actions;
         _ = preferred_action;
@@ -358,21 +361,21 @@ pub const DataOffer = struct {
 
 };
 
-pub const DataSource = struct {
+pub const wl_data_source = struct {
     inner: Object,
 
     pub const opcode = struct {
         pub const request = struct {
             pub const offer: u16 = 0;
             pub const destroy: u16 = 1;
-            pub const setActions: u16 = 2;
+            pub const set_actions: u16 = 2;
         };
         pub const event = struct {
             pub const target: u16 = 0;
             pub const send: u16 = 1;
             pub const cancelled: u16 = 2;
-            pub const dndDropPerformed: u16 = 3;
-            pub const dndFinished: u16 = 4;
+            pub const dnd_drop_performed: u16 = 3;
+            pub const dnd_finished: u16 = 4;
             pub const action: u16 = 5;
         };
     };
@@ -391,24 +394,24 @@ pub const DataSource = struct {
         _ = self;
     }
 
-    pub fn setActions(self: @This(), dnd_actions: DataDeviceManager.DndAction) void {
+    pub fn setActions(self: @This(), dnd_actions: ints.wl_data_device_manager.DndAction) void {
         _ = self;
         _ = dnd_actions;
     }
 
 };
 
-pub const DataDevice = struct {
+pub const wl_data_device = struct {
     inner: Object,
 
     pub const opcode = struct {
         pub const request = struct {
-            pub const startDrag: u16 = 0;
-            pub const setSelection: u16 = 1;
+            pub const start_drag: u16 = 0;
+            pub const set_selection: u16 = 1;
             pub const release: u16 = 2;
         };
         pub const event = struct {
-            pub const dataOffer: u16 = 0;
+            pub const data_offer: u16 = 0;
             pub const enter: u16 = 1;
             pub const leave: u16 = 2;
             pub const motion: u16 = 3;
@@ -422,7 +425,7 @@ pub const DataDevice = struct {
         used_source = 1, // source has already been used
     };
 
-    pub fn startDrag(self: @This(), source: ?DataSource, origin: Surface, icon: ?Surface, serial: u32) void {
+    pub fn startDrag(self: @This(), source: ?ints.wl_data_source, origin: ints.wl_surface, icon: ?ints.wl_surface, serial: u32) void {
         _ = self;
         _ = source;
         _ = origin;
@@ -430,7 +433,7 @@ pub const DataDevice = struct {
         _ = serial;
     }
 
-    pub fn setSelection(self: @This(), source: ?DataSource, serial: u32) void {
+    pub fn setSelection(self: @This(), source: ?ints.wl_data_source, serial: u32) void {
         _ = self;
         _ = source;
         _ = serial;
@@ -442,13 +445,13 @@ pub const DataDevice = struct {
 
 };
 
-pub const DataDeviceManager = struct {
+pub const wl_data_device_manager = struct {
     inner: Object,
 
     pub const opcode = struct {
         pub const request = struct {
-            pub const createDataSource: u16 = 0;
-            pub const getDataDevice: u16 = 1;
+            pub const create_data_source: u16 = 0;
+            pub const get_data_device: u16 = 1;
         };
         pub const event = struct {
         };
@@ -461,12 +464,12 @@ pub const DataDeviceManager = struct {
         ask = 4, // ask action
     };
 
-    pub fn createDataSource(self: @This()) DataSource {
+    pub fn createDataSource(self: @This()) ints.wl_data_source {
         _ = self;
         return undefined;
     }
 
-    pub fn getDataDevice(self: @This(), seat: Seat) DataDevice {
+    pub fn getDataDevice(self: @This(), seat: ints.wl_seat) ints.wl_data_device {
         _ = self;
         _ = seat;
         return undefined;
@@ -474,12 +477,12 @@ pub const DataDeviceManager = struct {
 
 };
 
-pub const Shell = struct {
+pub const wl_shell = struct {
     inner: Object,
 
     pub const opcode = struct {
         pub const request = struct {
-            pub const getShellSurface: u16 = 0;
+            pub const get_shell_surface: u16 = 0;
         };
         pub const event = struct {
         };
@@ -489,7 +492,7 @@ pub const Shell = struct {
         role = 0, // given wl_surface has another role
     };
 
-    pub fn getShellSurface(self: @This(), surface: Surface) ShellSurface {
+    pub fn getShellSurface(self: @This(), surface: ints.wl_surface) ints.wl_shell_surface {
         _ = self;
         _ = surface;
         return undefined;
@@ -497,7 +500,7 @@ pub const Shell = struct {
 
 };
 
-pub const ShellSurface = struct {
+pub const wl_shell_surface = struct {
     inner: Object,
 
     pub const opcode = struct {
@@ -505,18 +508,18 @@ pub const ShellSurface = struct {
             pub const pong: u16 = 0;
             pub const move: u16 = 1;
             pub const resize: u16 = 2;
-            pub const setToplevel: u16 = 3;
-            pub const setTransient: u16 = 4;
-            pub const setFullscreen: u16 = 5;
-            pub const setPopup: u16 = 6;
-            pub const setMaximized: u16 = 7;
-            pub const setTitle: u16 = 8;
-            pub const setClass: u16 = 9;
+            pub const set_toplevel: u16 = 3;
+            pub const set_transient: u16 = 4;
+            pub const set_fullscreen: u16 = 5;
+            pub const set_popup: u16 = 6;
+            pub const set_maximized: u16 = 7;
+            pub const set_title: u16 = 8;
+            pub const set_class: u16 = 9;
         };
         pub const event = struct {
             pub const ping: u16 = 0;
             pub const configure: u16 = 1;
-            pub const popupDone: u16 = 2;
+            pub const popup_done: u16 = 2;
         };
     };
 
@@ -548,13 +551,13 @@ pub const ShellSurface = struct {
         _ = serial;
     }
 
-    pub fn move(self: @This(), seat: Seat, serial: u32) void {
+    pub fn move(self: @This(), seat: ints.wl_seat, serial: u32) void {
         _ = self;
         _ = seat;
         _ = serial;
     }
 
-    pub fn resize(self: @This(), seat: Seat, serial: u32, edges: Resize) void {
+    pub fn resize(self: @This(), seat: ints.wl_seat, serial: u32, edges: Resize) void {
         _ = self;
         _ = seat;
         _ = serial;
@@ -565,7 +568,7 @@ pub const ShellSurface = struct {
         _ = self;
     }
 
-    pub fn setTransient(self: @This(), parent: Surface, x: i32, y: i32, flags: Transient) void {
+    pub fn setTransient(self: @This(), parent: ints.wl_surface, x: i32, y: i32, flags: Transient) void {
         _ = self;
         _ = parent;
         _ = x;
@@ -573,14 +576,14 @@ pub const ShellSurface = struct {
         _ = flags;
     }
 
-    pub fn setFullscreen(self: @This(), method: FullscreenMethod, framerate: u32, output: ?Output) void {
+    pub fn setFullscreen(self: @This(), method: FullscreenMethod, framerate: u32, output: ?ints.wl_output) void {
         _ = self;
         _ = method;
         _ = framerate;
         _ = output;
     }
 
-    pub fn setPopup(self: @This(), seat: Seat, serial: u32, parent: Surface, x: i32, y: i32, flags: Transient) void {
+    pub fn setPopup(self: @This(), seat: ints.wl_seat, serial: u32, parent: ints.wl_surface, x: i32, y: i32, flags: Transient) void {
         _ = self;
         _ = seat;
         _ = serial;
@@ -590,7 +593,7 @@ pub const ShellSurface = struct {
         _ = flags;
     }
 
-    pub fn setMaximized(self: @This(), output: ?Output) void {
+    pub fn setMaximized(self: @This(), output: ?ints.wl_output) void {
         _ = self;
         _ = output;
     }
@@ -607,7 +610,7 @@ pub const ShellSurface = struct {
 
 };
 
-pub const Surface = struct {
+pub const wl_surface = struct {
     inner: Object,
 
     pub const opcode = struct {
@@ -616,19 +619,19 @@ pub const Surface = struct {
             pub const attach: u16 = 1;
             pub const damage: u16 = 2;
             pub const frame: u16 = 3;
-            pub const setOpaqueRegion: u16 = 4;
-            pub const setInputRegion: u16 = 5;
+            pub const set_opaque_region: u16 = 4;
+            pub const set_input_region: u16 = 5;
             pub const commit: u16 = 6;
-            pub const setBufferTransform: u16 = 7;
-            pub const setBufferScale: u16 = 8;
-            pub const damageBuffer: u16 = 9;
+            pub const set_buffer_transform: u16 = 7;
+            pub const set_buffer_scale: u16 = 8;
+            pub const damage_buffer: u16 = 9;
             pub const offset: u16 = 10;
         };
         pub const event = struct {
             pub const enter: u16 = 0;
             pub const leave: u16 = 1;
-            pub const preferredBufferScale: u16 = 2;
-            pub const preferredBufferTransform: u16 = 3;
+            pub const preferred_buffer_scale: u16 = 2;
+            pub const preferred_buffer_transform: u16 = 3;
         };
     };
 
@@ -644,7 +647,7 @@ pub const Surface = struct {
         _ = self;
     }
 
-    pub fn attach(self: @This(), buffer: ?Buffer, x: i32, y: i32) void {
+    pub fn attach(self: @This(), buffer: ?ints.wl_buffer, x: i32, y: i32) void {
         _ = self;
         _ = buffer;
         _ = x;
@@ -659,17 +662,17 @@ pub const Surface = struct {
         _ = height;
     }
 
-    pub fn frame(self: @This()) Callback {
+    pub fn frame(self: @This()) ints.wl_callback {
         _ = self;
         return undefined;
     }
 
-    pub fn setOpaqueRegion(self: @This(), region: ?Region) void {
+    pub fn setOpaqueRegion(self: @This(), region: ?ints.wl_region) void {
         _ = self;
         _ = region;
     }
 
-    pub fn setInputRegion(self: @This(), region: ?Region) void {
+    pub fn setInputRegion(self: @This(), region: ?ints.wl_region) void {
         _ = self;
         _ = region;
     }
@@ -678,7 +681,7 @@ pub const Surface = struct {
         _ = self;
     }
 
-    pub fn setBufferTransform(self: @This(), transform: Output.Transform) void {
+    pub fn setBufferTransform(self: @This(), transform: ints.wl_output.Transform) void {
         _ = self;
         _ = transform;
     }
@@ -704,14 +707,14 @@ pub const Surface = struct {
 
 };
 
-pub const Seat = struct {
+pub const wl_seat = struct {
     inner: Object,
 
     pub const opcode = struct {
         pub const request = struct {
-            pub const getPointer: u16 = 0;
-            pub const getKeyboard: u16 = 1;
-            pub const getTouch: u16 = 2;
+            pub const get_pointer: u16 = 0;
+            pub const get_keyboard: u16 = 1;
+            pub const get_touch: u16 = 2;
             pub const release: u16 = 3;
         };
         pub const event = struct {
@@ -730,17 +733,17 @@ pub const Seat = struct {
         missing_capability = 0, // get_pointer, get_keyboard or get_touch called on seat without the matching capability
     };
 
-    pub fn getPointer(self: @This()) Pointer {
+    pub fn getPointer(self: @This()) ints.wl_pointer {
         _ = self;
         return undefined;
     }
 
-    pub fn getKeyboard(self: @This()) Keyboard {
+    pub fn getKeyboard(self: @This()) ints.wl_keyboard {
         _ = self;
         return undefined;
     }
 
-    pub fn getTouch(self: @This()) Touch {
+    pub fn getTouch(self: @This()) ints.wl_touch {
         _ = self;
         return undefined;
     }
@@ -751,12 +754,12 @@ pub const Seat = struct {
 
 };
 
-pub const Pointer = struct {
+pub const wl_pointer = struct {
     inner: Object,
 
     pub const opcode = struct {
         pub const request = struct {
-            pub const setCursor: u16 = 0;
+            pub const set_cursor: u16 = 0;
             pub const release: u16 = 1;
         };
         pub const event = struct {
@@ -766,11 +769,11 @@ pub const Pointer = struct {
             pub const button: u16 = 3;
             pub const axis: u16 = 4;
             pub const frame: u16 = 5;
-            pub const axisSource: u16 = 6;
-            pub const axisStop: u16 = 7;
-            pub const axisDiscrete: u16 = 8;
-            pub const axisValue120: u16 = 9;
-            pub const axisRelativeDirection: u16 = 10;
+            pub const axis_source: u16 = 6;
+            pub const axis_stop: u16 = 7;
+            pub const axis_discrete: u16 = 8;
+            pub const axis_value120: u16 = 9;
+            pub const axis_relative_direction: u16 = 10;
         };
     };
 
@@ -800,7 +803,7 @@ pub const Pointer = struct {
         inverted = 1, // physical motion is the inverse of the axis direction
     };
 
-    pub fn setCursor(self: @This(), serial: u32, surface: ?Surface, hotspot_x: i32, hotspot_y: i32) void {
+    pub fn setCursor(self: @This(), serial: u32, surface: ?ints.wl_surface, hotspot_x: i32, hotspot_y: i32) void {
         _ = self;
         _ = serial;
         _ = surface;
@@ -814,7 +817,7 @@ pub const Pointer = struct {
 
 };
 
-pub const Keyboard = struct {
+pub const wl_keyboard = struct {
     inner: Object,
 
     pub const opcode = struct {
@@ -827,7 +830,7 @@ pub const Keyboard = struct {
             pub const leave: u16 = 2;
             pub const key: u16 = 3;
             pub const modifiers: u16 = 4;
-            pub const repeatInfo: u16 = 5;
+            pub const repeat_info: u16 = 5;
         };
     };
 
@@ -847,7 +850,7 @@ pub const Keyboard = struct {
 
 };
 
-pub const Touch = struct {
+pub const wl_touch = struct {
     inner: Object,
 
     pub const opcode = struct {
@@ -871,7 +874,7 @@ pub const Touch = struct {
 
 };
 
-pub const Output = struct {
+pub const wl_output = struct {
     inner: Object,
 
     pub const opcode = struct {
@@ -919,7 +922,7 @@ pub const Output = struct {
 
 };
 
-pub const Region = struct {
+pub const wl_region = struct {
     inner: Object,
 
     pub const opcode = struct {
@@ -954,13 +957,13 @@ pub const Region = struct {
 
 };
 
-pub const Subcompositor = struct {
+pub const wl_subcompositor = struct {
     inner: Object,
 
     pub const opcode = struct {
         pub const request = struct {
             pub const destroy: u16 = 0;
-            pub const getSubsurface: u16 = 1;
+            pub const get_subsurface: u16 = 1;
         };
         pub const event = struct {
         };
@@ -975,7 +978,7 @@ pub const Subcompositor = struct {
         _ = self;
     }
 
-    pub fn getSubsurface(self: @This(), surface: Surface, parent: Surface) Subsurface {
+    pub fn getSubsurface(self: @This(), surface: ints.wl_surface, parent: ints.wl_surface) ints.wl_subsurface {
         _ = self;
         _ = surface;
         _ = parent;
@@ -984,17 +987,17 @@ pub const Subcompositor = struct {
 
 };
 
-pub const Subsurface = struct {
+pub const wl_subsurface = struct {
     inner: Object,
 
     pub const opcode = struct {
         pub const request = struct {
             pub const destroy: u16 = 0;
-            pub const setPosition: u16 = 1;
-            pub const placeAbove: u16 = 2;
-            pub const placeBelow: u16 = 3;
-            pub const setSync: u16 = 4;
-            pub const setDesync: u16 = 5;
+            pub const set_position: u16 = 1;
+            pub const place_above: u16 = 2;
+            pub const place_below: u16 = 3;
+            pub const set_sync: u16 = 4;
+            pub const set_desync: u16 = 5;
         };
         pub const event = struct {
         };
@@ -1014,12 +1017,12 @@ pub const Subsurface = struct {
         _ = y;
     }
 
-    pub fn placeAbove(self: @This(), sibling: Surface) void {
+    pub fn placeAbove(self: @This(), sibling: ints.wl_surface) void {
         _ = self;
         _ = sibling;
     }
 
-    pub fn placeBelow(self: @This(), sibling: Surface) void {
+    pub fn placeBelow(self: @This(), sibling: ints.wl_surface) void {
         _ = self;
         _ = sibling;
     }
