@@ -10,7 +10,9 @@ pub fn build(b: *std.Build) void {
 
     const scanner_step = b.addRunArtifact(scanner);
     if (b.args) |args| {
-        scanner_step.addArgs(args);
+        if (args.len < 1) @panic("No input file");
+        if (args.len > 1) @panic("Too many input args");
+        scanner_step.addArg(args[0]);
     }
     const output = scanner_step.addOutputFileArg("wayland.zig");
     const wf = b.addWriteFiles();

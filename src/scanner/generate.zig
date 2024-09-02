@@ -9,11 +9,17 @@ const Arg = types.Arg;
 const Enum = types.Enum;
 const Entry = types.Entry;
 
-pub fn generateProtocol(protocol: *const Protocol, writer: anytype) !void {
+pub fn generateProtocol(
+    protocol: *const Protocol,
+    writer: anytype,
+    dependencies: [][]const u8
+) !void {
     try writer.print("const util = @import(\"util.zig\");\n", .{});
     try writer.print("const ints = struct {{\n", .{});
     try writer.print("    usingnamespace @import(\"protocol.zig\");\n", .{});
-    // TODO allow build script dependency imports
+    for (dependencies) |dep| {
+        try writer.print("    usingnamespace @import(\"{s}\");\n", .{dep});
+    }
     try writer.print("}};\n\n", .{});
 
     try writer.print("const Object = util.Object;\n", .{});

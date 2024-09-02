@@ -20,7 +20,6 @@ pub fn main() !void {
 
     const args = try std.process.argsAlloc(alloc);
     if (args.len < 3) { return error.TooFewArgs; }
-    else if (args.len > 3) { return error.TooManyArgs; }
 
     const in_path = args[1];
     var in_file = try std.fs.cwd().openFile(in_path, .{});
@@ -42,7 +41,7 @@ pub fn main() !void {
     defer out_file.close();
     const writer = out_file.writer();
 
-    // TODO generate code
-    try generate.generateProtocol(&protocol, &writer);
+    const dependencies = args[3..];
+    try generate.generateProtocol(&protocol, &writer, dependencies);
 }
 
