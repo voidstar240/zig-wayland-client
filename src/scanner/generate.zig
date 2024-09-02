@@ -206,18 +206,6 @@ fn newIdArgCount(request: *const Method) usize {
     return count;
 }
 
-// Prints `name` to `writer` potentially escaping both parts of name if needed.
-fn writeCompoundName(name: []const u8, writer: anytype) !void {
-    if (std.mem.indexOfScalar(u8, name, '.')) |i| {
-        try writer.print("ints.", .{});
-        try writeName(name[0..i], writer);
-        try writer.print(".", .{});
-        try writeEnumName(name[(i + 1)..], writer);
-    } else {
-        try writeName(name, writer);
-    }
-}
-
 /// Prints `name` to `writer` escaping `name` if needed.
 fn writeName(name: []const u8, writer: anytype) !void {
     if (isBadName(name)) {
