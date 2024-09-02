@@ -14,6 +14,11 @@ pub fn generateProtocol(
     writer: anytype,
     dependencies: [][]const u8
 ) !void {
+    if (protocol.copyright) |copyright| {
+        try writeParsedText(copyright, "// ", writer);
+        try writer.print("\n", .{});
+    }
+
     try writer.print("const util = @import(\"util.zig\");\n", .{});
     try writer.print("const ints = struct {{\n", .{});
     try writer.print("    usingnamespace @import(\"protocol.zig\");\n", .{});
@@ -24,13 +29,19 @@ pub fn generateProtocol(
 
     try writer.print("const Object = util.Object;\n", .{});
     try writer.print("const Fixed = util.Fixed;\n", .{});
-    try writer.print("const FD = util.FD;\n\n", .{});
+    try writer.print("const FD = util.FD;\n\n\n", .{});
+
     for (protocol.interfaces) |*interface| {
         try generateInterface(interface, writer);
     }
 }
 
 fn generateInterface(interface: *const Interface, writer: anytype) !void {
+    if (interface.description) |desc| {
+        if (desc.body) |body| {
+            try writeParsedText(body, "/// ", writer);
+        }
+    }
     try writer.print("pub const ", .{});
     try writeName(interface.name, writer);
     try writer.print(" = struct {{\n", .{});
@@ -73,6 +84,11 @@ fn generateOpcodes(interface: *const Interface, writer: anytype) !void {
 }
 
 fn generateRequest(request: *const Method, writer: anytype) !void {
+    if (request.description) |desc| {
+        if (desc.body) |body| {
+            try writeParsedText(body, "    /// ", writer);
+        }
+    }
     try writer.print("    pub fn ", .{});
     try writeMethodName(request.name, writer);
     try writer.print("(self: @This()", .{});
@@ -155,6 +171,11 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
 }
 
 fn generateEnum(enum_: *const Enum, writer: anytype) !void {
+    if (enum_.description) |desc| {
+        if (desc.body) |body| {
+            try writeParsedText(body, "    /// ", writer);
+        }
+    }
     try writer.print("    pub const ", .{});
     try writeEnumName(enum_.name, writer);
     try writer.print(" = enum(u32) {{\n", .{});
@@ -271,4 +292,57 @@ fn writeMethodName(name: []const u8, writer: anytype) !void {
     }
 
     if (bad) try writer.print("\"", .{});
+}
+
+/// Prints `text` with XML escape sequences properly escaped.
+fn writeParsedText(
+    text: []const u8,
+    prefix: []const u8,
+    writer: anytype
+) !void {
+    var rem_text = text;
+    var i: usize = 0;
+    var new_line = true;
+    while (i < rem_text.len) {
+        switch (rem_text[i]) {
+            ' ', '\t' => if (new_line) {
+                rem_text = rem_text[i+1..];
+                i = 0;
+            } else {
+                i += 1;
+            },
+            '&' => {
+                try writer.print("{s}{s}", .{prefix, rem_text[0..i]});
+                rem_text = rem_text[i..];
+                if (std.mem.eql(u8, rem_text[0..5], "&quot")) {
+                    try writer.print("\"", .{});
+                    rem_text = rem_text[5..];
+                } else if (std.mem.eql(u8, rem_text[0..5], "&apos")) {
+                    try writer.print("'", .{});
+                    rem_text = rem_text[5..];
+                } else if (std.mem.eql(u8, rem_text[0..3], "&lt")) {
+                    try writer.print("<", .{});
+                    rem_text = rem_text[3..];
+                } else if (std.mem.eql(u8, rem_text[0..3], "&gt")) {
+                    try writer.print(">", .{});
+                    rem_text = rem_text[4..];
+                } else if (std.mem.eql(u8, rem_text[0..4], "&amp")) {
+                    try writer.print("&", .{});
+                    rem_text = rem_text[4..];
+                }
+                new_line = false;
+                i = 0;
+            },
+            '\n' => {
+                try writer.print("{s}{s}", .{prefix, rem_text[0..i+1]});
+                rem_text = rem_text[i+1..];
+                new_line = true;
+                i = 0;
+            },
+            else => {
+                new_line = false;
+                i += 1;
+            },
+        }
+    }
 }
