@@ -41,7 +41,6 @@ pub fn connectToSocket() !std.net.Stream {
 }
 
 test "functionality" {
-    protocol.wl_touch.release(protocol.wl_touch { .inner = .{}});
     const sock = try connectToSocket();
     defer sock.close();
 }

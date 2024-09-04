@@ -147,24 +147,63 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
 
     if (return_obj) {
         if (return_interface) |name| {
-            try writer.print(") ints.", .{});
+            try writer.print(") !ints.", .{});
             try writeName(name, writer);
             try writer.print(" {{\n", .{});
+
+            try writer.print(
+                \\        const new_id = self.inner.global.nextObjectId();
+                \\
+                , .{});
+            try writer.print("        const new_obj = ints.", .{});
+            try writeName(name, writer);
+            try writer.print(
+                \\ {{
+                \\            .inner = Object {{
+                \\                .id = new_id,
+                \\                .global = self.inner.global,
+                \\            }},
+                \\        }};
+                \\
+                \\
+                , .{});
         } else {
-            try writer.print(") Object {{\n", .{});
+            try writer.print(") !Object {{\n", .{});
+
+            try writer.print(
+                \\        const new_id = self.inner.global.nextObjectId();
+                \\
+                , .{});
+            try writer.print(
+                \\        const new_obj = Object {{
+                \\            .id = new_id,
+                \\            .global = self.inner.global,
+                \\        }};
+                \\
+                \\
+                , .{});
         }
     } else {
-        try writer.print(") void {{\n", .{}); // TODO return error??
+        try writer.print(") !void {{\n", .{}); // TODO return specific error
     }
 
-    try writer.print("        _ = self;\n", .{});
+    try writer.print("        const op = @This().opcode.request.", .{});
+    try writeName(request.name, writer);
+    try writer.print(";\n", .{});
+
+    try writer.print("        try self.inner.sendRequest(op, .{{ ", .{});
     for (request.args) |arg| {
-        if ((arg.type == .new_id) and return_obj) continue;
-        try writer.print("        _ = {s};\n", .{arg.name});
+        if ((arg.type == .new_id) and return_obj) {
+            try writer.print("new_id, ", .{});
+            continue;
+        }
+        try writeName(arg.name, writer);
+        try writer.print(", ", .{});
     }
+    try writer.print("}});\n", .{});
 
     if (return_obj) {
-        try writer.print("        return undefined;\n", .{});
+        try writer.print("        return new_obj;\n", .{});
     }
 
     try writer.print("    }}\n\n", .{});
