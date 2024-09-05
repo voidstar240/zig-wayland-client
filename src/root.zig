@@ -44,12 +44,7 @@ test "functionality" {
     const sock = try connectToSocket();
     defer sock.close();
     var global = util.WaylandState.init(sock);
-    const display = protocol.wl_display {
-        .inner = util.Object {
-            .id = global.nextObjectId(),
-            .global = &global,
-        },
-    };
+    const display = global.create_display();
     const reg = try display.getRegistry();
     _ = reg;
     const sync = try display.sync();

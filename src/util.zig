@@ -1,4 +1,5 @@
 const std = @import("std");
+const protocol = @import("protocol.zig");
 
 const toBytes = std.mem.toBytes;
 const Stream = std.net.Stream;
@@ -100,6 +101,16 @@ pub const WaylandState = struct {
     pub fn nextObjectId(self: *WaylandState) u32 {
         defer self.next_id += 1;
         return self.next_id;
+    }
+
+    /// Creates the global wl_display object.
+    pub fn create_display(self: *WaylandState) protocol.wl_display {
+        return protocol.wl_display {
+            .inner = Object {
+                .id = self.nextObjectId(),
+                .global = self,
+            },
+        };
     }
 };
 
