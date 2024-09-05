@@ -40,6 +40,7 @@ pub const WaylandState = struct {
     socket: Stream,
     write_buffer: [4096]u8,
     write_end: usize,
+    read_buffer: [4096]u8 align(8),
     auto_flush: bool,
     next_id: u32,
 
@@ -51,6 +52,7 @@ pub const WaylandState = struct {
             .socket = socket,
             .write_buffer = undefined,
             .write_end = 0,
+            .read_buffer = undefined,
             .auto_flush = true,
             .next_id = 1,
         };
@@ -59,8 +61,10 @@ pub const WaylandState = struct {
     /// Writes the contents of the write_buffer to the socket.
     pub fn flush(self: *WaylandState) !void {
         var index: usize = 0;
-        while (index != self.write_buffer.len) {
-            index += try self.socket.write(self.write_buffer[index..]);
+        while (index < self.write_end) {
+            index += try self.socket.write(
+                self.write_buffer[index..self.write_end]
+            );
         }
         self.write_end = 0;
     }
