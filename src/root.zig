@@ -43,4 +43,23 @@ pub fn connectToSocket() !std.net.Stream {
 test "functionality" {
     const sock = try connectToSocket();
     defer sock.close();
+    var global = util.WaylandState.init(sock);
+    const display = protocol.wl_display {
+        .inner = util.Object {
+            .id = global.nextObjectId(),
+            .global = &global,
+        },
+    };
+    const reg = try display.getRegistry();
+    _ = reg;
+    const sync = try display.sync();
+    _ = sync;
+    var buf: [36]u8 = undefined;
+    const amt = try sock.read(&buf);
+    std.debug.print("amt = {d}\n", .{amt});
+    for (buf) |c| {
+        std.debug.print("{d} ", .{c});
+    }
+    std.debug.print("\n\n", .{});
+
 }

@@ -1,6 +1,8 @@
 const std = @import("std");
 
 const toBytes = std.mem.toBytes;
+const Stream = std.net.Stream;
+const GenericWriter = std.io.GenericWriter;
 
 const Fixed = enum(i32) {
     _,
@@ -34,29 +36,51 @@ pub const Object = struct {
 pub const FD = std.posix.fd_t;
 
 pub const WaylandState = struct {
-    socket: std.net.Stream,
-    buf_writer: std.io.BufferedWriter(4096, std.next.Stream),
+    socket: Stream,
+    write_buffer: [4096]u8,
+    write_end: usize,
     auto_flush: bool,
     next_id: u32,
 
-    /// Creates a new Wayland global object
-    pub fn init(socket: std.net.Stream) WaylandState {
+    const Writer = GenericWriter(*WaylandState, Stream.WriteError, write);
+
+    /// Creates a new Wayland global object.
+    pub fn init(socket: Stream) WaylandState {
         return WaylandState {
             .socket = socket,
-            .bur_writer = std.io.bufferedWriter(socket),
+            .write_buffer = undefined,
+            .write_end = 0,
             .auto_flush = true,
             .next_id = 1,
         };
     }
 
-    /// Flushes the write buffer.
+    /// Writes the contents of the write_buffer to the socket.
     pub fn flush(self: *WaylandState) !void {
-        self.buf_writer.flush();
+        var index: usize = 0;
+        while (index != self.write_buffer.len) {
+            index += try self.socket.write(self.write_buffer[index..]);
+        }
+        self.write_end = 0;
     }
 
-    /// Gets the writer for the socket stream.
-    pub fn writer(self: *WaylandState) std.io.GenericWriter {
-        self.buf_writer.writer();
+    /// Writes bytes to the buffer flushing if needed.
+    pub fn write(self: *WaylandState, bytes: []const u8) !usize {
+        if (self.write_end + bytes.len > self.write_buffer.len) {
+            try self.flush();
+            if (bytes.len > self.write_buffer.len)
+                return self.socket.write(bytes);
+        }
+
+        const new_end = self.write_end + bytes.len;
+        @memcpy(self.write_buffer[self.write_end..new_end], bytes);
+        self.write_end = new_end;
+        return bytes.len;
+    }
+
+    /// Gets a writer to the buffered socket stream.
+    pub fn writer(self: *WaylandState) Writer {
+        return .{ .context = self };
     }
 
     /// Writes a request to the wayland socket stream.
@@ -68,7 +92,7 @@ pub const WaylandState = struct {
     ) !void {
         try writeRequestRaw(self.writer(), obj_id, opcode, args);
         if (self.auto_flush) {
-            self.flush();
+            try self.flush();
         }
     }
 
