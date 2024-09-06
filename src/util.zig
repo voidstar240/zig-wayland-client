@@ -295,3 +295,69 @@ pub fn readEventRaw(
     try reader.readNoEof(buffer[@sizeOf(Header)..len]);
     return len;
 }
+
+/// Decodes the event into the passed struct Type. Note any slices in the struct
+/// are not owned.
+pub fn decodeEvent(event: []const u8, Type: type) !Type {
+    const type_info = @typeInfo(Type);
+    if (type_info != .Struct) {
+        @compileError("Not tuple or struct, found " ++ @typeName(Type));
+    }
+
+    var out: Type = undefined;
+
+    var index: usize = 0;
+    const fields = type_info.Struct.fields;
+    inline for (fields) |field| {
+        switch (field.type) {
+            i32, u32, u16, Fixed => {
+                const end = index + @sizeOf(field.type);
+                if (end > event.len) return error.UnexpectedMessageEnd;
+                const val = std.mem.bytesToValue(field.type, event[index..end]);
+                index = end;
+                @field(out, field.name) = val;
+            },
+            []const u8 => {
+                var end = index + @sizeOf(u32);
+                if (end > event.len) return error.UnexpectedMessageEnd;
+                const len = std.mem.bytesToValue(u32, event[index..end]);
+                index = end;
+                end = index + @as(usize, @intCast(len));
+                @field(out, field.name) = event[index..end];
+                index = end;
+                const pad = @subWithOverflow(0, index).@"0" % 4;
+                index += pad;
+            },
+            [:0]const u8 => {
+                var end = index + @sizeOf(u32);
+                if (end > event.len) return error.UnexpectedMessageEnd;
+                const len = std.mem.bytesToValue(u32, event[index..end]);
+                index = end;
+                if (len == 0) return error.UnexpectedNullString;
+                end = index + @as(usize, @intCast(len));
+                @field(out, field.name) = @ptrCast(event[index..(end - 1)]);
+                index = end;
+                const pad = @subWithOverflow(0, index).@"0" % 4;
+                index += pad;
+            },
+            ?[:0]const u8 => {
+                var end = index + @sizeOf(u32);
+                if (end > event.len) return error.UnexpectedMessageEnd;
+                const len = std.mem.bytesToValue(u32, event[index..end]);
+                index = end;
+                if (len == 0) {
+                    @field(out, field.name) = null;
+                    continue;
+                }
+                end = index + @as(usize, @intCast(len));
+                @field(out, field.name) = @ptrCast(event[index..(end - 1)]);
+                index = end;
+                const pad = @subWithOverflow(0, index).@"0" % 4;
+                index += pad;
+            },
+            else => @compileError("Invalid type, " ++ field.type),
+        }
+    }
+
+    return out;
+}

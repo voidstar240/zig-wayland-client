@@ -39,9 +39,23 @@ test "functionality" {
     _ = sync;
 
     const msg = try global.readEvent();
-    std.debug.print("len = {d}\n", .{msg.len});
-    for (msg) |byte| {
-        std.debug.print("{d} ", .{byte});
-    }
-    std.debug.print("\n\n", .{});
+    const Response = struct {
+        obj_id: u32,
+        opcode: u16,
+        len: u16,
+        name: u32,
+        interface: [:0]const u8,
+        version: u32,
+    };
+    const resp = try util.decodeEvent(msg, Response);
+    std.debug.print(
+        \\Response {{
+        \\  obj_id = {d},
+        \\  opcode = {d},
+        \\  len = {d},
+        \\  name = {d},
+        \\  interface = {s},
+        \\  version = {d},
+        \\}}
+        , .{resp.obj_id, resp.opcode, resp.len, resp.name, resp.interface, resp.version});
 }
