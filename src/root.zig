@@ -37,4 +37,11 @@ test "functionality" {
     _ = reg;
     const sync = try display.sync();
     _ = sync;
+
+    const msg = try global.readEvent();
+    std.debug.print("len = {d}\n", .{msg.len});
+    for (msg) |byte| {
+        std.debug.print("{d} ", .{byte});
+    }
+    std.debug.print("\n\n", .{});
 }

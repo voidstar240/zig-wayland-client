@@ -4,6 +4,7 @@ const protocol = @import("protocol.zig");
 const toBytes = std.mem.toBytes;
 const Stream = std.net.Stream;
 const GenericWriter = std.io.GenericWriter;
+const GenericReader = std.io.GenericReader;
 
 const Fixed = enum(i32) {
     _,
@@ -40,11 +41,12 @@ pub const WaylandState = struct {
     socket: Stream,
     write_buffer: [4096]u8,
     write_end: usize,
-    read_buffer: [4096]u8 align(8),
+    read_buffer: [4096]u8 align(@alignOf(*anyopaque)),
     auto_flush: bool,
     next_id: u32,
 
     const Writer = GenericWriter(*WaylandState, Stream.WriteError, write);
+    const Reader = GenericReader(Stream, Stream.ReadError, Stream.read);
 
     /// Creates a new Wayland global object.
     pub fn init(socket: Stream) WaylandState {
@@ -99,6 +101,19 @@ pub const WaylandState = struct {
         if (self.auto_flush) {
             try self.flush();
         }
+    }
+
+    /// Gets a reader to the socket stream.
+    pub fn reader(self: *WaylandState) Reader {
+        return self.socket.reader();
+    }
+
+    /// Reads one event into the read buffer overwritting what was there
+    /// previously. Returns a slice to the read buffer message. This slice is
+    /// not owned.
+    pub fn readEvent(self: *WaylandState) ![]const u8 {
+        const len = try readEventRaw(self.reader(), &self.read_buffer);
+        return self.read_buffer[0..len];
     }
 
     /// Gets an unused ID that can be allocated to a new object.
@@ -157,6 +172,12 @@ fn msgLength(args: anytype) u16 {
     }
     return len;
 }
+
+const Header = packed struct(u64) {
+    object_id: u32,
+    opcode: u16,
+    length: u16,
+};
 
 pub fn writeRequestRaw(
     writer: anytype,
@@ -257,4 +278,20 @@ pub fn writeRequestRaw(
             },
         }
     }
+}
+
+/// Reads one event into the provided buffer returning the length of the
+/// message. If the buffer is too small to fit the event error.EventTooBig
+/// is returned.
+pub fn readEventRaw(
+    reader: anytype,
+    buffer: []align(@alignOf(*anyopaque)) u8
+) !usize {
+    if (buffer.len < 8) return error.EventTooBig;
+    try reader.readNoEof(buffer[0..@sizeOf(Header)]);
+    const header = @as(*const Header, @ptrCast(buffer));
+    const len = header.length;
+    if (buffer.len < len) return error.EventTooBig;
+    try reader.readNoEof(buffer[@sizeOf(Header)..len]);
+    return len;
 }
