@@ -48,6 +48,7 @@ fn generateInterface(interface: *const Interface, writer: anytype) !void {
     try writer.print(" = struct {{\n", .{});
     try writer.print("    id: u32,\n", .{});
     try writer.print("    global: *WaylandState,\n\n", .{});
+    try writer.print("    const Self = @This();\n\n", .{});
     try generateOpcodes(interface, writer);
     for (interface.enums) |*enum_| {
         try generateEnum(enum_, writer);
@@ -93,7 +94,7 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
     }
     try writer.print("    pub fn ", .{});
     try writeMethodName(request.name, writer);
-    try writer.print("(self: @This()", .{});
+    try writer.print("(self: Self", .{});
 
     const return_obj = newIdArgCount(request) == 1;
     var return_interface: ?[]const u8 = null;
@@ -187,7 +188,7 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
         try writer.print(") !void {{\n", .{}); // TODO return specific error
     }
 
-    try writer.print("        const op = @This().opcode.request.", .{});
+    try writer.print("        const op = Self.opcode.request.", .{});
     try writeName(request.name, writer);
     try writer.print(";\n", .{});
 
