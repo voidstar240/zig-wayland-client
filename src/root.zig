@@ -32,7 +32,7 @@ test "functionality" {
     const sock = try connectToSocket();
     defer sock.close();
     var global = util.WaylandState.init(sock);
-    const display = global.create_display();
+    const display = global.getDisplay();
     const reg = try display.getRegistry();
     _ = reg;
     const sync = try display.sync();

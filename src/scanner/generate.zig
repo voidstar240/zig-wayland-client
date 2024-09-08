@@ -29,7 +29,8 @@ pub fn generateProtocol(
 
     try writer.print("const Object = util.Object;\n", .{});
     try writer.print("const Fixed = util.Fixed;\n", .{});
-    try writer.print("const FD = util.FD;\n\n\n", .{});
+    try writer.print("const FD = util.FD;\n", .{});
+    try writer.print("const WaylandState = util.WaylandState;\n\n\n", .{});
 
     for (protocol.interfaces) |*interface| {
         try generateInterface(interface, writer);
@@ -45,7 +46,8 @@ fn generateInterface(interface: *const Interface, writer: anytype) !void {
     try writer.print("pub const ", .{});
     try writeName(interface.name, writer);
     try writer.print(" = struct {{\n", .{});
-    try writer.print("    inner: Object,\n\n", .{});
+    try writer.print("    id: u32,\n", .{});
+    try writer.print("    global: *WaylandState,\n\n", .{});
     try generateOpcodes(interface, writer);
     for (interface.enums) |*enum_| {
         try generateEnum(enum_, writer);
@@ -152,17 +154,15 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
             try writer.print(" {{\n", .{});
 
             try writer.print(
-                \\        const new_id = self.inner.global.nextObjectId();
+                \\        const new_id = self.global.nextObjectId();
                 \\
                 , .{});
             try writer.print("        const new_obj = ints.", .{});
             try writeName(name, writer);
             try writer.print(
                 \\ {{
-                \\            .inner = Object {{
-                \\                .id = new_id,
-                \\                .global = self.inner.global,
-                \\            }},
+                \\            .id = new_id,
+                \\            .global = self.global,
                 \\        }};
                 \\
                 \\
@@ -171,13 +171,13 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
             try writer.print(") !Object {{\n", .{});
 
             try writer.print(
-                \\        const new_id = self.inner.global.nextObjectId();
+                \\        const new_id = self.global.nextObjectId();
                 \\
                 , .{});
             try writer.print(
                 \\        const new_obj = Object {{
                 \\            .id = new_id,
-                \\            .global = self.inner.global,
+                \\            .global = self.global,
                 \\        }};
                 \\
                 \\
@@ -191,7 +191,7 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
     try writeName(request.name, writer);
     try writer.print(";\n", .{});
 
-    try writer.print("        try self.inner.sendRequest(op, .{{ ", .{});
+    try writer.print("        try self.global.sendRequest(self.id, op, .{{ ", .{});
     for (request.args) |arg| {
         if ((arg.type == .new_id) and return_obj) {
             try writer.print("new_id, ", .{});

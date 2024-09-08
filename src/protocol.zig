@@ -31,12 +31,14 @@ const ints = struct {
 const Object = util.Object;
 const Fixed = util.Fixed;
 const FD = util.FD;
+const WaylandState = util.WaylandState;
 
 
 /// The core global object.  This is a special singleton object.  It
 /// is used for internal Wayland protocol features.
 pub const wl_display = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -70,16 +72,14 @@ pub const wl_display = struct {
     /// 
     /// The callback_data passed in the callback is undefined and should be ignored.
     pub fn sync(self: @This()) !ints.wl_callback {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_callback {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.sync;
-        try self.inner.sendRequest(op, .{ new_id, });
+        try self.global.sendRequest(self.id, op, .{ new_id, });
         return new_obj;
     }
 
@@ -93,16 +93,14 @@ pub const wl_display = struct {
     /// Therefore, clients should invoke get_registry as infrequently as
     /// possible to avoid wasting memory.
     pub fn getRegistry(self: @This()) !ints.wl_registry {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_registry {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.get_registry;
-        try self.inner.sendRequest(op, .{ new_id, });
+        try self.global.sendRequest(self.id, op, .{ new_id, });
         return new_obj;
     }
 
@@ -129,7 +127,8 @@ pub const wl_display = struct {
 /// emit events to the client and lets the client invoke requests on
 /// the object.
 pub const wl_registry = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -144,14 +143,14 @@ pub const wl_registry = struct {
     /// Binds a new, client-created object to the server using the
     /// specified name as the identifier.
     pub fn bind(self: @This(), name: u32) !Object {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = Object {
             .id = new_id,
-            .global = self.inner.global,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.bind;
-        try self.inner.sendRequest(op, .{ name, new_id, });
+        try self.global.sendRequest(self.id, op, .{ name, new_id, });
         return new_obj;
     }
 
@@ -163,7 +162,8 @@ pub const wl_registry = struct {
 /// Note, because wl_callback objects are created from multiple independent
 /// factory interfaces, the wl_callback interface is frozen at version 1.
 pub const wl_callback = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const event = struct {
@@ -177,7 +177,8 @@ pub const wl_callback = struct {
 /// compositor is in charge of combining the contents of multiple
 /// surfaces into one displayable output.
 pub const wl_compositor = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -188,31 +189,27 @@ pub const wl_compositor = struct {
 
     /// Ask the compositor to create a new surface.
     pub fn createSurface(self: @This()) !ints.wl_surface {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_surface {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.create_surface;
-        try self.inner.sendRequest(op, .{ new_id, });
+        try self.global.sendRequest(self.id, op, .{ new_id, });
         return new_obj;
     }
 
     /// Ask the compositor to create a new region.
     pub fn createRegion(self: @This()) !ints.wl_region {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_region {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.create_region;
-        try self.inner.sendRequest(op, .{ new_id, });
+        try self.global.sendRequest(self.id, op, .{ new_id, });
         return new_obj;
     }
 
@@ -226,7 +223,8 @@ pub const wl_compositor = struct {
 /// setup/teardown overhead and is useful when interactively resizing
 /// a surface or for many small buffers.
 pub const wl_shm_pool = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -248,16 +246,14 @@ pub const wl_shm_pool = struct {
     /// so it is valid to destroy the pool immediately after creating
     /// a buffer from it.
     pub fn createBuffer(self: @This(), offset: i32, width: i32, height: i32, stride: i32, format: ints.wl_shm.Format) !ints.wl_buffer {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_buffer {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.create_buffer;
-        try self.inner.sendRequest(op, .{ new_id, offset, width, height, stride, format, });
+        try self.global.sendRequest(self.id, op, .{ new_id, offset, width, height, stride, format, });
         return new_obj;
     }
 
@@ -268,7 +264,7 @@ pub const wl_shm_pool = struct {
     /// are gone.
     pub fn destroy(self: @This()) !void {
         const op = @This().opcode.request.destroy;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
     /// This request will cause the server to remap the backing memory
@@ -283,7 +279,7 @@ pub const wl_shm_pool = struct {
     /// the new pool size.
     pub fn resize(self: @This(), size: i32) !void {
         const op = @This().opcode.request.resize;
-        try self.inner.sendRequest(op, .{ size, });
+        try self.global.sendRequest(self.id, op, .{ size, });
     }
 
 };
@@ -298,7 +294,8 @@ pub const wl_shm_pool = struct {
 /// are emitted to inform clients about the valid pixel formats
 /// that can be used for buffers.
 pub const wl_shm = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -461,16 +458,14 @@ pub const wl_shm = struct {
     /// objects.  The server will mmap size bytes of the passed file
     /// descriptor, to use as backing memory for the pool.
     pub fn createPool(self: @This(), fd: FD, size: i32) !ints.wl_shm_pool {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_shm_pool {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.create_pool;
-        try self.inner.sendRequest(op, .{ new_id, fd, size, });
+        try self.global.sendRequest(self.id, op, .{ new_id, fd, size, });
         return new_obj;
     }
 
@@ -480,7 +475,7 @@ pub const wl_shm = struct {
     /// Objects created via this interface remain unaffected.
     pub fn release(self: @This()) !void {
         const op = @This().opcode.request.release;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
 };
@@ -501,7 +496,8 @@ pub const wl_shm = struct {
 /// Note, because wl_buffer objects are created from multiple independent
 /// factory interfaces, the wl_buffer interface is frozen at version 1.
 pub const wl_buffer = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -518,7 +514,7 @@ pub const wl_buffer = struct {
     /// For possible side-effects to a surface, see wl_surface.attach.
     pub fn destroy(self: @This()) !void {
         const op = @This().opcode.request.destroy;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
 };
@@ -530,7 +526,8 @@ pub const wl_buffer = struct {
 /// converted to and provides the mechanism for transferring the
 /// data directly from the source client.
 pub const wl_data_offer = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -570,7 +567,7 @@ pub const wl_data_offer = struct {
     /// conjunction with wl_data_source.action for feedback.
     pub fn accept(self: @This(), serial: u32, mime_type: ?[:0]const u8) !void {
         const op = @This().opcode.request.accept;
-        try self.inner.sendRequest(op, .{ serial, mime_type, });
+        try self.global.sendRequest(self.id, op, .{ serial, mime_type, });
     }
 
     /// To transfer the offered data, the client issues this request
@@ -590,13 +587,13 @@ pub const wl_data_offer = struct {
     /// determine acceptance.
     pub fn receive(self: @This(), mime_type: [:0]const u8, fd: FD) !void {
         const op = @This().opcode.request.receive;
-        try self.inner.sendRequest(op, .{ mime_type, fd, });
+        try self.global.sendRequest(self.id, op, .{ mime_type, fd, });
     }
 
     /// Destroy the data offer.
     pub fn destroy(self: @This()) !void {
         const op = @This().opcode.request.destroy;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
     /// Notifies the compositor that the drag destination successfully
@@ -615,7 +612,7 @@ pub const wl_data_offer = struct {
     /// operation, the invalid_finish protocol error is raised.
     pub fn finish(self: @This()) !void {
         const op = @This().opcode.request.finish;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
     /// Sets the actions that the destination side client supports for
@@ -651,7 +648,7 @@ pub const wl_data_offer = struct {
     /// will be raised otherwise.
     pub fn setActions(self: @This(), dnd_actions: ints.wl_data_device_manager.DndAction, preferred_action: ints.wl_data_device_manager.DndAction) !void {
         const op = @This().opcode.request.set_actions;
-        try self.inner.sendRequest(op, .{ dnd_actions, preferred_action, });
+        try self.global.sendRequest(self.id, op, .{ dnd_actions, preferred_action, });
     }
 
 };
@@ -661,7 +658,8 @@ pub const wl_data_offer = struct {
 /// provides a way to describe the offered data and a way to respond
 /// to requests to transfer the data.
 pub const wl_data_source = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -689,13 +687,13 @@ pub const wl_data_source = struct {
     /// multiple types.
     pub fn offer(self: @This(), mime_type: [:0]const u8) !void {
         const op = @This().opcode.request.offer;
-        try self.inner.sendRequest(op, .{ mime_type, });
+        try self.global.sendRequest(self.id, op, .{ mime_type, });
     }
 
     /// Destroy the data source.
     pub fn destroy(self: @This()) !void {
         const op = @This().opcode.request.destroy;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
     /// Sets the actions that the source side client supports for this
@@ -713,7 +711,7 @@ pub const wl_data_source = struct {
     /// for drag-and-drop will raise a protocol error.
     pub fn setActions(self: @This(), dnd_actions: ints.wl_data_device_manager.DndAction) !void {
         const op = @This().opcode.request.set_actions;
-        try self.inner.sendRequest(op, .{ dnd_actions, });
+        try self.global.sendRequest(self.id, op, .{ dnd_actions, });
     }
 
 };
@@ -724,7 +722,8 @@ pub const wl_data_source = struct {
 /// A wl_data_device provides access to inter-client data transfer
 /// mechanisms such as copy-and-paste and drag-and-drop.
 pub const wl_data_device = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -778,7 +777,7 @@ pub const wl_data_device = struct {
     /// may send a used_source error.
     pub fn startDrag(self: @This(), source: ?ints.wl_data_source, origin: ints.wl_surface, icon: ?ints.wl_surface, serial: u32) !void {
         const op = @This().opcode.request.start_drag;
-        try self.inner.sendRequest(op, .{ source, origin, icon, serial, });
+        try self.global.sendRequest(self.id, op, .{ source, origin, icon, serial, });
     }
 
     /// This request asks the compositor to set the selection
@@ -791,13 +790,13 @@ pub const wl_data_device = struct {
     /// may send a used_source error.
     pub fn setSelection(self: @This(), source: ?ints.wl_data_source, serial: u32) !void {
         const op = @This().opcode.request.set_selection;
-        try self.inner.sendRequest(op, .{ source, serial, });
+        try self.global.sendRequest(self.id, op, .{ source, serial, });
     }
 
     /// This request destroys the data device.
     pub fn release(self: @This()) !void {
         const op = @This().opcode.request.release;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
 };
@@ -813,7 +812,8 @@ pub const wl_data_device = struct {
 /// functioning properly. See wl_data_source.set_actions,
 /// wl_data_offer.accept and wl_data_offer.finish for details.
 pub const wl_data_device_manager = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -854,31 +854,27 @@ pub const wl_data_device_manager = struct {
 
     /// Create a new data source.
     pub fn createDataSource(self: @This()) !ints.wl_data_source {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_data_source {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.create_data_source;
-        try self.inner.sendRequest(op, .{ new_id, });
+        try self.global.sendRequest(self.id, op, .{ new_id, });
         return new_obj;
     }
 
     /// Create a new data device for a given seat.
     pub fn getDataDevice(self: @This(), seat: ints.wl_seat) !ints.wl_data_device {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_data_device {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.get_data_device;
-        try self.inner.sendRequest(op, .{ new_id, seat, });
+        try self.global.sendRequest(self.id, op, .{ new_id, seat, });
         return new_obj;
     }
 
@@ -894,7 +890,8 @@ pub const wl_data_device_manager = struct {
 /// For desktop-style user interfaces, use xdg_shell. Compositors and clients
 /// should not implement this interface.
 pub const wl_shell = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -912,16 +909,14 @@ pub const wl_shell = struct {
     /// 
     /// Only one shell surface can be associated with a given surface.
     pub fn getShellSurface(self: @This(), surface: ints.wl_surface) !ints.wl_shell_surface {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_shell_surface {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.get_shell_surface;
-        try self.inner.sendRequest(op, .{ new_id, surface, });
+        try self.global.sendRequest(self.id, op, .{ new_id, surface, });
         return new_obj;
     }
 
@@ -939,7 +934,8 @@ pub const wl_shell = struct {
 /// wl_shell_surface_destroy() must be called before destroying
 /// the wl_surface object.
 pub const wl_shell_surface = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -997,7 +993,7 @@ pub const wl_shell_surface = struct {
     /// the client may be deemed unresponsive.
     pub fn pong(self: @This(), serial: u32) !void {
         const op = @This().opcode.request.pong;
-        try self.inner.sendRequest(op, .{ serial, });
+        try self.global.sendRequest(self.id, op, .{ serial, });
     }
 
     /// Start a pointer-driven move of the surface.
@@ -1007,7 +1003,7 @@ pub const wl_shell_surface = struct {
     /// the surface (e.g. fullscreen or maximized).
     pub fn move(self: @This(), seat: ints.wl_seat, serial: u32) !void {
         const op = @This().opcode.request.move;
-        try self.inner.sendRequest(op, .{ seat, serial, });
+        try self.global.sendRequest(self.id, op, .{ seat, serial, });
     }
 
     /// Start a pointer-driven resizing of the surface.
@@ -1017,7 +1013,7 @@ pub const wl_shell_surface = struct {
     /// the surface (e.g. fullscreen or maximized).
     pub fn resize(self: @This(), seat: ints.wl_seat, serial: u32, edges: Resize) !void {
         const op = @This().opcode.request.resize;
-        try self.inner.sendRequest(op, .{ seat, serial, edges, });
+        try self.global.sendRequest(self.id, op, .{ seat, serial, edges, });
     }
 
     /// Map the surface as a toplevel surface.
@@ -1025,7 +1021,7 @@ pub const wl_shell_surface = struct {
     /// A toplevel surface is not fullscreen, maximized or transient.
     pub fn setToplevel(self: @This()) !void {
         const op = @This().opcode.request.set_toplevel;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
     /// Map the surface relative to an existing surface.
@@ -1037,7 +1033,7 @@ pub const wl_shell_surface = struct {
     /// The flags argument controls details of the transient behaviour.
     pub fn setTransient(self: @This(), parent: ints.wl_surface, x: i32, y: i32, flags: Transient) !void {
         const op = @This().opcode.request.set_transient;
-        try self.inner.sendRequest(op, .{ parent, x, y, flags, });
+        try self.global.sendRequest(self.id, op, .{ parent, x, y, flags, });
     }
 
     /// Map the surface as a fullscreen surface.
@@ -1075,7 +1071,7 @@ pub const wl_shell_surface = struct {
     /// be made fullscreen.
     pub fn setFullscreen(self: @This(), method: FullscreenMethod, framerate: u32, output: ?ints.wl_output) !void {
         const op = @This().opcode.request.set_fullscreen;
-        try self.inner.sendRequest(op, .{ method, framerate, output, });
+        try self.global.sendRequest(self.id, op, .{ method, framerate, output, });
     }
 
     /// Map the surface as a popup.
@@ -1099,7 +1095,7 @@ pub const wl_shell_surface = struct {
     /// parent surface, in surface-local coordinates.
     pub fn setPopup(self: @This(), seat: ints.wl_seat, serial: u32, parent: ints.wl_surface, x: i32, y: i32, flags: Transient) !void {
         const op = @This().opcode.request.set_popup;
-        try self.inner.sendRequest(op, .{ seat, serial, parent, x, y, flags, });
+        try self.global.sendRequest(self.id, op, .{ seat, serial, parent, x, y, flags, });
     }
 
     /// Map the surface as a maximized surface.
@@ -1122,7 +1118,7 @@ pub const wl_shell_surface = struct {
     /// The details depend on the compositor implementation.
     pub fn setMaximized(self: @This(), output: ?ints.wl_output) !void {
         const op = @This().opcode.request.set_maximized;
-        try self.inner.sendRequest(op, .{ output, });
+        try self.global.sendRequest(self.id, op, .{ output, });
     }
 
     /// Set a short title for the surface.
@@ -1134,7 +1130,7 @@ pub const wl_shell_surface = struct {
     /// The string must be encoded in UTF-8.
     pub fn setTitle(self: @This(), title: [:0]const u8) !void {
         const op = @This().opcode.request.set_title;
-        try self.inner.sendRequest(op, .{ title, });
+        try self.global.sendRequest(self.id, op, .{ title, });
     }
 
     /// Set a class for the surface.
@@ -1145,7 +1141,7 @@ pub const wl_shell_surface = struct {
     /// the application's .desktop file as the class.
     pub fn setClass(self: @This(), class_: [:0]const u8) !void {
         const op = @This().opcode.request.set_class;
-        try self.inner.sendRequest(op, .{ class_, });
+        try self.global.sendRequest(self.id, op, .{ class_, });
     }
 
 };
@@ -1193,7 +1189,8 @@ pub const wl_shell_surface = struct {
 /// a cursor (cursor is a different role than sub-surface, and role
 /// switching is not allowed).
 pub const wl_surface = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1229,7 +1226,7 @@ pub const wl_surface = struct {
     /// Deletes the surface and invalidates its object ID.
     pub fn destroy(self: @This()) !void {
         const op = @This().opcode.request.destroy;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
     /// Set a buffer as the content of this surface.
@@ -1298,7 +1295,7 @@ pub const wl_surface = struct {
     /// destroying buffers.
     pub fn attach(self: @This(), buffer: ?ints.wl_buffer, x: i32, y: i32) !void {
         const op = @This().opcode.request.attach;
-        try self.inner.sendRequest(op, .{ buffer, x, y, });
+        try self.global.sendRequest(self.id, op, .{ buffer, x, y, });
     }
 
     /// This request is used to describe the regions where the pending
@@ -1324,7 +1321,7 @@ pub const wl_surface = struct {
     /// instead of surface coordinates.
     pub fn damage(self: @This(), x: i32, y: i32, width: i32, height: i32) !void {
         const op = @This().opcode.request.damage;
-        try self.inner.sendRequest(op, .{ x, y, width, height, });
+        try self.global.sendRequest(self.id, op, .{ x, y, width, height, });
     }
 
     /// Request a notification when it is a good time to start drawing a new
@@ -1360,16 +1357,14 @@ pub const wl_surface = struct {
     /// The callback_data passed in the callback is the current time, in
     /// milliseconds, with an undefined base.
     pub fn frame(self: @This()) !ints.wl_callback {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_callback {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.frame;
-        try self.inner.sendRequest(op, .{ new_id, });
+        try self.global.sendRequest(self.id, op, .{ new_id, });
         return new_obj;
     }
 
@@ -1399,7 +1394,7 @@ pub const wl_surface = struct {
     /// region to be set to empty.
     pub fn setOpaqueRegion(self: @This(), region: ?ints.wl_region) !void {
         const op = @This().opcode.request.set_opaque_region;
-        try self.inner.sendRequest(op, .{ region, });
+        try self.global.sendRequest(self.id, op, .{ region, });
     }
 
     /// This request sets the region of the surface that can receive
@@ -1426,7 +1421,7 @@ pub const wl_surface = struct {
     /// to infinite.
     pub fn setInputRegion(self: @This(), region: ?ints.wl_region) !void {
         const op = @This().opcode.request.set_input_region;
-        try self.inner.sendRequest(op, .{ region, });
+        try self.global.sendRequest(self.id, op, .{ region, });
     }
 
     /// Surface state (input, opaque, and damage regions, attached buffers,
@@ -1450,7 +1445,7 @@ pub const wl_surface = struct {
     /// Other interfaces may add further double-buffered surface state.
     pub fn commit(self: @This()) !void {
         const op = @This().opcode.request.commit;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
     /// This request sets the transformation that the client has already applied
@@ -1486,7 +1481,7 @@ pub const wl_surface = struct {
     /// is raised.
     pub fn setBufferTransform(self: @This(), transform: ints.wl_output.Transform) !void {
         const op = @This().opcode.request.set_buffer_transform;
-        try self.inner.sendRequest(op, .{ transform, });
+        try self.global.sendRequest(self.id, op, .{ transform, });
     }
 
     /// This request sets an optional scaling factor on how the compositor
@@ -1514,7 +1509,7 @@ pub const wl_surface = struct {
     /// raised.
     pub fn setBufferScale(self: @This(), scale: i32) !void {
         const op = @This().opcode.request.set_buffer_scale;
-        try self.inner.sendRequest(op, .{ scale, });
+        try self.global.sendRequest(self.id, op, .{ scale, });
     }
 
     /// This request is used to describe the regions where the pending
@@ -1551,7 +1546,7 @@ pub const wl_surface = struct {
     /// after receiving the wl_surface.commit.
     pub fn damageBuffer(self: @This(), x: i32, y: i32, width: i32, height: i32) !void {
         const op = @This().opcode.request.damage_buffer;
-        try self.inner.sendRequest(op, .{ x, y, width, height, });
+        try self.global.sendRequest(self.id, op, .{ x, y, width, height, });
     }
 
     /// The x and y arguments specify the location of the new pending
@@ -1568,7 +1563,7 @@ pub const wl_surface = struct {
     /// to 5. See wl_surface.attach for details.
     pub fn offset(self: @This(), x: i32, y: i32) !void {
         const op = @This().opcode.request.offset;
-        try self.inner.sendRequest(op, .{ x, y, });
+        try self.global.sendRequest(self.id, op, .{ x, y, });
     }
 
 };
@@ -1578,7 +1573,8 @@ pub const wl_surface = struct {
 /// device is hot plugged.  A seat typically has a pointer and
 /// maintains a keyboard focus and a pointer focus.
 pub const wl_seat = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1615,16 +1611,14 @@ pub const wl_seat = struct {
     /// never had the pointer capability. The missing_capability error will
     /// be sent in this case.
     pub fn getPointer(self: @This()) !ints.wl_pointer {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_pointer {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.get_pointer;
-        try self.inner.sendRequest(op, .{ new_id, });
+        try self.global.sendRequest(self.id, op, .{ new_id, });
         return new_obj;
     }
 
@@ -1637,16 +1631,14 @@ pub const wl_seat = struct {
     /// never had the keyboard capability. The missing_capability error will
     /// be sent in this case.
     pub fn getKeyboard(self: @This()) !ints.wl_keyboard {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_keyboard {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.get_keyboard;
-        try self.inner.sendRequest(op, .{ new_id, });
+        try self.global.sendRequest(self.id, op, .{ new_id, });
         return new_obj;
     }
 
@@ -1659,16 +1651,14 @@ pub const wl_seat = struct {
     /// never had the touch capability. The missing_capability error will
     /// be sent in this case.
     pub fn getTouch(self: @This()) !ints.wl_touch {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_touch {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.get_touch;
-        try self.inner.sendRequest(op, .{ new_id, });
+        try self.global.sendRequest(self.id, op, .{ new_id, });
         return new_obj;
     }
 
@@ -1676,7 +1666,7 @@ pub const wl_seat = struct {
     /// use the seat object anymore.
     pub fn release(self: @This()) !void {
         const op = @This().opcode.request.release;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
 };
@@ -1690,7 +1680,8 @@ pub const wl_seat = struct {
 /// and button and axis events for button presses, button releases
 /// and scrolling.
 pub const wl_pointer = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1794,7 +1785,7 @@ pub const wl_pointer = struct {
     /// ignored.
     pub fn setCursor(self: @This(), serial: u32, surface: ?ints.wl_surface, hotspot_x: i32, hotspot_y: i32) !void {
         const op = @This().opcode.request.set_cursor;
-        try self.inner.sendRequest(op, .{ serial, surface, hotspot_x, hotspot_y, });
+        try self.global.sendRequest(self.id, op, .{ serial, surface, hotspot_x, hotspot_y, });
     }
 
     /// Using this request a client can tell the server that it is not going to
@@ -1804,7 +1795,7 @@ pub const wl_pointer = struct {
     /// wl_pointer_destroy() after using this request.
     pub fn release(self: @This()) !void {
         const op = @This().opcode.request.release;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
 };
@@ -1822,7 +1813,8 @@ pub const wl_pointer = struct {
 /// By default, the active surface is null, the keys currently logically down
 /// are empty, the active modifiers and the active group are 0.
 pub const wl_keyboard = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1853,7 +1845,7 @@ pub const wl_keyboard = struct {
 
     pub fn release(self: @This()) !void {
         const op = @This().opcode.request.release;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
 };
@@ -1867,7 +1859,8 @@ pub const wl_keyboard = struct {
 /// and ending with an up event. Events relating to the same
 /// contact point can be identified by the ID of the sequence.
 pub const wl_touch = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1886,7 +1879,7 @@ pub const wl_touch = struct {
 
     pub fn release(self: @This()) !void {
         const op = @This().opcode.request.release;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
 };
@@ -1898,7 +1891,8 @@ pub const wl_touch = struct {
 /// displays part of the compositor space.  This object is published
 /// as global during start up, or when a monitor is hotplugged.
 pub const wl_output = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1957,7 +1951,7 @@ pub const wl_output = struct {
     /// use the output object anymore.
     pub fn release(self: @This()) !void {
         const op = @This().opcode.request.release;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
 };
@@ -1967,7 +1961,8 @@ pub const wl_output = struct {
 /// Region objects are used to describe the opaque and input
 /// regions of a surface.
 pub const wl_region = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1980,19 +1975,19 @@ pub const wl_region = struct {
     /// Destroy the region.  This will invalidate the object ID.
     pub fn destroy(self: @This()) !void {
         const op = @This().opcode.request.destroy;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
     /// Add the specified rectangle to the region.
     pub fn add(self: @This(), x: i32, y: i32, width: i32, height: i32) !void {
         const op = @This().opcode.request.add;
-        try self.inner.sendRequest(op, .{ x, y, width, height, });
+        try self.global.sendRequest(self.id, op, .{ x, y, width, height, });
     }
 
     /// Subtract the specified rectangle from the region.
     pub fn subtract(self: @This(), x: i32, y: i32, width: i32, height: i32) !void {
         const op = @This().opcode.request.subtract;
-        try self.inner.sendRequest(op, .{ x, y, width, height, });
+        try self.global.sendRequest(self.id, op, .{ x, y, width, height, });
     }
 
 };
@@ -2017,7 +2012,8 @@ pub const wl_region = struct {
 /// objects. This should allow the compositor to pass YUV video buffer
 /// processing to dedicated overlay hardware when possible.
 pub const wl_subcompositor = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -2036,7 +2032,7 @@ pub const wl_subcompositor = struct {
     /// objects, wl_subsurface objects included.
     pub fn destroy(self: @This()) !void {
         const op = @This().opcode.request.destroy;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
     /// Create a sub-surface interface for the given surface, and
@@ -2059,16 +2055,14 @@ pub const wl_subcompositor = struct {
     /// This request modifies the behaviour of wl_surface.commit request on
     /// the sub-surface, see the documentation on wl_subsurface interface.
     pub fn getSubsurface(self: @This(), surface: ints.wl_surface, parent: ints.wl_surface) !ints.wl_subsurface {
-        const new_id = self.inner.global.nextObjectId();
+        const new_id = self.global.nextObjectId();
         const new_obj = ints.wl_subsurface {
-            .inner = Object {
-                .id = new_id,
-                .global = self.inner.global,
-            },
+            .id = new_id,
+            .global = self.global,
         };
 
         const op = @This().opcode.request.get_subsurface;
-        try self.inner.sendRequest(op, .{ new_id, surface, parent, });
+        try self.global.sendRequest(self.id, op, .{ new_id, surface, parent, });
         return new_obj;
     }
 
@@ -2127,7 +2121,8 @@ pub const wl_subcompositor = struct {
 /// The wl_surface.offset request is ignored: clients must use set_position
 /// instead to move the sub-surface.
 pub const wl_subsurface = struct {
-    inner: Object,
+    id: u32,
+    global: *WaylandState,
 
     pub const opcode = struct {
         pub const request = struct {
@@ -2150,7 +2145,7 @@ pub const wl_subsurface = struct {
     /// to the parent is deleted. The wl_surface is unmapped immediately.
     pub fn destroy(self: @This()) !void {
         const op = @This().opcode.request.destroy;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
     /// This schedules a sub-surface position change.
@@ -2169,7 +2164,7 @@ pub const wl_subsurface = struct {
     /// The initial position is 0, 0.
     pub fn setPosition(self: @This(), x: i32, y: i32) !void {
         const op = @This().opcode.request.set_position;
-        try self.inner.sendRequest(op, .{ x, y, });
+        try self.global.sendRequest(self.id, op, .{ x, y, });
     }
 
     /// This sub-surface is taken from the stack, and put back just
@@ -2187,14 +2182,14 @@ pub const wl_subsurface = struct {
     /// of its siblings and parent.
     pub fn placeAbove(self: @This(), sibling: ints.wl_surface) !void {
         const op = @This().opcode.request.place_above;
-        try self.inner.sendRequest(op, .{ sibling, });
+        try self.global.sendRequest(self.id, op, .{ sibling, });
     }
 
     /// The sub-surface is placed just below the reference surface.
     /// See wl_subsurface.place_above.
     pub fn placeBelow(self: @This(), sibling: ints.wl_surface) !void {
         const op = @This().opcode.request.place_below;
-        try self.inner.sendRequest(op, .{ sibling, });
+        try self.global.sendRequest(self.id, op, .{ sibling, });
     }
 
     /// Change the commit behaviour of the sub-surface to synchronized
@@ -2212,7 +2207,7 @@ pub const wl_subsurface = struct {
     /// See wl_subsurface for the recursive effect of this mode.
     pub fn setSync(self: @This()) !void {
         const op = @This().opcode.request.set_sync;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
     /// Change the commit behaviour of the sub-surface to desynchronized
@@ -2236,7 +2231,7 @@ pub const wl_subsurface = struct {
     /// the cached state is applied on set_desync.
     pub fn setDesync(self: @This()) !void {
         const op = @This().opcode.request.set_desync;
-        try self.inner.sendRequest(op, .{ });
+        try self.global.sendRequest(self.id, op, .{ });
     }
 
 };

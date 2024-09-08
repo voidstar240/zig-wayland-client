@@ -29,10 +29,6 @@ const Fixed = enum(i32) {
 pub const Object = struct {
     id: u32,
     global: *WaylandState,
-
-    pub fn sendRequest(self: Object, opcode: u16, args: anytype) !void {
-        return self.global.sendRequest(self.id, opcode, args);
-    }
 };
 
 pub const FD = std.posix.fd_t;
@@ -122,16 +118,64 @@ pub const WaylandState = struct {
         return self.next_id;
     }
 
-    /// Creates the global wl_display object.
-    pub fn create_display(self: *WaylandState) protocol.wl_display {
+    /// Gets the global wl_display object.
+    pub fn getDisplay(self: *WaylandState) protocol.wl_display {
         return protocol.wl_display {
-            .inner = Object {
-                .id = self.nextObjectId(),
-                .global = self,
-            },
+            .id = self.nextObjectId(),
+            .global = self,
         };
     }
 };
+
+/// Throws a compile error if `ObjType` is not an object/interface.
+pub fn assertObject(comptime ObjType: type) void {
+    comptime {
+        const name = @typeName(ObjType);
+        const info = @typeInfo(ObjType);
+        if (info != .Struct)
+            @compileError(name ++ " is not an object. Not a struct.");
+
+        var has_id = false;
+        var has_global = false;
+        for (info.Struct.fields) |field| {
+            if (std.mem.eql(u8, field.name, "id")) {
+                has_id = true;
+                if (field.type != u32)
+                    @compileError(name ++ " is not an object. `id` not u32.");
+            } else if (std.mem.eql(u8, field.name, "global")) {
+                has_global = true;
+                if (field.type != *WaylandState)
+                    @compileError(
+                        name ++ " is not an object. `global` not *WaylandState."
+                    );
+            }
+        }
+
+        if (has_id == false)
+            @compileError(name ++ " is not an object. Has no `id` field.");
+
+        if (has_global == false)
+            @compileError(name ++ " is not an object. Has no `global` field.");
+    }
+}
+
+/// Converts `interface` into an Object.
+pub fn objectFromInterface(interface: anytype) Object {
+    comptime assertObject(@TypeOf(interface));
+    return Object {
+        .id = interface.id,
+        .global = interface.global,
+    };
+}
+
+/// Converts `object` to an interface with type `InterfaceType`.
+pub fn interfaceFromObject(InterfaceType: type, object: Object) InterfaceType {
+    comptime assertObject(InterfaceType);
+    return InterfaceType {
+        .id = object.id,
+        .global = object.global,
+    };
+}
 
 const Header = packed struct(u64) {
     object_id: u32,
@@ -200,33 +244,9 @@ pub fn writeRequestRaw(
             []const u8 => try wireWriteArray(writer, val),
             [:0]const u8 => try wireWriteString(writer, val),
             ?[:0]const u8 => try wireWriteString(writer, val),
-            Object => try wireWriteObject(writer, val),
-            ?Object => try wireWriteObjectOptional(writer, val),
             else => switch (info) {
-                .Struct => {
-                    if (!@hasField(field.type, "inner")) {
-                        @compileError("No inner field on struct.");
-                    }
-                    const obj = val.inner;
-                    if (@TypeOf(obj) != Object) {
-                        @compileError("inner is not an Object.");
-                    }
-                    try wireWriteObject(writer, obj);
-                },
-                .Optional => {
-                    if (val) |interface| {
-                        if (!@hasField(@TypeOf(interface), "inner")) {
-                            @compileError("No inner field on struct.");
-                        }
-                        const obj = interface.inner;
-                        if (@TypeOf(obj) != Object) {
-                            @compileError("inner is not an Object.");
-                        }
-                        try wireWriteObject(writer, obj);
-                    } else {
-                        try wireWriteU32(writer, 0);
-                    }
-                },
+                .Struct => try wireWriteObject(writer, val),
+                .Optional => try wireWriteObject(writer, val),
                 .Enum => try wireWriteEnum(writer, val),
                 else => @compileError("Invalid type, " ++ field_type_name),
             },
@@ -360,22 +380,16 @@ fn wireWriteString(writer: anytype, str: ?[:0]const u8) !void {
 }
 
 fn wireWriteObject(writer: anytype, object: anytype) !void {
-    const type_name = @typeName(@TypeOf(object));
-    const type_info = @typeInfo(@TypeOf(object));
-    if (type_info != .Struct)
-        @compileError(type_name ++ " is not an object. Not a struct.");
-    if (!@hasField(object, "id"))
-        @compileError(type_name ++ " is not an object. Has no `id` field.");
-    if (@TypeOf(object.id) != u32)
-        @compileError(type_name ++ " is not an object. `id` not u32.");
-
+    const ObjType = @TypeOf(object);
+    const type_info = @typeInfo(ObjType);
+    if (type_info == .Optional) {
+        comptime assertObject(type_info.Optional.child);
+        if (object == null)
+            return wireWriteU32(writer, 0);
+        return wireWriteU32(writer, object.?.id);
+    }
+    comptime assertObject(ObjType);
     return wireWriteU32(writer, object.id);
-}
-
-fn wireWriteObjectOptional(writer: anytype, object: anytype) !void {
-    if (object == null)
-        return wireWriteU32(writer, 0);
-    return wireWriteObject(writer, object.?);
 }
 
 fn wireWriteEnum(writer: anytype, enum_: anytype) !void {
