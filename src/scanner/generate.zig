@@ -111,44 +111,7 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
         try writer.print(", ", .{});
         try writeName(arg.name, writer);
         try writer.print(": ", .{});
-        switch (arg.type) {
-            .int => try writer.print("i32", .{}),
-            .uint => try writer.print("u32", .{}),
-            .fixed => try writer.print("Fixed", .{}),
-            .array => try writer.print("[]const u8", .{}),
-            .fd => try writer.print("FD", .{}),
-            .string => |meta| {
-                if (meta.allow_null) try writer.print("?", .{});
-                try writer.print("[:0]const u8", .{});
-            },
-            .object => |meta| {
-                if (meta.allow_null) try writer.print("?", .{});
-                if (meta.interface) |name| {
-                    try writer.print("ints.", .{});
-                    try writeName(name, writer);
-                } else {
-                    try writer.print("Object", .{});
-                }
-            },
-            .new_id => |meta| {
-                if (meta.interface) |name| {
-                    try writer.print("ints.", .{});
-                    try writeName(name, writer);
-                } else {
-                    try writer.print("Object", .{});
-                }
-            },
-            .enum_ => |meta| {
-                if (std.mem.indexOfScalar(u8, meta.enum_name, '.')) |i| {
-                    try writer.print("ints.", .{});
-                    try writeName(meta.enum_name[0..i], writer);
-                    try writer.print(".", .{});
-                    try writeEnumName(meta.enum_name[(i + 1)..], writer);
-                } else {
-                    try writeEnumName(meta.enum_name, writer);
-                }
-            },
-        }
+        try generateArgType(arg.type, writer);
     }
 
     if (return_obj) {
@@ -244,52 +207,53 @@ fn generateEvent(event: *const Method, writer: anytype) !void {
 fn generateEventCallbackType(event: *const Method, writer: anytype) !void {
     try writer.print("*const fn (*anyopaque", .{});
     for (event.args) |arg| {
-        // TODO abstract this into function
-        switch (arg.type) {
-            .int => try writer.print(", i32", .{}),
-            .uint => try writer.print(", u32", .{}),
-            .fixed => try writer.print(", Fixed", .{}),
-            .array => try writer.print(", []const u8", .{}),
-            .fd => try writer.print(", FD", .{}),
-            .string => |meta| {
-                try writer.print(", ", .{});
-                if (meta.allow_null)
-                    try writer.print("?", .{});
-                try writer.print("[:0]const u8", .{});
-            },
-            .object => |meta| {
-                try writer.print(", ", .{});
-                if (meta.allow_null)
-                    try writer.print("?", .{});
-                if (meta.interface) |interface| {
-                    try writer.print("ints.", .{});
-                    try writeName(interface, writer);
-                } else {
-                    try writer.print("Object", .{});
-                }
-            },
-            .new_id => |meta| {
-                if (meta.interface) |interface| {
-                    try writer.print(", ints.", .{});
-                    try writeName(interface, writer);
-                } else {
-                    try writer.print(", Object", .{});
-                }
-            },
-            .enum_ => |meta| {
-                if (std.mem.indexOfScalar(u8, meta.enum_name, '.')) |i| {
-                    try writer.print(", ints.", .{});
-                    try writeName(meta.enum_name[0..i], writer);
-                    try writer.print(".", .{});
-                    try writeEnumName(meta.enum_name[(i + 1)..], writer);
-                } else {
-                    try writer.print(", ", .{});
-                    try writeEnumName(meta.enum_name, writer);
-                }
-            },
-        }
+        try writer.print(", ", .{});
+        try generateArgType(arg.type, writer);
     }
     try writer.print(") void", .{});
+}
+
+fn generateArgType(arg_type: Arg.Type, writer: anytype) !void {
+    switch (arg_type) {
+        .int => try writer.print("i32", .{}),
+        .uint => try writer.print("u32", .{}),
+        .fixed => try writer.print("Fixed", .{}),
+        .array => try writer.print("[]const u8", .{}),
+        .fd => try writer.print("FD", .{}),
+        .string => |meta| {
+            if (meta.allow_null)
+                try writer.print("?", .{});
+            try writer.print("[:0]const u8", .{});
+        },
+        .object => |meta| {
+            if (meta.allow_null)
+                try writer.print("?", .{});
+            if (meta.interface) |interface| {
+                try writer.print("ints.", .{});
+                try writeName(interface, writer);
+            } else {
+                try writer.print("Object", .{});
+            }
+        },
+        .new_id => |meta| {
+            if (meta.interface) |interface| {
+                try writer.print("ints.", .{});
+                try writeName(interface, writer);
+            } else {
+                try writer.print("Object", .{});
+            }
+        },
+        .enum_ => |meta| {
+            if (std.mem.indexOfScalar(u8, meta.enum_name, '.')) |i| {
+                try writer.print("ints.", .{});
+                try writeName(meta.enum_name[0..i], writer);
+                try writer.print(".", .{});
+                try writeEnumName(meta.enum_name[(i + 1)..], writer);
+            } else {
+                try writeEnumName(meta.enum_name, writer);
+            }
+        },
+    }
 }
 
 fn generateEnum(enum_: *const Enum, writer: anytype) !void {
