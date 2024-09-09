@@ -53,6 +53,33 @@ pub const wl_display = struct {
         };
     };
 
+    pub const callback_execs = struct {
+        fn execErrorCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: ErrorCallback = @ptrCast(callback);
+            const Args = .{ Object, u32, [:0]const u8, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2");
+        }
+
+        fn execDeleteIdCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: DeleteIdCallback = @ptrCast(callback);
+            const Args = .{ u32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+    };
+
     /// These errors are global and can be emitted in response to any
     /// server request.
     pub const Error = enum(u32) {
@@ -113,7 +140,7 @@ pub const wl_display = struct {
     /// by the object interface.  As such, each interface defines its
     /// own set of error codes.  The message is a brief description
     /// of the error, for (debugging) convenience.
-    const ErrorCallback = *const fn (*anyopaque, Object, u32, [:0]const u8) void;
+    const ErrorCallback = *const fn (Self, *anyopaque, Object, u32, [:0]const u8) void;
     pub fn setErrorCallback(self: Self, user_data: *anyopaque, callback: ErrorCallback) void {
         _ = self;
         _ = user_data;
@@ -125,7 +152,7 @@ pub const wl_display = struct {
     /// the server will send this event to acknowledge that it has
     /// seen the delete request. When the client receives this event,
     /// it will know that it can safely reuse the object ID.
-    const DeleteIdCallback = *const fn (*anyopaque, u32) void;
+    const DeleteIdCallback = *const fn (Self, *anyopaque, u32) void;
     pub fn setDeleteIdCallback(self: Self, user_data: *anyopaque, callback: DeleteIdCallback) void {
         _ = self;
         _ = user_data;
@@ -170,6 +197,33 @@ pub const wl_registry = struct {
         };
     };
 
+    pub const callback_execs = struct {
+        fn execGlobalCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: GlobalCallback = @ptrCast(callback);
+            const Args = .{ u32, [:0]const u8, u32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2");
+        }
+
+        fn execGlobalRemoveCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: GlobalRemoveCallback = @ptrCast(callback);
+            const Args = .{ u32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+    };
+
     /// Binds a new, client-created object to the server using the
     /// specified name as the identifier.
     pub fn bind(self: Self, name: u32) !Object {
@@ -189,7 +243,7 @@ pub const wl_registry = struct {
     /// The event notifies the client that a global object with
     /// the given name is now available, and it implements the
     /// given version of the given interface.
-    const GlobalCallback = *const fn (*anyopaque, u32, [:0]const u8, u32) void;
+    const GlobalCallback = *const fn (Self, *anyopaque, u32, [:0]const u8, u32) void;
     pub fn setGlobalCallback(self: Self, user_data: *anyopaque, callback: GlobalCallback) void {
         _ = self;
         _ = user_data;
@@ -206,7 +260,7 @@ pub const wl_registry = struct {
     /// The object remains valid and requests to the object will be
     /// ignored until the client destroys it, to avoid races between
     /// the global going away and a client sending a request to it.
-    const GlobalRemoveCallback = *const fn (*anyopaque, u32) void;
+    const GlobalRemoveCallback = *const fn (Self, *anyopaque, u32) void;
     pub fn setGlobalRemoveCallback(self: Self, user_data: *anyopaque, callback: GlobalRemoveCallback) void {
         _ = self;
         _ = user_data;
@@ -232,8 +286,23 @@ pub const wl_callback = struct {
         };
     };
 
+    pub const callback_execs = struct {
+        fn execDoneCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: DoneCallback = @ptrCast(callback);
+            const Args = .{ u32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+    };
+
     /// Notify the client when the related request is done.
-    const DoneCallback = *const fn (*anyopaque, u32) void;
+    const DoneCallback = *const fn (Self, *anyopaque, u32) void;
     pub fn setDoneCallback(self: Self, user_data: *anyopaque, callback: DoneCallback) void {
         _ = self;
         _ = user_data;
@@ -380,6 +449,21 @@ pub const wl_shm = struct {
         pub const event = struct {
             pub const format: u16 = 0;
         };
+    };
+
+    pub const callback_execs = struct {
+        fn execFormatCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: FormatCallback = @ptrCast(callback);
+            const Args = .{ Format, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
     };
 
     /// These errors can be emitted in response to wl_shm requests.
@@ -556,7 +640,7 @@ pub const wl_shm = struct {
     /// Informs the client about a valid pixel format that
     /// can be used for buffers. Known formats include
     /// argb8888 and xrgb8888.
-    const FormatCallback = *const fn (*anyopaque, Format) void;
+    const FormatCallback = *const fn (Self, *anyopaque, Format) void;
     pub fn setFormatCallback(self: Self, user_data: *anyopaque, callback: FormatCallback) void {
         _ = self;
         _ = user_data;
@@ -595,6 +679,20 @@ pub const wl_buffer = struct {
         };
     };
 
+    pub const callback_execs = struct {
+        fn execReleaseCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: ReleaseCallback = @ptrCast(callback);
+            _ = event;
+            typed_fn_ptr(self, user_data);
+        }
+
+    };
+
     /// Destroy a buffer. If and how you need to release the backing
     /// storage is defined by the buffer factory interface.
     /// 
@@ -616,7 +714,7 @@ pub const wl_buffer = struct {
     /// this is possible, when the compositor maintains a copy of the
     /// wl_surface contents, e.g. as a GL texture. This is an important
     /// optimization for GL(ES) compositors with wl_shm clients.
-    const ReleaseCallback = *const fn (*anyopaque) void;
+    const ReleaseCallback = *const fn (Self, *anyopaque) void;
     pub fn setReleaseCallback(self: Self, user_data: *anyopaque, callback: ReleaseCallback) void {
         _ = self;
         _ = user_data;
@@ -650,6 +748,45 @@ pub const wl_data_offer = struct {
             pub const source_actions: u16 = 1;
             pub const action: u16 = 2;
         };
+    };
+
+    pub const callback_execs = struct {
+        fn execOfferCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: OfferCallback = @ptrCast(callback);
+            const Args = .{ [:0]const u8, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+        fn execSourceActionsCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: SourceActionsCallback = @ptrCast(callback);
+            const Args = .{ ints.wl_data_device_manager.DndAction, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+        fn execActionCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: ActionCallback = @ptrCast(callback);
+            const Args = .{ ints.wl_data_device_manager.DndAction, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
     };
 
     pub const Error = enum(u32) {
@@ -761,7 +898,7 @@ pub const wl_data_offer = struct {
 
     /// Sent immediately after creating the wl_data_offer object.  One
     /// event per offered mime type.
-    const OfferCallback = *const fn (*anyopaque, [:0]const u8) void;
+    const OfferCallback = *const fn (Self, *anyopaque, [:0]const u8) void;
     pub fn setOfferCallback(self: Self, user_data: *anyopaque, callback: OfferCallback) void {
         _ = self;
         _ = user_data;
@@ -772,7 +909,7 @@ pub const wl_data_offer = struct {
     /// will be sent immediately after creating the wl_data_offer object,
     /// or anytime the source side changes its offered actions through
     /// wl_data_source.set_actions.
-    const SourceActionsCallback = *const fn (*anyopaque, ints.wl_data_device_manager.DndAction) void;
+    const SourceActionsCallback = *const fn (Self, *anyopaque, ints.wl_data_device_manager.DndAction) void;
     pub fn setSourceActionsCallback(self: Self, user_data: *anyopaque, callback: SourceActionsCallback) void {
         _ = self;
         _ = user_data;
@@ -814,7 +951,7 @@ pub const wl_data_offer = struct {
     /// user (e.g. popping up a menu with the available options). The
     /// final wl_data_offer.set_actions and wl_data_offer.accept requests
     /// must happen before the call to wl_data_offer.finish.
-    const ActionCallback = *const fn (*anyopaque, ints.wl_data_device_manager.DndAction) void;
+    const ActionCallback = *const fn (Self, *anyopaque, ints.wl_data_device_manager.DndAction) void;
     pub fn setActionCallback(self: Self, user_data: *anyopaque, callback: ActionCallback) void {
         _ = self;
         _ = user_data;
@@ -847,6 +984,78 @@ pub const wl_data_source = struct {
             pub const dnd_finished: u16 = 4;
             pub const action: u16 = 5;
         };
+    };
+
+    pub const callback_execs = struct {
+        fn execTargetCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: TargetCallback = @ptrCast(callback);
+            const Args = .{ ?[:0]const u8, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+        fn execSendCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: SendCallback = @ptrCast(callback);
+            const Args = .{ [:0]const u8, FD, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1");
+        }
+
+        fn execCancelledCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: CancelledCallback = @ptrCast(callback);
+            _ = event;
+            typed_fn_ptr(self, user_data);
+        }
+
+        fn execDndDropPerformedCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: DndDropPerformedCallback = @ptrCast(callback);
+            _ = event;
+            typed_fn_ptr(self, user_data);
+        }
+
+        fn execDndFinishedCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: DndFinishedCallback = @ptrCast(callback);
+            _ = event;
+            typed_fn_ptr(self, user_data);
+        }
+
+        fn execActionCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: ActionCallback = @ptrCast(callback);
+            const Args = .{ ints.wl_data_device_manager.DndAction, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
     };
 
     pub const Error = enum(u32) {
@@ -890,7 +1099,7 @@ pub const wl_data_source = struct {
     /// a target does not accept any of the offered types, type is NULL.
     /// 
     /// Used for feedback during drag-and-drop.
-    const TargetCallback = *const fn (*anyopaque, ?[:0]const u8) void;
+    const TargetCallback = *const fn (Self, *anyopaque, ?[:0]const u8) void;
     pub fn setTargetCallback(self: Self, user_data: *anyopaque, callback: TargetCallback) void {
         _ = self;
         _ = user_data;
@@ -900,7 +1109,7 @@ pub const wl_data_source = struct {
     /// Request for data from the client.  Send the data as the
     /// specified mime type over the passed file descriptor, then
     /// close it.
-    const SendCallback = *const fn (*anyopaque, [:0]const u8, FD) void;
+    const SendCallback = *const fn (Self, *anyopaque, [:0]const u8, FD) void;
     pub fn setSendCallback(self: Self, user_data: *anyopaque, callback: SendCallback) void {
         _ = self;
         _ = user_data;
@@ -927,7 +1136,7 @@ pub const wl_data_source = struct {
     /// For objects of version 2 or older, wl_data_source.cancelled will
     /// only be emitted if the data source was replaced by another data
     /// source.
-    const CancelledCallback = *const fn (*anyopaque) void;
+    const CancelledCallback = *const fn (Self, *anyopaque) void;
     pub fn setCancelledCallback(self: Self, user_data: *anyopaque, callback: CancelledCallback) void {
         _ = self;
         _ = user_data;
@@ -943,7 +1152,7 @@ pub const wl_data_source = struct {
     /// 
     /// Note that the data_source may still be used in the future and should
     /// not be destroyed here.
-    const DndDropPerformedCallback = *const fn (*anyopaque) void;
+    const DndDropPerformedCallback = *const fn (Self, *anyopaque) void;
     pub fn setDndDropPerformedCallback(self: Self, user_data: *anyopaque, callback: DndDropPerformedCallback) void {
         _ = self;
         _ = user_data;
@@ -956,7 +1165,7 @@ pub const wl_data_source = struct {
     /// 
     /// If the action used to perform the operation was "move", the
     /// source can now delete the transferred data.
-    const DndFinishedCallback = *const fn (*anyopaque) void;
+    const DndFinishedCallback = *const fn (Self, *anyopaque) void;
     pub fn setDndFinishedCallback(self: Self, user_data: *anyopaque, callback: DndFinishedCallback) void {
         _ = self;
         _ = user_data;
@@ -988,7 +1197,7 @@ pub const wl_data_source = struct {
     /// 
     /// Clients can trigger cursor surface changes from this point, so
     /// they reflect the current action.
-    const ActionCallback = *const fn (*anyopaque, ints.wl_data_device_manager.DndAction) void;
+    const ActionCallback = *const fn (Self, *anyopaque, ints.wl_data_device_manager.DndAction) void;
     pub fn setActionCallback(self: Self, user_data: *anyopaque, callback: ActionCallback) void {
         _ = self;
         _ = user_data;
@@ -1022,6 +1231,79 @@ pub const wl_data_device = struct {
             pub const drop: u16 = 4;
             pub const selection: u16 = 5;
         };
+    };
+
+    pub const callback_execs = struct {
+        fn execDataOfferCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: DataOfferCallback = @ptrCast(callback);
+            const Args = .{ ints.wl_data_offer, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+        fn execEnterCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: EnterCallback = @ptrCast(callback);
+            const Args = .{ u32, ints.wl_surface, Fixed, Fixed, ?ints.wl_data_offer, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2", args.@"3", args.@"4");
+        }
+
+        fn execLeaveCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: LeaveCallback = @ptrCast(callback);
+            _ = event;
+            typed_fn_ptr(self, user_data);
+        }
+
+        fn execMotionCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: MotionCallback = @ptrCast(callback);
+            const Args = .{ u32, Fixed, Fixed, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2");
+        }
+
+        fn execDropCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: DropCallback = @ptrCast(callback);
+            _ = event;
+            typed_fn_ptr(self, user_data);
+        }
+
+        fn execSelectionCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: SelectionCallback = @ptrCast(callback);
+            const Args = .{ ?ints.wl_data_offer, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
     };
 
     pub const Error = enum(u32) {
@@ -1089,7 +1371,7 @@ pub const wl_data_device = struct {
     /// following the data_device.data_offer event, the new data_offer
     /// object will send out data_offer.offer events to describe the
     /// mime types it offers.
-    const DataOfferCallback = *const fn (*anyopaque, ints.wl_data_offer) void;
+    const DataOfferCallback = *const fn (Self, *anyopaque, ints.wl_data_offer) void;
     pub fn setDataOfferCallback(self: Self, user_data: *anyopaque, callback: DataOfferCallback) void {
         _ = self;
         _ = user_data;
@@ -1100,7 +1382,7 @@ pub const wl_data_device = struct {
     /// a surface owned by the client.  The position of the pointer at
     /// enter time is provided by the x and y arguments, in surface-local
     /// coordinates.
-    const EnterCallback = *const fn (*anyopaque, u32, ints.wl_surface, Fixed, Fixed, ?ints.wl_data_offer) void;
+    const EnterCallback = *const fn (Self, *anyopaque, u32, ints.wl_surface, Fixed, Fixed, ?ints.wl_data_offer) void;
     pub fn setEnterCallback(self: Self, user_data: *anyopaque, callback: EnterCallback) void {
         _ = self;
         _ = user_data;
@@ -1110,7 +1392,7 @@ pub const wl_data_device = struct {
     /// This event is sent when the drag-and-drop pointer leaves the
     /// surface and the session ends.  The client must destroy the
     /// wl_data_offer introduced at enter time at this point.
-    const LeaveCallback = *const fn (*anyopaque) void;
+    const LeaveCallback = *const fn (Self, *anyopaque) void;
     pub fn setLeaveCallback(self: Self, user_data: *anyopaque, callback: LeaveCallback) void {
         _ = self;
         _ = user_data;
@@ -1121,7 +1403,7 @@ pub const wl_data_device = struct {
     /// the currently focused surface. The new position of the pointer
     /// is provided by the x and y arguments, in surface-local
     /// coordinates.
-    const MotionCallback = *const fn (*anyopaque, u32, Fixed, Fixed) void;
+    const MotionCallback = *const fn (Self, *anyopaque, u32, Fixed, Fixed) void;
     pub fn setMotionCallback(self: Self, user_data: *anyopaque, callback: MotionCallback) void {
         _ = self;
         _ = user_data;
@@ -1141,7 +1423,7 @@ pub const wl_data_device = struct {
     /// final. The drag-and-drop destination is expected to perform one last
     /// wl_data_offer.set_actions request, or wl_data_offer.destroy in order
     /// to cancel the operation.
-    const DropCallback = *const fn (*anyopaque) void;
+    const DropCallback = *const fn (Self, *anyopaque) void;
     pub fn setDropCallback(self: Self, user_data: *anyopaque, callback: DropCallback) void {
         _ = self;
         _ = user_data;
@@ -1160,7 +1442,7 @@ pub const wl_data_device = struct {
     /// keyboard focus within the same client doesn't mean a new selection
     /// will be sent.  The client must destroy the previous selection
     /// data_offer, if any, upon receiving this event.
-    const SelectionCallback = *const fn (*anyopaque, ?ints.wl_data_offer) void;
+    const SelectionCallback = *const fn (Self, *anyopaque, ?ints.wl_data_offer) void;
     pub fn setSelectionCallback(self: Self, user_data: *anyopaque, callback: SelectionCallback) void {
         _ = self;
         _ = user_data;
@@ -1329,6 +1611,44 @@ pub const wl_shell_surface = struct {
             pub const configure: u16 = 1;
             pub const popup_done: u16 = 2;
         };
+    };
+
+    pub const callback_execs = struct {
+        fn execPingCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: PingCallback = @ptrCast(callback);
+            const Args = .{ u32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+        fn execConfigureCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: ConfigureCallback = @ptrCast(callback);
+            const Args = .{ Resize, i32, i32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2");
+        }
+
+        fn execPopupDoneCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: PopupDoneCallback = @ptrCast(callback);
+            _ = event;
+            typed_fn_ptr(self, user_data);
+        }
+
     };
 
     /// These values are used to indicate which edge of a surface
@@ -1520,7 +1840,7 @@ pub const wl_shell_surface = struct {
 
     /// Ping a client to check if it is receiving events and sending
     /// requests. A client is expected to reply with a pong request.
-    const PingCallback = *const fn (*anyopaque, u32) void;
+    const PingCallback = *const fn (Self, *anyopaque, u32) void;
     pub fn setPingCallback(self: Self, user_data: *anyopaque, callback: PingCallback) void {
         _ = self;
         _ = user_data;
@@ -1544,7 +1864,7 @@ pub const wl_shell_surface = struct {
     /// 
     /// The width and height arguments specify the size of the window
     /// in surface-local coordinates.
-    const ConfigureCallback = *const fn (*anyopaque, Resize, i32, i32) void;
+    const ConfigureCallback = *const fn (Self, *anyopaque, Resize, i32, i32) void;
     pub fn setConfigureCallback(self: Self, user_data: *anyopaque, callback: ConfigureCallback) void {
         _ = self;
         _ = user_data;
@@ -1554,7 +1874,7 @@ pub const wl_shell_surface = struct {
     /// The popup_done event is sent out when a popup grab is broken,
     /// that is, when the user clicks a surface that doesn't belong
     /// to the client owning the popup surface.
-    const PopupDoneCallback = *const fn (*anyopaque) void;
+    const PopupDoneCallback = *const fn (Self, *anyopaque) void;
     pub fn setPopupDoneCallback(self: Self, user_data: *anyopaque, callback: PopupDoneCallback) void {
         _ = self;
         _ = user_data;
@@ -1631,6 +1951,57 @@ pub const wl_surface = struct {
             pub const preferred_buffer_scale: u16 = 2;
             pub const preferred_buffer_transform: u16 = 3;
         };
+    };
+
+    pub const callback_execs = struct {
+        fn execEnterCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: EnterCallback = @ptrCast(callback);
+            const Args = .{ ints.wl_output, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+        fn execLeaveCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: LeaveCallback = @ptrCast(callback);
+            const Args = .{ ints.wl_output, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+        fn execPreferredBufferScaleCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: PreferredBufferScaleCallback = @ptrCast(callback);
+            const Args = .{ i32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+        fn execPreferredBufferTransformCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: PreferredBufferTransformCallback = @ptrCast(callback);
+            const Args = .{ ints.wl_output.Transform, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
     };
 
     /// These errors can be emitted in response to wl_surface requests.
@@ -1990,7 +2361,7 @@ pub const wl_surface = struct {
     /// output.
     /// 
     /// Note that a surface may be overlapping with zero or more outputs.
-    const EnterCallback = *const fn (*anyopaque, ints.wl_output) void;
+    const EnterCallback = *const fn (Self, *anyopaque, ints.wl_output) void;
     pub fn setEnterCallback(self: Self, user_data: *anyopaque, callback: EnterCallback) void {
         _ = self;
         _ = user_data;
@@ -2006,7 +2377,7 @@ pub const wl_surface = struct {
     /// has been sent, and the compositor might expect new surface content
     /// updates even if no enter event has been sent. The frame event should be
     /// used instead.
-    const LeaveCallback = *const fn (*anyopaque, ints.wl_output) void;
+    const LeaveCallback = *const fn (Self, *anyopaque, ints.wl_output) void;
     pub fn setLeaveCallback(self: Self, user_data: *anyopaque, callback: LeaveCallback) void {
         _ = self;
         _ = user_data;
@@ -2025,7 +2396,7 @@ pub const wl_surface = struct {
     /// buffer.
     /// 
     /// The compositor shall emit a scale value greater than 0.
-    const PreferredBufferScaleCallback = *const fn (*anyopaque, i32) void;
+    const PreferredBufferScaleCallback = *const fn (Self, *anyopaque, i32) void;
     pub fn setPreferredBufferScaleCallback(self: Self, user_data: *anyopaque, callback: PreferredBufferScaleCallback) void {
         _ = self;
         _ = user_data;
@@ -2041,7 +2412,7 @@ pub const wl_surface = struct {
     /// Applying this transformation to the surface buffer contents and using
     /// wl_surface.set_buffer_transform might allow the compositor to use the
     /// surface buffer more efficiently.
-    const PreferredBufferTransformCallback = *const fn (*anyopaque, ints.wl_output.Transform) void;
+    const PreferredBufferTransformCallback = *const fn (Self, *anyopaque, ints.wl_output.Transform) void;
     pub fn setPreferredBufferTransformCallback(self: Self, user_data: *anyopaque, callback: PreferredBufferTransformCallback) void {
         _ = self;
         _ = user_data;
@@ -2071,6 +2442,33 @@ pub const wl_seat = struct {
             pub const capabilities: u16 = 0;
             pub const name: u16 = 1;
         };
+    };
+
+    pub const callback_execs = struct {
+        fn execCapabilitiesCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: CapabilitiesCallback = @ptrCast(callback);
+            const Args = .{ Capability, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+        fn execNameCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: NameCallback = @ptrCast(callback);
+            const Args = .{ [:0]const u8, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
     };
 
     /// This is a bitmask of capabilities this seat has; if a member is
@@ -2177,7 +2575,7 @@ pub const wl_seat = struct {
     /// 
     /// The above behavior also applies to wl_keyboard and wl_touch with the
     /// keyboard and touch capabilities, respectively.
-    const CapabilitiesCallback = *const fn (*anyopaque, Capability) void;
+    const CapabilitiesCallback = *const fn (Self, *anyopaque, Capability) void;
     pub fn setCapabilitiesCallback(self: Self, user_data: *anyopaque, callback: CapabilitiesCallback) void {
         _ = self;
         _ = user_data;
@@ -2200,7 +2598,7 @@ pub const wl_seat = struct {
     /// 
     /// Compositors may re-use the same seat name if the wl_seat global is
     /// destroyed and re-created later.
-    const NameCallback = *const fn (*anyopaque, [:0]const u8) void;
+    const NameCallback = *const fn (Self, *anyopaque, [:0]const u8) void;
     pub fn setNameCallback(self: Self, user_data: *anyopaque, callback: NameCallback) void {
         _ = self;
         _ = user_data;
@@ -2241,6 +2639,140 @@ pub const wl_pointer = struct {
             pub const axis_value120: u16 = 9;
             pub const axis_relative_direction: u16 = 10;
         };
+    };
+
+    pub const callback_execs = struct {
+        fn execEnterCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: EnterCallback = @ptrCast(callback);
+            const Args = .{ u32, ints.wl_surface, Fixed, Fixed, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2", args.@"3");
+        }
+
+        fn execLeaveCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: LeaveCallback = @ptrCast(callback);
+            const Args = .{ u32, ints.wl_surface, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1");
+        }
+
+        fn execMotionCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: MotionCallback = @ptrCast(callback);
+            const Args = .{ u32, Fixed, Fixed, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2");
+        }
+
+        fn execButtonCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: ButtonCallback = @ptrCast(callback);
+            const Args = .{ u32, u32, u32, ButtonState, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2", args.@"3");
+        }
+
+        fn execAxisCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: AxisCallback = @ptrCast(callback);
+            const Args = .{ u32, Axis, Fixed, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2");
+        }
+
+        fn execFrameCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: FrameCallback = @ptrCast(callback);
+            _ = event;
+            typed_fn_ptr(self, user_data);
+        }
+
+        fn execAxisSourceCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: AxisSourceCallback = @ptrCast(callback);
+            const Args = .{ AxisSource, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+        fn execAxisStopCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: AxisStopCallback = @ptrCast(callback);
+            const Args = .{ u32, Axis, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1");
+        }
+
+        fn execAxisDiscreteCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: AxisDiscreteCallback = @ptrCast(callback);
+            const Args = .{ Axis, i32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1");
+        }
+
+        fn execAxisValue120Callback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: AxisValue120Callback = @ptrCast(callback);
+            const Args = .{ Axis, i32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1");
+        }
+
+        fn execAxisRelativeDirectionCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: AxisRelativeDirectionCallback = @ptrCast(callback);
+            const Args = .{ Axis, AxisRelativeDirection, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1");
+        }
+
     };
 
     pub const Error = enum(u32) {
@@ -2344,7 +2876,7 @@ pub const wl_pointer = struct {
     /// When a seat's focus enters a surface, the pointer image
     /// is undefined and a client should respond to this event by setting
     /// an appropriate pointer image with the set_cursor request.
-    const EnterCallback = *const fn (*anyopaque, u32, ints.wl_surface, Fixed, Fixed) void;
+    const EnterCallback = *const fn (Self, *anyopaque, u32, ints.wl_surface, Fixed, Fixed) void;
     pub fn setEnterCallback(self: Self, user_data: *anyopaque, callback: EnterCallback) void {
         _ = self;
         _ = user_data;
@@ -2356,7 +2888,7 @@ pub const wl_pointer = struct {
     /// 
     /// The leave notification is sent before the enter notification
     /// for the new focus.
-    const LeaveCallback = *const fn (*anyopaque, u32, ints.wl_surface) void;
+    const LeaveCallback = *const fn (Self, *anyopaque, u32, ints.wl_surface) void;
     pub fn setLeaveCallback(self: Self, user_data: *anyopaque, callback: LeaveCallback) void {
         _ = self;
         _ = user_data;
@@ -2366,7 +2898,7 @@ pub const wl_pointer = struct {
     /// Notification of pointer location change. The arguments
     /// surface_x and surface_y are the location relative to the
     /// focused surface.
-    const MotionCallback = *const fn (*anyopaque, u32, Fixed, Fixed) void;
+    const MotionCallback = *const fn (Self, *anyopaque, u32, Fixed, Fixed) void;
     pub fn setMotionCallback(self: Self, user_data: *anyopaque, callback: MotionCallback) void {
         _ = self;
         _ = user_data;
@@ -2387,7 +2919,7 @@ pub const wl_pointer = struct {
     /// kernel's event code list. All other button codes above 0xFFFF are
     /// currently undefined but may be used in future versions of this
     /// protocol.
-    const ButtonCallback = *const fn (*anyopaque, u32, u32, u32, ButtonState) void;
+    const ButtonCallback = *const fn (Self, *anyopaque, u32, u32, u32, ButtonState) void;
     pub fn setButtonCallback(self: Self, user_data: *anyopaque, callback: ButtonCallback) void {
         _ = self;
         _ = user_data;
@@ -2410,7 +2942,7 @@ pub const wl_pointer = struct {
     /// 
     /// When applicable, a client can transform its content relative to the
     /// scroll distance.
-    const AxisCallback = *const fn (*anyopaque, u32, Axis, Fixed) void;
+    const AxisCallback = *const fn (Self, *anyopaque, u32, Axis, Fixed) void;
     pub fn setAxisCallback(self: Self, user_data: *anyopaque, callback: AxisCallback) void {
         _ = self;
         _ = user_data;
@@ -2451,7 +2983,7 @@ pub const wl_pointer = struct {
     /// Compositor-specific policies may require the wl_pointer.leave and
     /// wl_pointer.enter event being split across multiple wl_pointer.frame
     /// groups.
-    const FrameCallback = *const fn (*anyopaque) void;
+    const FrameCallback = *const fn (Self, *anyopaque) void;
     pub fn setFrameCallback(self: Self, user_data: *anyopaque, callback: FrameCallback) void {
         _ = self;
         _ = user_data;
@@ -2483,7 +3015,7 @@ pub const wl_pointer = struct {
     /// 
     /// The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
     /// not guaranteed.
-    const AxisSourceCallback = *const fn (*anyopaque, AxisSource) void;
+    const AxisSourceCallback = *const fn (Self, *anyopaque, AxisSource) void;
     pub fn setAxisSourceCallback(self: Self, user_data: *anyopaque, callback: AxisSourceCallback) void {
         _ = self;
         _ = user_data;
@@ -2504,7 +3036,7 @@ pub const wl_pointer = struct {
     /// The timestamp is to be interpreted identical to the timestamp in the
     /// wl_pointer.axis event. The timestamp value may be the same as a
     /// preceding wl_pointer.axis event.
-    const AxisStopCallback = *const fn (*anyopaque, u32, Axis) void;
+    const AxisStopCallback = *const fn (Self, *anyopaque, u32, Axis) void;
     pub fn setAxisStopCallback(self: Self, user_data: *anyopaque, callback: AxisStopCallback) void {
         _ = self;
         _ = user_data;
@@ -2541,7 +3073,7 @@ pub const wl_pointer = struct {
     /// 
     /// The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
     /// not guaranteed.
-    const AxisDiscreteCallback = *const fn (*anyopaque, Axis, i32) void;
+    const AxisDiscreteCallback = *const fn (Self, *anyopaque, Axis, i32) void;
     pub fn setAxisDiscreteCallback(self: Self, user_data: *anyopaque, callback: AxisDiscreteCallback) void {
         _ = self;
         _ = user_data;
@@ -2569,7 +3101,7 @@ pub const wl_pointer = struct {
     /// 
     /// The order of wl_pointer.axis_value120 and wl_pointer.axis_source is
     /// not guaranteed.
-    const AxisValue120Callback = *const fn (*anyopaque, Axis, i32) void;
+    const AxisValue120Callback = *const fn (Self, *anyopaque, Axis, i32) void;
     pub fn setAxisValue120Callback(self: Self, user_data: *anyopaque, callback: AxisValue120Callback) void {
         _ = self;
         _ = user_data;
@@ -2611,7 +3143,7 @@ pub const wl_pointer = struct {
     /// The order of wl_pointer.axis_relative_direction,
     /// wl_pointer.axis_discrete and wl_pointer.axis_source is not
     /// guaranteed.
-    const AxisRelativeDirectionCallback = *const fn (*anyopaque, Axis, AxisRelativeDirection) void;
+    const AxisRelativeDirectionCallback = *const fn (Self, *anyopaque, Axis, AxisRelativeDirection) void;
     pub fn setAxisRelativeDirectionCallback(self: Self, user_data: *anyopaque, callback: AxisRelativeDirectionCallback) void {
         _ = self;
         _ = user_data;
@@ -2652,6 +3184,81 @@ pub const wl_keyboard = struct {
         };
     };
 
+    pub const callback_execs = struct {
+        fn execKeymapCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: KeymapCallback = @ptrCast(callback);
+            const Args = .{ KeymapFormat, FD, u32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2");
+        }
+
+        fn execEnterCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: EnterCallback = @ptrCast(callback);
+            const Args = .{ u32, ints.wl_surface, []const u8, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2");
+        }
+
+        fn execLeaveCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: LeaveCallback = @ptrCast(callback);
+            const Args = .{ u32, ints.wl_surface, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1");
+        }
+
+        fn execKeyCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: KeyCallback = @ptrCast(callback);
+            const Args = .{ u32, u32, u32, KeyState, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2", args.@"3");
+        }
+
+        fn execModifiersCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: ModifiersCallback = @ptrCast(callback);
+            const Args = .{ u32, u32, u32, u32, u32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2", args.@"3", args.@"4");
+        }
+
+        fn execRepeatInfoCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: RepeatInfoCallback = @ptrCast(callback);
+            const Args = .{ i32, i32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1");
+        }
+
+    };
+
     /// This specifies the format of the keymap provided to the
     /// client with the wl_keyboard.keymap event.
     pub const KeymapFormat = enum(u32) {
@@ -2676,7 +3283,7 @@ pub const wl_keyboard = struct {
     /// 
     /// From version 7 onwards, the fd must be mapped with MAP_PRIVATE by
     /// the recipient, as MAP_SHARED may fail.
-    const KeymapCallback = *const fn (*anyopaque, KeymapFormat, FD, u32) void;
+    const KeymapCallback = *const fn (Self, *anyopaque, KeymapFormat, FD, u32) void;
     pub fn setKeymapCallback(self: Self, user_data: *anyopaque, callback: KeymapCallback) void {
         _ = self;
         _ = user_data;
@@ -2693,7 +3300,7 @@ pub const wl_keyboard = struct {
     /// the surface argument and the keys currently logically down to the keys
     /// in the keys argument. The compositor must not send this event if the
     /// wl_keyboard already had an active surface immediately before this event.
-    const EnterCallback = *const fn (*anyopaque, u32, ints.wl_surface, []const u8) void;
+    const EnterCallback = *const fn (Self, *anyopaque, u32, ints.wl_surface, []const u8) void;
     pub fn setEnterCallback(self: Self, user_data: *anyopaque, callback: EnterCallback) void {
         _ = self;
         _ = user_data;
@@ -2710,7 +3317,7 @@ pub const wl_keyboard = struct {
     /// defaults. The compositor must not send this event if the active surface
     /// of the wl_keyboard was not equal to the surface argument immediately
     /// before this event.
-    const LeaveCallback = *const fn (*anyopaque, u32, ints.wl_surface) void;
+    const LeaveCallback = *const fn (Self, *anyopaque, u32, ints.wl_surface) void;
     pub fn setLeaveCallback(self: Self, user_data: *anyopaque, callback: LeaveCallback) void {
         _ = self;
         _ = user_data;
@@ -2735,7 +3342,7 @@ pub const wl_keyboard = struct {
     /// compositor must not send this event if state is pressed (resp. released)
     /// and the key was already logically down (resp. was not logically down)
     /// immediately before this event.
-    const KeyCallback = *const fn (*anyopaque, u32, u32, u32, KeyState) void;
+    const KeyCallback = *const fn (Self, *anyopaque, u32, u32, u32, KeyState) void;
     pub fn setKeyCallback(self: Self, user_data: *anyopaque, callback: KeyCallback) void {
         _ = self;
         _ = user_data;
@@ -2755,7 +3362,7 @@ pub const wl_keyboard = struct {
     /// 
     /// In the wl_keyboard logical state, this event updates the modifiers and
     /// group.
-    const ModifiersCallback = *const fn (*anyopaque, u32, u32, u32, u32, u32) void;
+    const ModifiersCallback = *const fn (Self, *anyopaque, u32, u32, u32, u32, u32) void;
     pub fn setModifiersCallback(self: Self, user_data: *anyopaque, callback: ModifiersCallback) void {
         _ = self;
         _ = user_data;
@@ -2774,7 +3381,7 @@ pub const wl_keyboard = struct {
     /// This event can be sent later on as well with a new value if necessary,
     /// so clients should continue listening for the event past the creation
     /// of wl_keyboard.
-    const RepeatInfoCallback = *const fn (*anyopaque, i32, i32) void;
+    const RepeatInfoCallback = *const fn (Self, *anyopaque, i32, i32) void;
     pub fn setRepeatInfoCallback(self: Self, user_data: *anyopaque, callback: RepeatInfoCallback) void {
         _ = self;
         _ = user_data;
@@ -2812,6 +3419,91 @@ pub const wl_touch = struct {
         };
     };
 
+    pub const callback_execs = struct {
+        fn execDownCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: DownCallback = @ptrCast(callback);
+            const Args = .{ u32, u32, ints.wl_surface, i32, Fixed, Fixed, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2", args.@"3", args.@"4", args.@"5");
+        }
+
+        fn execUpCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: UpCallback = @ptrCast(callback);
+            const Args = .{ u32, u32, i32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2");
+        }
+
+        fn execMotionCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: MotionCallback = @ptrCast(callback);
+            const Args = .{ u32, i32, Fixed, Fixed, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2", args.@"3");
+        }
+
+        fn execFrameCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: FrameCallback = @ptrCast(callback);
+            _ = event;
+            typed_fn_ptr(self, user_data);
+        }
+
+        fn execCancelCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: CancelCallback = @ptrCast(callback);
+            _ = event;
+            typed_fn_ptr(self, user_data);
+        }
+
+        fn execShapeCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: ShapeCallback = @ptrCast(callback);
+            const Args = .{ i32, Fixed, Fixed, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2");
+        }
+
+        fn execOrientationCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: OrientationCallback = @ptrCast(callback);
+            const Args = .{ i32, Fixed, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1");
+        }
+
+    };
+
     pub fn release(self: Self) !void {
         const op = Self.opcode.request.release;
         try self.global.sendRequest(self.id, op, .{ });
@@ -2821,7 +3513,7 @@ pub const wl_touch = struct {
     /// assigned a unique ID. Future events from this touch point reference
     /// this ID. The ID ceases to be valid after a touch up event and may be
     /// reused in the future.
-    const DownCallback = *const fn (*anyopaque, u32, u32, ints.wl_surface, i32, Fixed, Fixed) void;
+    const DownCallback = *const fn (Self, *anyopaque, u32, u32, ints.wl_surface, i32, Fixed, Fixed) void;
     pub fn setDownCallback(self: Self, user_data: *anyopaque, callback: DownCallback) void {
         _ = self;
         _ = user_data;
@@ -2831,7 +3523,7 @@ pub const wl_touch = struct {
     /// The touch point has disappeared. No further events will be sent for
     /// this touch point and the touch point's ID is released and may be
     /// reused in a future touch down event.
-    const UpCallback = *const fn (*anyopaque, u32, u32, i32) void;
+    const UpCallback = *const fn (Self, *anyopaque, u32, u32, i32) void;
     pub fn setUpCallback(self: Self, user_data: *anyopaque, callback: UpCallback) void {
         _ = self;
         _ = user_data;
@@ -2839,7 +3531,7 @@ pub const wl_touch = struct {
     }
 
     /// A touch point has changed coordinates.
-    const MotionCallback = *const fn (*anyopaque, u32, i32, Fixed, Fixed) void;
+    const MotionCallback = *const fn (Self, *anyopaque, u32, i32, Fixed, Fixed) void;
     pub fn setMotionCallback(self: Self, user_data: *anyopaque, callback: MotionCallback) void {
         _ = self;
         _ = user_data;
@@ -2854,7 +3546,7 @@ pub const wl_touch = struct {
     /// guarantee is provided about the set of events within a frame. A client
     /// must assume that any state not updated in a frame is unchanged from the
     /// previously known state.
-    const FrameCallback = *const fn (*anyopaque) void;
+    const FrameCallback = *const fn (Self, *anyopaque) void;
     pub fn setFrameCallback(self: Self, user_data: *anyopaque, callback: FrameCallback) void {
         _ = self;
         _ = user_data;
@@ -2869,7 +3561,7 @@ pub const wl_touch = struct {
     /// this surface may reuse the touch point ID.
     /// 
     /// No frame event is required after the cancel event.
-    const CancelCallback = *const fn (*anyopaque) void;
+    const CancelCallback = *const fn (Self, *anyopaque) void;
     pub fn setCancelCallback(self: Self, user_data: *anyopaque, callback: CancelCallback) void {
         _ = self;
         _ = user_data;
@@ -2901,7 +3593,7 @@ pub const wl_touch = struct {
     /// This event is only sent by the compositor if the touch device supports
     /// shape reports. The client has to make reasonable assumptions about the
     /// shape if it did not receive this event.
-    const ShapeCallback = *const fn (*anyopaque, i32, Fixed, Fixed) void;
+    const ShapeCallback = *const fn (Self, *anyopaque, i32, Fixed, Fixed) void;
     pub fn setShapeCallback(self: Self, user_data: *anyopaque, callback: ShapeCallback) void {
         _ = self;
         _ = user_data;
@@ -2931,7 +3623,7 @@ pub const wl_touch = struct {
     /// 
     /// This event is only sent by the compositor if the touch device supports
     /// orientation reports.
-    const OrientationCallback = *const fn (*anyopaque, i32, Fixed) void;
+    const OrientationCallback = *const fn (Self, *anyopaque, i32, Fixed) void;
     pub fn setOrientationCallback(self: Self, user_data: *anyopaque, callback: OrientationCallback) void {
         _ = self;
         _ = user_data;
@@ -2964,6 +3656,80 @@ pub const wl_output = struct {
             pub const name: u16 = 4;
             pub const description: u16 = 5;
         };
+    };
+
+    pub const callback_execs = struct {
+        fn execGeometryCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: GeometryCallback = @ptrCast(callback);
+            const Args = .{ i32, i32, i32, i32, Subpixel, [:0]const u8, [:0]const u8, Transform, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2", args.@"3", args.@"4", args.@"5", args.@"6", args.@"7");
+        }
+
+        fn execModeCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: ModeCallback = @ptrCast(callback);
+            const Args = .{ Mode, i32, i32, i32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0", args.@"1", args.@"2", args.@"3");
+        }
+
+        fn execDoneCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: DoneCallback = @ptrCast(callback);
+            _ = event;
+            typed_fn_ptr(self, user_data);
+        }
+
+        fn execScaleCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: ScaleCallback = @ptrCast(callback);
+            const Args = .{ i32, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+        fn execNameCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: NameCallback = @ptrCast(callback);
+            const Args = .{ [:0]const u8, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
+        fn execDescriptionCallback(
+            self: *Self,
+            event: []const u8,
+            user_data: *anyopaque,
+            callback: *const anyopaque
+        ) void {
+            const typed_fn_ptr: DescriptionCallback = @ptrCast(callback);
+            const Args = .{ [:0]const u8, };
+            const args = self.global.decodeEvent(event, Args);
+            typed_fn_ptr(self, user_data, args.@"0");
+        }
+
     };
 
     /// This enumeration describes how the physical
@@ -3032,7 +3798,7 @@ pub const wl_output = struct {
     /// outputs, might fake this information. Instead of using x and y, clients
     /// should use xdg_output.logical_position. Instead of using make and model,
     /// clients should use name and description.
-    const GeometryCallback = *const fn (*anyopaque, i32, i32, i32, i32, Subpixel, [:0]const u8, [:0]const u8, Transform) void;
+    const GeometryCallback = *const fn (Self, *anyopaque, i32, i32, i32, i32, Subpixel, [:0]const u8, [:0]const u8, Transform) void;
     pub fn setGeometryCallback(self: Self, user_data: *anyopaque, callback: GeometryCallback) void {
         _ = self;
         _ = user_data;
@@ -3072,7 +3838,7 @@ pub const wl_output = struct {
     /// Note: this information is not always meaningful for all outputs. Some
     /// compositors, such as those exposing virtual outputs, might fake the
     /// refresh rate or the size.
-    const ModeCallback = *const fn (*anyopaque, Mode, i32, i32, i32) void;
+    const ModeCallback = *const fn (Self, *anyopaque, Mode, i32, i32, i32) void;
     pub fn setModeCallback(self: Self, user_data: *anyopaque, callback: ModeCallback) void {
         _ = self;
         _ = user_data;
@@ -3084,7 +3850,7 @@ pub const wl_output = struct {
     /// other property changes done after that. This allows
     /// changes to the output properties to be seen as
     /// atomic, even if they happen via multiple events.
-    const DoneCallback = *const fn (*anyopaque) void;
+    const DoneCallback = *const fn (Self, *anyopaque) void;
     pub fn setDoneCallback(self: Self, user_data: *anyopaque, callback: DoneCallback) void {
         _ = self;
         _ = user_data;
@@ -3109,7 +3875,7 @@ pub const wl_output = struct {
     /// scale to use for a surface.
     /// 
     /// The scale event will be followed by a done event.
-    const ScaleCallback = *const fn (*anyopaque, i32) void;
+    const ScaleCallback = *const fn (Self, *anyopaque, i32) void;
     pub fn setScaleCallback(self: Self, user_data: *anyopaque, callback: ScaleCallback) void {
         _ = self;
         _ = user_data;
@@ -3144,7 +3910,7 @@ pub const wl_output = struct {
     /// same name if possible.
     /// 
     /// The name event will be followed by a done event.
-    const NameCallback = *const fn (*anyopaque, [:0]const u8) void;
+    const NameCallback = *const fn (Self, *anyopaque, [:0]const u8) void;
     pub fn setNameCallback(self: Self, user_data: *anyopaque, callback: NameCallback) void {
         _ = self;
         _ = user_data;
@@ -3165,7 +3931,7 @@ pub const wl_output = struct {
     /// not be sent at all.
     /// 
     /// The description event will be followed by a done event.
-    const DescriptionCallback = *const fn (*anyopaque, [:0]const u8) void;
+    const DescriptionCallback = *const fn (Self, *anyopaque, [:0]const u8) void;
     pub fn setDescriptionCallback(self: Self, user_data: *anyopaque, callback: DescriptionCallback) void {
         _ = self;
         _ = user_data;

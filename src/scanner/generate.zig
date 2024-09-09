@@ -50,6 +50,13 @@ fn generateInterface(interface: *const Interface, writer: anytype) !void {
     try writer.print("    global: *WaylandState,\n\n", .{});
     try writer.print("    const Self = @This();\n\n", .{});
     try generateOpcodes(interface, writer);
+    if (interface.events.len > 0) {
+        try writer.print("    pub const callback_execs = struct {{\n", .{});
+        for (interface.events) |*event| {
+            try generateCallbackExecutor(event, writer);
+        }
+        try writer.print("    }};\n\n", .{});
+    }
     for (interface.enums) |*enum_| {
         try generateEnum(enum_, writer);
     }
@@ -87,6 +94,43 @@ fn generateOpcodes(interface: *const Interface, writer: anytype) !void {
         try writer.print("        }};\n", .{});
     }
     try writer.print("    }};\n\n", .{});
+}
+
+fn generateCallbackExecutor(event: *const Method, writer: anytype) !void {
+    try writer.print("        fn exec", .{});
+    try writeEnumName(event.name, writer);
+    try writer.print(
+        \\Callback(
+        \\            self: *Self,
+        \\            event: []const u8,
+        \\            user_data: *anyopaque,
+        \\            callback: *const anyopaque
+        \\        ) void {{
+        \\
+        , .{});
+    try writer.print("            const typed_fn_ptr: ", .{});
+    try writeEnumName(event.name, writer);
+    try writer.print("Callback = @ptrCast(callback);\n", .{});
+    if (event.args.len > 0) {
+        try writer.print("            const Args = .{{ ", .{});
+        for (event.args) |arg| {
+            try generateArgType(arg.type, writer);
+            try writer.print(", ", .{});
+        }
+        try writer.print("}};\n", .{});
+        try writer.print(
+            \\            const args = self.global.decodeEvent(event, Args);
+            \\
+            , .{});
+    } else {
+        try writer.print("            _ = event;\n", .{});
+    }
+    try writer.print("            typed_fn_ptr(self, user_data", .{});
+    for (event.args, 0..) |_, i| {
+        try writer.print(", args.@\"{d}\"", .{i});
+    }
+    try writer.print(");\n", .{});
+    try writer.print("        }}\n\n", .{});
 }
 
 fn generateRequest(request: *const Method, writer: anytype) !void {
@@ -205,7 +249,7 @@ fn generateEvent(event: *const Method, writer: anytype) !void {
 }
 
 fn generateEventCallbackType(event: *const Method, writer: anytype) !void {
-    try writer.print("*const fn (*anyopaque", .{});
+    try writer.print("*const fn (Self, *anyopaque", .{});
     for (event.args) |arg| {
         try writer.print(", ", .{});
         try generateArgType(arg.type, writer);
