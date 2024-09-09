@@ -99,6 +99,45 @@ pub const WaylandState = struct {
         }
     }
 
+    /// Decodes the event into the passed struct Type. Note any slices in the struct
+    /// are not owned.
+    pub fn decodeEvent(
+        self: *WaylandState,
+        event: []const u8,
+        Type: type
+    ) Type {
+        const type_info = @typeInfo(Type);
+        if (type_info != .Struct) {
+            @compileError("Not tuple or struct, found " ++ @typeName(Type));
+        }
+
+        var out: Type = undefined;
+        var index: usize = @sizeOf(Header);
+        const fields = type_info.Struct.fields;
+        inline for (fields) |field| {
+            const info = @typeInfo(field.type);
+            const val_ptr = &@field(out, field.name);
+            switch (field.type) {
+                i32 => val_ptr.* = wireDecodeI32(event, &index),
+                u32 => val_ptr.* = wireDecodeU32(event, &index),
+                Fixed => val_ptr.* = wireDecodeFixed(event, &index),
+                []const u8 => val_ptr.* = wireDecodeArray(event, &index),
+                [:0]const u8 => val_ptr.* = wireDecodeString(event, &index).?,
+                ?[:0]const u8 => val_ptr.* = wireDecodeString(event, &index),
+                else => switch (info) {
+                    .Struct => val_ptr.* =
+                        wireDecodeObject(event, &index, self, field.type).?, 
+                    .Optional => val_ptr.* =
+                        wireDecodeObject(event, &index, self, field.type),
+                    .Enum => val_ptr.* =
+                        wireDecodeEnum(event, &index, field.type),
+                    else => @compileError("Invalid type, " ++ field.type),
+                }
+            }
+        }
+        return out;
+    }
+
     /// Gets a reader to the socket stream.
     pub fn reader(self: *WaylandState) Reader {
         return self.socket.reader();
@@ -270,72 +309,6 @@ pub fn readEventRaw(
     return len;
 }
 
-/// Decodes the event into the passed struct Type. Note any slices in the struct
-/// are not owned.
-pub fn decodeEvent(event: []const u8, Type: type) !Type {
-    const type_info = @typeInfo(Type);
-    if (type_info != .Struct) {
-        @compileError("Not tuple or struct, found " ++ @typeName(Type));
-    }
-
-    var out: Type = undefined;
-
-    var index: usize = 0;
-    const fields = type_info.Struct.fields;
-    inline for (fields) |field| {
-        switch (field.type) {
-            i32, u32, u16, Fixed => {
-                const end = index + @sizeOf(field.type);
-                if (end > event.len) return error.UnexpectedMessageEnd;
-                const val = std.mem.bytesToValue(field.type, event[index..end]);
-                index = end;
-                @field(out, field.name) = val;
-            },
-            []const u8 => {
-                var end = index + @sizeOf(u32);
-                if (end > event.len) return error.UnexpectedMessageEnd;
-                const len = std.mem.bytesToValue(u32, event[index..end]);
-                index = end;
-                end = index + @as(usize, @intCast(len));
-                @field(out, field.name) = event[index..end];
-                index = end;
-                const pad = @subWithOverflow(0, index).@"0" % 4;
-                index += pad;
-            },
-            [:0]const u8 => {
-                var end = index + @sizeOf(u32);
-                if (end > event.len) return error.UnexpectedMessageEnd;
-                const len = std.mem.bytesToValue(u32, event[index..end]);
-                index = end;
-                if (len == 0) return error.UnexpectedNullString;
-                end = index + @as(usize, @intCast(len));
-                @field(out, field.name) = @ptrCast(event[index..(end - 1)]);
-                index = end;
-                const pad = @subWithOverflow(0, index).@"0" % 4;
-                index += pad;
-            },
-            ?[:0]const u8 => {
-                var end = index + @sizeOf(u32);
-                if (end > event.len) return error.UnexpectedMessageEnd;
-                const len = std.mem.bytesToValue(u32, event[index..end]);
-                index = end;
-                if (len == 0) {
-                    @field(out, field.name) = null;
-                    continue;
-                }
-                end = index + @as(usize, @intCast(len));
-                @field(out, field.name) = @ptrCast(event[index..(end - 1)]);
-                index = end;
-                const pad = @subWithOverflow(0, index).@"0" % 4;
-                index += pad;
-            },
-            else => @compileError("Invalid type, " ++ field.type),
-        }
-    }
-
-    return out;
-}
-
 fn wireWriteHeader(writer: anytype, header: Header) !void {
     return writer.writeAll(&toBytes(header));
 }
@@ -370,13 +343,9 @@ fn wireWriteString(writer: anytype, str: ?[:0]const u8) !void {
     if (str == null) {
         return wireWriteU32(writer, 0);
     }
-    const len = str.?.len + 1;
-    try wireWriteU32(writer, @intCast(len));
-    try writer.writeAll(str.?[0..len]);
-    const pad = @subWithOverflow(0, len).@"0" % 4;
-    for (0..pad) |_| {
-        try writer.writeAll(&[_]u8{0});
-    }
+    var arr: []const u8 = @ptrCast(str.?);
+    arr.len += 1;
+    return wireWriteArray(writer, arr);
 }
 
 fn wireWriteObject(writer: anytype, object: anytype) !void {
@@ -401,6 +370,66 @@ fn wireWriteEnum(writer: anytype, enum_: anytype) !void {
     switch (type_info.Enum.tag_type) {
         i32 => return wireWriteI32(writer, @intFromEnum(enum_)),
         u32 => return wireWriteU32(writer, @intFromEnum(enum_)),
+        else => @compileError(type_name ++ " tag must be i32 or u32.")
+    }
+}
+
+fn wireDecodeI32(bytes: []const u8, start: *usize) i32 {
+    std.debug.assert(bytes[(start.*)..].len >= @sizeOf(i32));
+    defer start.* += @sizeOf(i32);
+    return std.mem.bytesToValue(i32, bytes[(start.*)..]);
+}
+
+fn wireDecodeU32(bytes: []const u8, start: *usize) u32 {
+    std.debug.assert(bytes[(start.*)..].len >= @sizeOf(u32));
+    defer start.* += @sizeOf(u32);
+    return std.mem.bytesToValue(u32, bytes[(start.*)..]);
+}
+
+fn wireDecodeFixed(bytes: []const u8, start: *usize) Fixed {
+    return @enumFromInt(wireDecodeI32(bytes, start));
+}
+
+fn wireDecodeArray(bytes: []const u8, start: *usize) []const u8 {
+    const len = wireDecodeU32(bytes, start);
+    const pad = @subWithOverflow(0, len).@"0" % 4;
+    std.debug.assert(bytes[(start.*)..].len >= len + pad);
+    defer start.* += len + pad;
+    return bytes[(start.*)..(start.* + len)];
+}
+
+fn wireDecodeString(bytes: []const u8, start: *usize) ?[:0]const u8 {
+    const arr = wireDecodeArray(bytes, start);
+    if (arr.len == 0) return null;
+    var str: [:0]const u8 = @ptrCast(arr);
+    str.len -= 1;
+    return str;
+}
+
+fn wireDecodeObject(
+    bytes: []const u8,
+    start: *usize,
+    global: *WaylandState,
+    ObjType: type
+) ?ObjType {
+    assertObject(ObjType);
+    const id = wireDecodeU32(bytes, start);
+    if (id == 0) return null;
+    return ObjType {
+        .id = id,
+        .global = global,
+    };
+}
+
+fn wireDecodeEnum(bytes: []const u8, start: *usize, EnumType: type) EnumType {
+    const type_name = @typeName(EnumType);
+    const type_info = @typeInfo(EnumType);
+    if (type_info != .Enum)
+        @compileError(type_name ++ " is not an object. Not a struct.");
+
+    switch (type_info.Enum.tag_type) {
+        i32 => return @enumFromInt(wireWriteI32(bytes, start)),
+        u32 => return @enumFromInt(wireWriteU32(bytes, start)),
         else => @compileError(type_name ++ " tag must be i32 or u32.")
     }
 }

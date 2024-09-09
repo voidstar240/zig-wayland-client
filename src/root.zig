@@ -40,22 +40,16 @@ test "functionality" {
 
     const msg = try global.readEvent();
     const Response = struct {
-        obj_id: u32,
-        opcode: u16,
-        len: u16,
         name: u32,
         interface: [:0]const u8,
         version: u32,
     };
-    const resp = try util.decodeEvent(msg, Response);
+    const resp = global.decodeEvent(msg, Response);
     std.debug.print(
         \\Response {{
-        \\  obj_id = {d},
-        \\  opcode = {d},
-        \\  len = {d},
         \\  name = {d},
         \\  interface = {s},
         \\  version = {d},
         \\}}
-        , .{resp.obj_id, resp.opcode, resp.len, resp.name, resp.interface, resp.version});
+        , .{resp.name, resp.interface, resp.version});
 }
