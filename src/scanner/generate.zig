@@ -30,7 +30,8 @@ pub fn generateProtocol(
     try writer.print("const Object = util.Object;\n", .{});
     try writer.print("const Fixed = util.Fixed;\n", .{});
     try writer.print("const FD = util.FD;\n", .{});
-    try writer.print("const WaylandState = util.WaylandState;\n\n\n", .{});
+    try writer.print("const WaylandState = util.WaylandState;\n", .{});
+    try writer.print("const decodeEvent = util.decodeEvent;\n\n\n", .{});
 
     for (protocol.interfaces) |*interface| {
         try generateInterface(interface, writer);
@@ -185,8 +186,9 @@ fn generateEvent(event: *const Method, writer: anytype) !void {
     try writer.print("Event(event: []const u8) ", .{});
     try generateEventStructName(event, writer);
     try writer.print(" {{\n", .{});
-    try writer.print("        _ = event;\n", .{});
-    try writer.print("        return undefined;\n", .{});
+    try writer.print("        return decodeEvent(event, ", .{});
+    try generateEventStructName(event, writer);
+    try writer.print(");\n", .{});
     try writer.print("    }}\n\n", .{});
 }
 

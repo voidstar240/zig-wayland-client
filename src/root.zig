@@ -39,18 +39,12 @@ test "functionality" {
     _ = sync;
 
     const msg = try global.readEvent();
-    const Response = struct {
-        obj: protocol.wl_registry,
-        name: u32,
-        interface: [:0]const u8,
-        version: u32,
-    };
-    const resp = util.decodeEvent(msg, Response);
+    const event = protocol.wl_registry.decodeGlobalEvent(msg);
     std.debug.print(
         \\Response {{
         \\  name = {d},
         \\  interface = {s},
         \\  version = {d},
         \\}}
-        , .{resp.name, resp.interface, resp.version});
+        , .{event.name, event.interface, event.version});
 }
