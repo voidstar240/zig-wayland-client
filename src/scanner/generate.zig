@@ -50,13 +50,6 @@ fn generateInterface(interface: *const Interface, writer: anytype) !void {
     try writer.print("    global: *WaylandState,\n\n", .{});
     try writer.print("    const Self = @This();\n\n", .{});
     try generateOpcodes(interface, writer);
-    if (interface.events.len > 0) {
-        try writer.print("    pub const callback_execs = struct {{\n", .{});
-        for (interface.events) |*event| {
-            try generateCallbackExecutor(event, writer);
-        }
-        try writer.print("    }};\n\n", .{});
-    }
     for (interface.enums) |*enum_| {
         try generateEnum(enum_, writer);
     }
@@ -94,43 +87,6 @@ fn generateOpcodes(interface: *const Interface, writer: anytype) !void {
         try writer.print("        }};\n", .{});
     }
     try writer.print("    }};\n\n", .{});
-}
-
-fn generateCallbackExecutor(event: *const Method, writer: anytype) !void {
-    try writer.print("        fn exec", .{});
-    try writeEnumName(event.name, writer);
-    try writer.print(
-        \\Callback(
-        \\            self: *Self,
-        \\            event: []const u8,
-        \\            user_data: *anyopaque,
-        \\            callback: *const anyopaque
-        \\        ) void {{
-        \\
-        , .{});
-    try writer.print("            const typed_fn_ptr: ", .{});
-    try writeEnumName(event.name, writer);
-    try writer.print("Callback = @ptrCast(callback);\n", .{});
-    if (event.args.len > 0) {
-        try writer.print("            const Args = .{{ ", .{});
-        for (event.args) |arg| {
-            try generateArgType(arg.type, writer);
-            try writer.print(", ", .{});
-        }
-        try writer.print("}};\n", .{});
-        try writer.print(
-            \\            const args = self.global.decodeEvent(event, Args);
-            \\
-            , .{});
-    } else {
-        try writer.print("            _ = event;\n", .{});
-    }
-    try writer.print("            typed_fn_ptr(self, user_data", .{});
-    for (event.args, 0..) |_, i| {
-        try writer.print(", args.@\"{d}\"", .{i});
-    }
-    try writer.print(");\n", .{});
-    try writer.print("        }}\n\n", .{});
 }
 
 fn generateRequest(request: *const Method, writer: anytype) !void {
@@ -226,35 +182,38 @@ fn generateEvent(event: *const Method, writer: anytype) !void {
             try writeParsedText(body, "    /// ", writer);
         }
     }
-    try writer.print("    const ", .{});
+    try generateEventStruct(event, writer);
+    try writer.print("    pub fn decode", .{});
     try writeEnumName(event.name, writer);
-    try writer.print("Callback = ", .{});
-    try generateEventCallbackType(event, writer);
-    try writer.print(";\n", .{});
-
-    try writer.print("    pub fn set", .{});
-    try writeEnumName(event.name, writer);
-    try writer.print(
-        \\Callback(self: Self, user_data: *anyopaque, callback: 
-        , .{});
-    try writeEnumName(event.name, writer);
-    try writer.print("Callback) void {{\n", .{});
-    try writer.print(
-        \\        _ = self;
-        \\        _ = user_data;
-        \\        _ = callback;
-        \\
-        , .{});
+    try writer.print("Event(event: []const u8) ", .{});
+    try generateEventStructName(event, writer);
+    try writer.print(" {{\n", .{});
+    try writer.print("        _ = event;\n", .{});
+    try writer.print("        return undefined;\n", .{});
     try writer.print("    }}\n\n", .{});
 }
 
-fn generateEventCallbackType(event: *const Method, writer: anytype) !void {
-    try writer.print("*const fn (Self, *anyopaque", .{});
+fn generateEventStruct(event: *const Method, writer: anytype) !void {
+    try writer.print("    const ", .{});
+    try generateEventStructName(event, writer);
+    try writer.print(
+        \\ = struct {{
+        \\        object: Self,
+        \\
+        , .{});
     for (event.args) |arg| {
-        try writer.print(", ", .{});
+        try writer.print("        ", .{});
+        try writeName(arg.name, writer);
+        try writer.print(": ", .{});
         try generateArgType(arg.type, writer);
+        try writer.print(",\n", .{});
     }
-    try writer.print(") void", .{});
+    try writer.print("    }};\n", .{});
+}
+
+fn generateEventStructName(event: *const Method, writer: anytype) !void {
+    try writeEnumName(event.name, writer);
+    try writer.print("Event", .{});
 }
 
 fn generateArgType(arg_type: Arg.Type, writer: anytype) !void {
