@@ -33,18 +33,19 @@ test "functionality" {
     defer sock.close();
     var global = util.WaylandState.init(sock);
     const display = global.getDisplay();
-    const reg = try display.getRegistry();
+    const reg = try display.getRegistry(&global);
     _ = reg;
-    const sync = try display.sync();
+    const sync = try display.sync(&global);
     _ = sync;
 
     const msg = try global.readEvent();
     const Response = struct {
+        obj: protocol.wl_registry,
         name: u32,
         interface: [:0]const u8,
         version: u32,
     };
-    const resp = global.decodeEvent(msg, Response);
+    const resp = util.decodeEvent(msg, Response);
     std.debug.print(
         \\Response {{
         \\  name = {d},

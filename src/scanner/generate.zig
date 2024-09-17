@@ -46,8 +46,7 @@ fn generateInterface(interface: *const Interface, writer: anytype) !void {
     try writer.print("pub const ", .{});
     try writeName(interface.name, writer);
     try writer.print(" = struct {{\n", .{});
-    try writer.print("    id: u32,\n", .{});
-    try writer.print("    global: *WaylandState,\n\n", .{});
+    try writer.print("    id: u32,\n\n", .{});
     try writer.print("    const Self = @This();\n\n", .{});
     try generateOpcodes(interface, writer);
     for (interface.enums) |*enum_| {
@@ -97,7 +96,7 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
     }
     try writer.print("    pub fn ", .{});
     try writeMethodName(request.name, writer);
-    try writer.print("(self: Self", .{});
+    try writer.print("(self: Self, global: *WaylandState", .{});
 
     const return_obj = newIdArgCount(request) == 1;
     var return_interface: ?[]const u8 = null;
@@ -121,7 +120,7 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
             try writer.print(" {{\n", .{});
 
             try writer.print(
-                \\        const new_id = self.global.nextObjectId();
+                \\        const new_id = global.nextObjectId();
                 \\
                 , .{});
             try writer.print("        const new_obj = ints.", .{});
@@ -129,7 +128,6 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
             try writer.print(
                 \\ {{
                 \\            .id = new_id,
-                \\            .global = self.global,
                 \\        }};
                 \\
                 \\
@@ -138,13 +136,12 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
             try writer.print(") !Object {{\n", .{});
 
             try writer.print(
-                \\        const new_id = self.global.nextObjectId();
+                \\        const new_id = global.nextObjectId();
                 \\
                 , .{});
             try writer.print(
                 \\        const new_obj = Object {{
                 \\            .id = new_id,
-                \\            .global = self.global,
                 \\        }};
                 \\
                 \\
@@ -158,7 +155,7 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
     try writeName(request.name, writer);
     try writer.print(";\n", .{});
 
-    try writer.print("        try self.global.sendRequest(self.id, op, .{{ ", .{});
+    try writer.print("        try global.sendRequest(self.id, op, .{{ ", .{});
     for (request.args) |arg| {
         if ((arg.type == .new_id) and return_obj) {
             try writer.print("new_id, ", .{});

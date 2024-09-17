@@ -28,7 +28,6 @@ const Fixed = enum(i32) {
 
 pub const Object = struct {
     id: u32,
-    global: *WaylandState,
 };
 
 pub const FD = std.posix.fd_t;
@@ -99,45 +98,6 @@ pub const WaylandState = struct {
         }
     }
 
-    /// Decodes the event into the passed struct Type. Note any slices in the struct
-    /// are not owned.
-    pub fn decodeEvent(
-        self: *WaylandState,
-        event: []const u8,
-        Type: type
-    ) Type {
-        const type_info = @typeInfo(Type);
-        if (type_info != .Struct) {
-            @compileError("Not tuple or struct, found " ++ @typeName(Type));
-        }
-
-        var out: Type = undefined;
-        var index: usize = @sizeOf(Header);
-        const fields = type_info.Struct.fields;
-        inline for (fields) |field| {
-            const info = @typeInfo(field.type);
-            const val_ptr = &@field(out, field.name);
-            switch (field.type) {
-                i32 => val_ptr.* = wireDecodeI32(event, &index),
-                u32 => val_ptr.* = wireDecodeU32(event, &index),
-                Fixed => val_ptr.* = wireDecodeFixed(event, &index),
-                []const u8 => val_ptr.* = wireDecodeArray(event, &index),
-                [:0]const u8 => val_ptr.* = wireDecodeString(event, &index).?,
-                ?[:0]const u8 => val_ptr.* = wireDecodeString(event, &index),
-                else => switch (info) {
-                    .Struct => val_ptr.* =
-                        wireDecodeObject(event, &index, self, field.type).?, 
-                    .Optional => val_ptr.* =
-                        wireDecodeObject(event, &index, self, field.type),
-                    .Enum => val_ptr.* =
-                        wireDecodeEnum(event, &index, field.type),
-                    else => @compileError("Invalid type, " ++ field.type),
-                }
-            }
-        }
-        return out;
-    }
-
     /// Gets a reader to the socket stream.
     pub fn reader(self: *WaylandState) Reader {
         return self.socket.reader();
@@ -161,7 +121,6 @@ pub const WaylandState = struct {
     pub fn getDisplay(self: *WaylandState) protocol.wl_display {
         return protocol.wl_display {
             .id = self.nextObjectId(),
-            .global = self,
         };
     }
 };
@@ -175,26 +134,16 @@ pub fn assertObject(comptime ObjType: type) void {
             @compileError(name ++ " is not an object. Not a struct.");
 
         var has_id = false;
-        var has_global = false;
         for (info.Struct.fields) |field| {
             if (std.mem.eql(u8, field.name, "id")) {
                 has_id = true;
                 if (field.type != u32)
                     @compileError(name ++ " is not an object. `id` not u32.");
-            } else if (std.mem.eql(u8, field.name, "global")) {
-                has_global = true;
-                if (field.type != *WaylandState)
-                    @compileError(
-                        name ++ " is not an object. `global` not *WaylandState."
-                    );
             }
         }
 
         if (has_id == false)
             @compileError(name ++ " is not an object. Has no `id` field.");
-
-        if (has_global == false)
-            @compileError(name ++ " is not an object. Has no `global` field.");
     }
 }
 
@@ -203,7 +152,6 @@ pub fn objectFromInterface(interface: anytype) Object {
     comptime assertObject(@TypeOf(interface));
     return Object {
         .id = interface.id,
-        .global = interface.global,
     };
 }
 
@@ -212,7 +160,6 @@ pub fn interfaceFromObject(InterfaceType: type, object: Object) InterfaceType {
     comptime assertObject(InterfaceType);
     return InterfaceType {
         .id = object.id,
-        .global = object.global,
     };
 }
 
@@ -307,6 +254,52 @@ pub fn readEventRaw(
     if (buffer.len < len) return error.EventTooBig;
     try reader.readNoEof(buffer[@sizeOf(Header)..len]);
     return len;
+}
+
+/// Decodes the event into the passed struct Type. Note any slices in the struct
+/// are not owned.
+pub fn decodeEvent(
+    event: []const u8,
+    Type: type
+) Type {
+    const type_info = @typeInfo(Type);
+    if (type_info != .Struct) {
+        @compileError("Not tuple or struct, found " ++ @typeName(Type));
+    }
+
+    var out: Type = undefined;
+    var index: usize = @sizeOf(Header);
+    const fields = type_info.Struct.fields;
+    inline for (fields, 0..) |field, i| {
+        const info = @typeInfo(field.type);
+        const val_ptr = &@field(out, field.name);
+        if (i == 0) {
+            if (info != .Struct)
+                @compileError("First field must be an object.");
+            assertObject(field.type);
+            var id_i: usize = 0;
+            val_ptr.* = wireDecodeObject(event, &id_i, field.type).?;
+            continue;
+        }
+        switch (field.type) {
+            i32 => val_ptr.* = wireDecodeI32(event, &index),
+            u32 => val_ptr.* = wireDecodeU32(event, &index),
+            Fixed => val_ptr.* = wireDecodeFixed(event, &index),
+            []const u8 => val_ptr.* = wireDecodeArray(event, &index),
+            [:0]const u8 => val_ptr.* = wireDecodeString(event, &index).?,
+            ?[:0]const u8 => val_ptr.* = wireDecodeString(event, &index),
+            else => switch (info) {
+                .Struct => val_ptr.* =
+                    wireDecodeObject(event, &index, field.type).?, 
+                .Optional => val_ptr.* =
+                    wireDecodeObject(event, &index, field.type),
+                .Enum => val_ptr.* =
+                    wireDecodeEnum(event, &index, field.type),
+                else => @compileError("Invalid type, " ++ field.type),
+            }
+        }
+    }
+    return out;
 }
 
 fn wireWriteHeader(writer: anytype, header: Header) !void {
@@ -409,7 +402,6 @@ fn wireDecodeString(bytes: []const u8, start: *usize) ?[:0]const u8 {
 fn wireDecodeObject(
     bytes: []const u8,
     start: *usize,
-    global: *WaylandState,
     ObjType: type
 ) ?ObjType {
     assertObject(ObjType);
@@ -417,7 +409,6 @@ fn wireDecodeObject(
     if (id == 0) return null;
     return ObjType {
         .id = id,
-        .global = global,
     };
 }
 
