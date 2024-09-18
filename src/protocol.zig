@@ -34,6 +34,7 @@ const FD = util.FD;
 const WaylandState = util.WaylandState;
 const decodeEvent = util.decodeEvent;
 const DecodeError = util.DecodeError;
+const AnonymousEvent = util.AnonymousEvent;
 
 
 /// The core global object.  This is a special singleton object.  It
@@ -118,7 +119,7 @@ pub const wl_display = struct {
         code: u32,
         message: [:0]const u8,
     };
-    pub fn decodeErrorEvent(event: []const u8) DecodeError!ErrorEvent {
+    pub fn decodeErrorEvent(event: AnonymousEvent) DecodeError!ErrorEvent {
         return try decodeEvent(event, ErrorEvent);
     }
 
@@ -131,7 +132,7 @@ pub const wl_display = struct {
         object: Self,
         id: u32,
     };
-    pub fn decodeDeleteIdEvent(event: []const u8) DecodeError!DeleteIdEvent {
+    pub fn decodeDeleteIdEvent(event: AnonymousEvent) DecodeError!DeleteIdEvent {
         return try decodeEvent(event, DeleteIdEvent);
     }
 
@@ -196,7 +197,7 @@ pub const wl_registry = struct {
         interface: [:0]const u8,
         version: u32,
     };
-    pub fn decodeGlobalEvent(event: []const u8) DecodeError!GlobalEvent {
+    pub fn decodeGlobalEvent(event: AnonymousEvent) DecodeError!GlobalEvent {
         return try decodeEvent(event, GlobalEvent);
     }
 
@@ -214,7 +215,7 @@ pub const wl_registry = struct {
         object: Self,
         name: u32,
     };
-    pub fn decodeGlobalRemoveEvent(event: []const u8) DecodeError!GlobalRemoveEvent {
+    pub fn decodeGlobalRemoveEvent(event: AnonymousEvent) DecodeError!GlobalRemoveEvent {
         return try decodeEvent(event, GlobalRemoveEvent);
     }
 
@@ -241,7 +242,7 @@ pub const wl_callback = struct {
         object: Self,
         callback_data: u32,
     };
-    pub fn decodeDoneEvent(event: []const u8) DecodeError!DoneEvent {
+    pub fn decodeDoneEvent(event: AnonymousEvent) DecodeError!DoneEvent {
         return try decodeEvent(event, DoneEvent);
     }
 
@@ -558,7 +559,7 @@ pub const wl_shm = struct {
         object: Self,
         format: Format,
     };
-    pub fn decodeFormatEvent(event: []const u8) DecodeError!FormatEvent {
+    pub fn decodeFormatEvent(event: AnonymousEvent) DecodeError!FormatEvent {
         return try decodeEvent(event, FormatEvent);
     }
 
@@ -617,7 +618,7 @@ pub const wl_buffer = struct {
     const ReleaseEvent = struct {
         object: Self,
     };
-    pub fn decodeReleaseEvent(event: []const u8) DecodeError!ReleaseEvent {
+    pub fn decodeReleaseEvent(event: AnonymousEvent) DecodeError!ReleaseEvent {
         return try decodeEvent(event, ReleaseEvent);
     }
 
@@ -762,7 +763,7 @@ pub const wl_data_offer = struct {
         object: Self,
         mime_type: [:0]const u8,
     };
-    pub fn decodeOfferEvent(event: []const u8) DecodeError!OfferEvent {
+    pub fn decodeOfferEvent(event: AnonymousEvent) DecodeError!OfferEvent {
         return try decodeEvent(event, OfferEvent);
     }
 
@@ -774,7 +775,7 @@ pub const wl_data_offer = struct {
         object: Self,
         source_actions: ints.wl_data_device_manager.DndAction,
     };
-    pub fn decodeSourceActionsEvent(event: []const u8) DecodeError!SourceActionsEvent {
+    pub fn decodeSourceActionsEvent(event: AnonymousEvent) DecodeError!SourceActionsEvent {
         return try decodeEvent(event, SourceActionsEvent);
     }
 
@@ -817,7 +818,7 @@ pub const wl_data_offer = struct {
         object: Self,
         dnd_action: ints.wl_data_device_manager.DndAction,
     };
-    pub fn decodeActionEvent(event: []const u8) DecodeError!ActionEvent {
+    pub fn decodeActionEvent(event: AnonymousEvent) DecodeError!ActionEvent {
         return try decodeEvent(event, ActionEvent);
     }
 
@@ -893,7 +894,7 @@ pub const wl_data_source = struct {
         object: Self,
         mime_type: ?[:0]const u8,
     };
-    pub fn decodeTargetEvent(event: []const u8) DecodeError!TargetEvent {
+    pub fn decodeTargetEvent(event: AnonymousEvent) DecodeError!TargetEvent {
         return try decodeEvent(event, TargetEvent);
     }
 
@@ -905,7 +906,7 @@ pub const wl_data_source = struct {
         mime_type: [:0]const u8,
         fd: FD,
     };
-    pub fn decodeSendEvent(event: []const u8) DecodeError!SendEvent {
+    pub fn decodeSendEvent(event: AnonymousEvent) DecodeError!SendEvent {
         return try decodeEvent(event, SendEvent);
     }
 
@@ -932,7 +933,7 @@ pub const wl_data_source = struct {
     const CancelledEvent = struct {
         object: Self,
     };
-    pub fn decodeCancelledEvent(event: []const u8) DecodeError!CancelledEvent {
+    pub fn decodeCancelledEvent(event: AnonymousEvent) DecodeError!CancelledEvent {
         return try decodeEvent(event, CancelledEvent);
     }
 
@@ -948,7 +949,7 @@ pub const wl_data_source = struct {
     const DndDropPerformedEvent = struct {
         object: Self,
     };
-    pub fn decodeDndDropPerformedEvent(event: []const u8) DecodeError!DndDropPerformedEvent {
+    pub fn decodeDndDropPerformedEvent(event: AnonymousEvent) DecodeError!DndDropPerformedEvent {
         return try decodeEvent(event, DndDropPerformedEvent);
     }
 
@@ -961,7 +962,7 @@ pub const wl_data_source = struct {
     const DndFinishedEvent = struct {
         object: Self,
     };
-    pub fn decodeDndFinishedEvent(event: []const u8) DecodeError!DndFinishedEvent {
+    pub fn decodeDndFinishedEvent(event: AnonymousEvent) DecodeError!DndFinishedEvent {
         return try decodeEvent(event, DndFinishedEvent);
     }
 
@@ -994,7 +995,7 @@ pub const wl_data_source = struct {
         object: Self,
         dnd_action: ints.wl_data_device_manager.DndAction,
     };
-    pub fn decodeActionEvent(event: []const u8) DecodeError!ActionEvent {
+    pub fn decodeActionEvent(event: AnonymousEvent) DecodeError!ActionEvent {
         return try decodeEvent(event, ActionEvent);
     }
 
@@ -1095,7 +1096,7 @@ pub const wl_data_device = struct {
         object: Self,
         id: ints.wl_data_offer,
     };
-    pub fn decodeDataOfferEvent(event: []const u8) DecodeError!DataOfferEvent {
+    pub fn decodeDataOfferEvent(event: AnonymousEvent) DecodeError!DataOfferEvent {
         return try decodeEvent(event, DataOfferEvent);
     }
 
@@ -1111,7 +1112,7 @@ pub const wl_data_device = struct {
         y: Fixed,
         id: ?ints.wl_data_offer,
     };
-    pub fn decodeEnterEvent(event: []const u8) DecodeError!EnterEvent {
+    pub fn decodeEnterEvent(event: AnonymousEvent) DecodeError!EnterEvent {
         return try decodeEvent(event, EnterEvent);
     }
 
@@ -1121,7 +1122,7 @@ pub const wl_data_device = struct {
     const LeaveEvent = struct {
         object: Self,
     };
-    pub fn decodeLeaveEvent(event: []const u8) DecodeError!LeaveEvent {
+    pub fn decodeLeaveEvent(event: AnonymousEvent) DecodeError!LeaveEvent {
         return try decodeEvent(event, LeaveEvent);
     }
 
@@ -1135,7 +1136,7 @@ pub const wl_data_device = struct {
         x: Fixed,
         y: Fixed,
     };
-    pub fn decodeMotionEvent(event: []const u8) DecodeError!MotionEvent {
+    pub fn decodeMotionEvent(event: AnonymousEvent) DecodeError!MotionEvent {
         return try decodeEvent(event, MotionEvent);
     }
 
@@ -1155,7 +1156,7 @@ pub const wl_data_device = struct {
     const DropEvent = struct {
         object: Self,
     };
-    pub fn decodeDropEvent(event: []const u8) DecodeError!DropEvent {
+    pub fn decodeDropEvent(event: AnonymousEvent) DecodeError!DropEvent {
         return try decodeEvent(event, DropEvent);
     }
 
@@ -1175,7 +1176,7 @@ pub const wl_data_device = struct {
         object: Self,
         id: ?ints.wl_data_offer,
     };
-    pub fn decodeSelectionEvent(event: []const u8) DecodeError!SelectionEvent {
+    pub fn decodeSelectionEvent(event: AnonymousEvent) DecodeError!SelectionEvent {
         return try decodeEvent(event, SelectionEvent);
     }
 
@@ -1530,7 +1531,7 @@ pub const wl_shell_surface = struct {
         object: Self,
         serial: u32,
     };
-    pub fn decodePingEvent(event: []const u8) DecodeError!PingEvent {
+    pub fn decodePingEvent(event: AnonymousEvent) DecodeError!PingEvent {
         return try decodeEvent(event, PingEvent);
     }
 
@@ -1557,7 +1558,7 @@ pub const wl_shell_surface = struct {
         width: i32,
         height: i32,
     };
-    pub fn decodeConfigureEvent(event: []const u8) DecodeError!ConfigureEvent {
+    pub fn decodeConfigureEvent(event: AnonymousEvent) DecodeError!ConfigureEvent {
         return try decodeEvent(event, ConfigureEvent);
     }
 
@@ -1567,7 +1568,7 @@ pub const wl_shell_surface = struct {
     const PopupDoneEvent = struct {
         object: Self,
     };
-    pub fn decodePopupDoneEvent(event: []const u8) DecodeError!PopupDoneEvent {
+    pub fn decodePopupDoneEvent(event: AnonymousEvent) DecodeError!PopupDoneEvent {
         return try decodeEvent(event, PopupDoneEvent);
     }
 
@@ -2002,7 +2003,7 @@ pub const wl_surface = struct {
         object: Self,
         output: ints.wl_output,
     };
-    pub fn decodeEnterEvent(event: []const u8) DecodeError!EnterEvent {
+    pub fn decodeEnterEvent(event: AnonymousEvent) DecodeError!EnterEvent {
         return try decodeEvent(event, EnterEvent);
     }
 
@@ -2019,7 +2020,7 @@ pub const wl_surface = struct {
         object: Self,
         output: ints.wl_output,
     };
-    pub fn decodeLeaveEvent(event: []const u8) DecodeError!LeaveEvent {
+    pub fn decodeLeaveEvent(event: AnonymousEvent) DecodeError!LeaveEvent {
         return try decodeEvent(event, LeaveEvent);
     }
 
@@ -2039,7 +2040,7 @@ pub const wl_surface = struct {
         object: Self,
         factor: i32,
     };
-    pub fn decodePreferredBufferScaleEvent(event: []const u8) DecodeError!PreferredBufferScaleEvent {
+    pub fn decodePreferredBufferScaleEvent(event: AnonymousEvent) DecodeError!PreferredBufferScaleEvent {
         return try decodeEvent(event, PreferredBufferScaleEvent);
     }
 
@@ -2056,7 +2057,7 @@ pub const wl_surface = struct {
         object: Self,
         transform: ints.wl_output.Transform,
     };
-    pub fn decodePreferredBufferTransformEvent(event: []const u8) DecodeError!PreferredBufferTransformEvent {
+    pub fn decodePreferredBufferTransformEvent(event: AnonymousEvent) DecodeError!PreferredBufferTransformEvent {
         return try decodeEvent(event, PreferredBufferTransformEvent);
     }
 
@@ -2189,7 +2190,7 @@ pub const wl_seat = struct {
         object: Self,
         capabilities: Capability,
     };
-    pub fn decodeCapabilitiesEvent(event: []const u8) DecodeError!CapabilitiesEvent {
+    pub fn decodeCapabilitiesEvent(event: AnonymousEvent) DecodeError!CapabilitiesEvent {
         return try decodeEvent(event, CapabilitiesEvent);
     }
 
@@ -2213,7 +2214,7 @@ pub const wl_seat = struct {
         object: Self,
         name: [:0]const u8,
     };
-    pub fn decodeNameEvent(event: []const u8) DecodeError!NameEvent {
+    pub fn decodeNameEvent(event: AnonymousEvent) DecodeError!NameEvent {
         return try decodeEvent(event, NameEvent);
     }
 
@@ -2360,7 +2361,7 @@ pub const wl_pointer = struct {
         surface_x: Fixed,
         surface_y: Fixed,
     };
-    pub fn decodeEnterEvent(event: []const u8) DecodeError!EnterEvent {
+    pub fn decodeEnterEvent(event: AnonymousEvent) DecodeError!EnterEvent {
         return try decodeEvent(event, EnterEvent);
     }
 
@@ -2374,7 +2375,7 @@ pub const wl_pointer = struct {
         serial: u32,
         surface: ints.wl_surface,
     };
-    pub fn decodeLeaveEvent(event: []const u8) DecodeError!LeaveEvent {
+    pub fn decodeLeaveEvent(event: AnonymousEvent) DecodeError!LeaveEvent {
         return try decodeEvent(event, LeaveEvent);
     }
 
@@ -2387,7 +2388,7 @@ pub const wl_pointer = struct {
         surface_x: Fixed,
         surface_y: Fixed,
     };
-    pub fn decodeMotionEvent(event: []const u8) DecodeError!MotionEvent {
+    pub fn decodeMotionEvent(event: AnonymousEvent) DecodeError!MotionEvent {
         return try decodeEvent(event, MotionEvent);
     }
 
@@ -2412,7 +2413,7 @@ pub const wl_pointer = struct {
         button: u32,
         state: ButtonState,
     };
-    pub fn decodeButtonEvent(event: []const u8) DecodeError!ButtonEvent {
+    pub fn decodeButtonEvent(event: AnonymousEvent) DecodeError!ButtonEvent {
         return try decodeEvent(event, ButtonEvent);
     }
 
@@ -2438,7 +2439,7 @@ pub const wl_pointer = struct {
         axis: Axis,
         value: Fixed,
     };
-    pub fn decodeAxisEvent(event: []const u8) DecodeError!AxisEvent {
+    pub fn decodeAxisEvent(event: AnonymousEvent) DecodeError!AxisEvent {
         return try decodeEvent(event, AxisEvent);
     }
 
@@ -2479,7 +2480,7 @@ pub const wl_pointer = struct {
     const FrameEvent = struct {
         object: Self,
     };
-    pub fn decodeFrameEvent(event: []const u8) DecodeError!FrameEvent {
+    pub fn decodeFrameEvent(event: AnonymousEvent) DecodeError!FrameEvent {
         return try decodeEvent(event, FrameEvent);
     }
 
@@ -2512,7 +2513,7 @@ pub const wl_pointer = struct {
         object: Self,
         axis_source: AxisSource,
     };
-    pub fn decodeAxisSourceEvent(event: []const u8) DecodeError!AxisSourceEvent {
+    pub fn decodeAxisSourceEvent(event: AnonymousEvent) DecodeError!AxisSourceEvent {
         return try decodeEvent(event, AxisSourceEvent);
     }
 
@@ -2535,7 +2536,7 @@ pub const wl_pointer = struct {
         time: u32,
         axis: Axis,
     };
-    pub fn decodeAxisStopEvent(event: []const u8) DecodeError!AxisStopEvent {
+    pub fn decodeAxisStopEvent(event: AnonymousEvent) DecodeError!AxisStopEvent {
         return try decodeEvent(event, AxisStopEvent);
     }
 
@@ -2574,7 +2575,7 @@ pub const wl_pointer = struct {
         axis: Axis,
         discrete: i32,
     };
-    pub fn decodeAxisDiscreteEvent(event: []const u8) DecodeError!AxisDiscreteEvent {
+    pub fn decodeAxisDiscreteEvent(event: AnonymousEvent) DecodeError!AxisDiscreteEvent {
         return try decodeEvent(event, AxisDiscreteEvent);
     }
 
@@ -2604,7 +2605,7 @@ pub const wl_pointer = struct {
         axis: Axis,
         value120: i32,
     };
-    pub fn decodeAxisValue120Event(event: []const u8) DecodeError!AxisValue120Event {
+    pub fn decodeAxisValue120Event(event: AnonymousEvent) DecodeError!AxisValue120Event {
         return try decodeEvent(event, AxisValue120Event);
     }
 
@@ -2648,7 +2649,7 @@ pub const wl_pointer = struct {
         axis: Axis,
         direction: AxisRelativeDirection,
     };
-    pub fn decodeAxisRelativeDirectionEvent(event: []const u8) DecodeError!AxisRelativeDirectionEvent {
+    pub fn decodeAxisRelativeDirectionEvent(event: AnonymousEvent) DecodeError!AxisRelativeDirectionEvent {
         return try decodeEvent(event, AxisRelativeDirectionEvent);
     }
 
@@ -2715,7 +2716,7 @@ pub const wl_keyboard = struct {
         fd: FD,
         size: u32,
     };
-    pub fn decodeKeymapEvent(event: []const u8) DecodeError!KeymapEvent {
+    pub fn decodeKeymapEvent(event: AnonymousEvent) DecodeError!KeymapEvent {
         return try decodeEvent(event, KeymapEvent);
     }
 
@@ -2735,7 +2736,7 @@ pub const wl_keyboard = struct {
         surface: ints.wl_surface,
         keys: []const u8,
     };
-    pub fn decodeEnterEvent(event: []const u8) DecodeError!EnterEvent {
+    pub fn decodeEnterEvent(event: AnonymousEvent) DecodeError!EnterEvent {
         return try decodeEvent(event, EnterEvent);
     }
 
@@ -2754,7 +2755,7 @@ pub const wl_keyboard = struct {
         serial: u32,
         surface: ints.wl_surface,
     };
-    pub fn decodeLeaveEvent(event: []const u8) DecodeError!LeaveEvent {
+    pub fn decodeLeaveEvent(event: AnonymousEvent) DecodeError!LeaveEvent {
         return try decodeEvent(event, LeaveEvent);
     }
 
@@ -2783,7 +2784,7 @@ pub const wl_keyboard = struct {
         key: u32,
         state: KeyState,
     };
-    pub fn decodeKeyEvent(event: []const u8) DecodeError!KeyEvent {
+    pub fn decodeKeyEvent(event: AnonymousEvent) DecodeError!KeyEvent {
         return try decodeEvent(event, KeyEvent);
     }
 
@@ -2808,7 +2809,7 @@ pub const wl_keyboard = struct {
         mods_locked: u32,
         group: u32,
     };
-    pub fn decodeModifiersEvent(event: []const u8) DecodeError!ModifiersEvent {
+    pub fn decodeModifiersEvent(event: AnonymousEvent) DecodeError!ModifiersEvent {
         return try decodeEvent(event, ModifiersEvent);
     }
 
@@ -2829,7 +2830,7 @@ pub const wl_keyboard = struct {
         rate: i32,
         delay: i32,
     };
-    pub fn decodeRepeatInfoEvent(event: []const u8) DecodeError!RepeatInfoEvent {
+    pub fn decodeRepeatInfoEvent(event: AnonymousEvent) DecodeError!RepeatInfoEvent {
         return try decodeEvent(event, RepeatInfoEvent);
     }
 
@@ -2881,7 +2882,7 @@ pub const wl_touch = struct {
         x: Fixed,
         y: Fixed,
     };
-    pub fn decodeDownEvent(event: []const u8) DecodeError!DownEvent {
+    pub fn decodeDownEvent(event: AnonymousEvent) DecodeError!DownEvent {
         return try decodeEvent(event, DownEvent);
     }
 
@@ -2894,7 +2895,7 @@ pub const wl_touch = struct {
         time: u32,
         id: i32,
     };
-    pub fn decodeUpEvent(event: []const u8) DecodeError!UpEvent {
+    pub fn decodeUpEvent(event: AnonymousEvent) DecodeError!UpEvent {
         return try decodeEvent(event, UpEvent);
     }
 
@@ -2906,7 +2907,7 @@ pub const wl_touch = struct {
         x: Fixed,
         y: Fixed,
     };
-    pub fn decodeMotionEvent(event: []const u8) DecodeError!MotionEvent {
+    pub fn decodeMotionEvent(event: AnonymousEvent) DecodeError!MotionEvent {
         return try decodeEvent(event, MotionEvent);
     }
 
@@ -2921,7 +2922,7 @@ pub const wl_touch = struct {
     const FrameEvent = struct {
         object: Self,
     };
-    pub fn decodeFrameEvent(event: []const u8) DecodeError!FrameEvent {
+    pub fn decodeFrameEvent(event: AnonymousEvent) DecodeError!FrameEvent {
         return try decodeEvent(event, FrameEvent);
     }
 
@@ -2936,7 +2937,7 @@ pub const wl_touch = struct {
     const CancelEvent = struct {
         object: Self,
     };
-    pub fn decodeCancelEvent(event: []const u8) DecodeError!CancelEvent {
+    pub fn decodeCancelEvent(event: AnonymousEvent) DecodeError!CancelEvent {
         return try decodeEvent(event, CancelEvent);
     }
 
@@ -2971,7 +2972,7 @@ pub const wl_touch = struct {
         major: Fixed,
         minor: Fixed,
     };
-    pub fn decodeShapeEvent(event: []const u8) DecodeError!ShapeEvent {
+    pub fn decodeShapeEvent(event: AnonymousEvent) DecodeError!ShapeEvent {
         return try decodeEvent(event, ShapeEvent);
     }
 
@@ -3003,7 +3004,7 @@ pub const wl_touch = struct {
         id: i32,
         orientation: Fixed,
     };
-    pub fn decodeOrientationEvent(event: []const u8) DecodeError!OrientationEvent {
+    pub fn decodeOrientationEvent(event: AnonymousEvent) DecodeError!OrientationEvent {
         return try decodeEvent(event, OrientationEvent);
     }
 
@@ -3111,7 +3112,7 @@ pub const wl_output = struct {
         model: [:0]const u8,
         transform: Transform,
     };
-    pub fn decodeGeometryEvent(event: []const u8) DecodeError!GeometryEvent {
+    pub fn decodeGeometryEvent(event: AnonymousEvent) DecodeError!GeometryEvent {
         return try decodeEvent(event, GeometryEvent);
     }
 
@@ -3155,7 +3156,7 @@ pub const wl_output = struct {
         height: i32,
         refresh: i32,
     };
-    pub fn decodeModeEvent(event: []const u8) DecodeError!ModeEvent {
+    pub fn decodeModeEvent(event: AnonymousEvent) DecodeError!ModeEvent {
         return try decodeEvent(event, ModeEvent);
     }
 
@@ -3167,7 +3168,7 @@ pub const wl_output = struct {
     const DoneEvent = struct {
         object: Self,
     };
-    pub fn decodeDoneEvent(event: []const u8) DecodeError!DoneEvent {
+    pub fn decodeDoneEvent(event: AnonymousEvent) DecodeError!DoneEvent {
         return try decodeEvent(event, DoneEvent);
     }
 
@@ -3193,7 +3194,7 @@ pub const wl_output = struct {
         object: Self,
         factor: i32,
     };
-    pub fn decodeScaleEvent(event: []const u8) DecodeError!ScaleEvent {
+    pub fn decodeScaleEvent(event: AnonymousEvent) DecodeError!ScaleEvent {
         return try decodeEvent(event, ScaleEvent);
     }
 
@@ -3229,7 +3230,7 @@ pub const wl_output = struct {
         object: Self,
         name: [:0]const u8,
     };
-    pub fn decodeNameEvent(event: []const u8) DecodeError!NameEvent {
+    pub fn decodeNameEvent(event: AnonymousEvent) DecodeError!NameEvent {
         return try decodeEvent(event, NameEvent);
     }
 
@@ -3251,7 +3252,7 @@ pub const wl_output = struct {
         object: Self,
         description: [:0]const u8,
     };
-    pub fn decodeDescriptionEvent(event: []const u8) DecodeError!DescriptionEvent {
+    pub fn decodeDescriptionEvent(event: AnonymousEvent) DecodeError!DescriptionEvent {
         return try decodeEvent(event, DescriptionEvent);
     }
 

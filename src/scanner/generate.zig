@@ -32,7 +32,8 @@ pub fn generateProtocol(
     try writer.print("const FD = util.FD;\n", .{});
     try writer.print("const WaylandState = util.WaylandState;\n", .{});
     try writer.print("const decodeEvent = util.decodeEvent;\n", .{});
-    try writer.print("const DecodeError = util.DecodeError;\n\n\n", .{});
+    try writer.print("const DecodeError = util.DecodeError;\n", .{});
+    try writer.print("const AnonymousEvent = util.AnonymousEvent;\n\n\n", .{});
 
     for (protocol.interfaces) |*interface| {
         try generateInterface(interface, writer);
@@ -184,7 +185,7 @@ fn generateEvent(event: *const Method, writer: anytype) !void {
     try generateEventStruct(event, writer);
     try writer.print("    pub fn decode", .{});
     try writeEnumName(event.name, writer);
-    try writer.print("Event(event: []const u8) DecodeError!", .{});
+    try writer.print("Event(event: AnonymousEvent) DecodeError!", .{});
     try generateEventStructName(event, writer);
     try writer.print(" {{\n", .{});
     try writer.print("        return try decodeEvent(event, ", .{});
