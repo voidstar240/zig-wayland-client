@@ -102,12 +102,11 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
     try writer.print("(self: Self, global: *WaylandState", .{});
 
     const return_obj = newIdArgCount(request) == 1;
-    var return_interface: ?[]const u8 = null;
+    var return_arg: Arg = undefined;
     for (request.args) |arg| {
         if (arg.type == .new_id) {
             if (return_obj) {
-                return_interface = arg.type.new_id.interface;
-                continue;
+                return_arg = arg;
             }
         }
         try writer.print(", ", .{});
@@ -117,38 +116,25 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
     }
 
     if (return_obj) {
-        if (return_interface) |name| {
+        if (return_arg.type.new_id.interface) |name| {
             try writer.print(") !ints.", .{});
             try writeName(name, writer);
             try writer.print(" {{\n", .{});
 
-            try writer.print(
-                \\        const new_id = global.nextObjectId();
-                \\
-                , .{});
             try writer.print("        const new_obj = ints.", .{});
             try writeName(name, writer);
-            try writer.print(
-                \\ {{
-                \\            .id = new_id,
-                \\        }};
-                \\
-                \\
-                , .{});
+            try writer.print(" {{\n            .id = ", .{});
+            try writeName(return_arg.name, writer);
+            try writer.print(",\n        }};\n\n", .{});
         } else {
             try writer.print(") !Object {{\n", .{});
 
             try writer.print(
-                \\        const new_id = global.nextObjectId();
-                \\
-                , .{});
-            try writer.print(
                 \\        const new_obj = Object {{
-                \\            .id = new_id,
-                \\        }};
-                \\
-                \\
+                \\            .id = 
                 , .{});
+            try writeName(return_arg.name, writer);
+            try writer.print(",\n        }};\n\n", .{});
         }
     } else {
         try writer.print(") !void {{\n", .{}); // TODO return specific error
@@ -160,10 +146,6 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
 
     try writer.print("        try global.sendRequest(self.id, op, .{{ ", .{});
     for (request.args) |arg| {
-        if ((arg.type == .new_id) and return_obj) {
-            try writer.print("new_id, ", .{});
-            continue;
-        }
         try writeName(arg.name, writer);
         try writer.print(", ", .{});
     }
@@ -239,14 +221,7 @@ fn generateArgType(arg_type: Arg.Type, writer: anytype) !void {
                 try writer.print("Object", .{});
             }
         },
-        .new_id => |meta| {
-            if (meta.interface) |interface| {
-                try writer.print("ints.", .{});
-                try writeName(interface, writer);
-            } else {
-                try writer.print("Object", .{});
-            }
-        },
+        .new_id => try writer.print("u32", .{}),
         .enum_ => |meta| {
             if (std.mem.indexOfScalar(u8, meta.enum_name, '.')) |i| {
                 try writer.print("ints.", .{});

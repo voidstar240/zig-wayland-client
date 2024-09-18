@@ -38,7 +38,6 @@ pub const WaylandState = struct {
     write_end: usize,
     read_buffer: [4096]u8 align(@alignOf(*anyopaque)),
     auto_flush: bool,
-    next_id: u32,
 
     const Writer = GenericWriter(*WaylandState, Stream.WriteError, write);
     const Reader = GenericReader(Stream, Stream.ReadError, Stream.read);
@@ -51,7 +50,6 @@ pub const WaylandState = struct {
             .write_end = 0,
             .read_buffer = undefined,
             .auto_flush = true,
-            .next_id = 1,
         };
     }
 
@@ -115,16 +113,10 @@ pub const WaylandState = struct {
         };
     }
 
-    /// Gets an unused ID that can be allocated to a new object.
-    pub fn nextObjectId(self: *WaylandState) u32 {
-        defer self.next_id += 1;
-        return self.next_id;
-    }
-
     /// Gets the global wl_display object.
-    pub fn getDisplay(self: *WaylandState) protocol.wl_display {
+    pub fn getDisplay() protocol.wl_display {
         return protocol.wl_display {
-            .id = self.nextObjectId(),
+            .id = 1,
         };
     }
 };

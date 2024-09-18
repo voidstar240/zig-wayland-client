@@ -15,7 +15,8 @@ pub fn connectToSocket() !std.net.Stream {
         len = sock_name.len;
     } else {
         // concat XDG_RUNTIME_DIR and sock_name to get path
-        const sock_dir = std.posix.getenv("XDG_RUNTIME_DIR") orelse return error.RuntimeDirNotSet;
+        const sock_dir = std.posix.getenv("XDG_RUNTIME_DIR")
+            orelse return error.RuntimeDirNotSet;
         len = sock_dir.len + 1 + sock_name.len;
         if (len > path.len) return error.SocketPathTooLong;
         @memcpy(path[0..sock_dir.len], sock_dir);
@@ -32,10 +33,10 @@ test "functionality" {
     const sock = try connectToSocket();
     defer sock.close();
     var global = util.WaylandState.init(sock);
-    const display = global.getDisplay();
-    const reg = try display.getRegistry(&global);
+    const display = util.WaylandState.getDisplay();
+    const reg = try display.getRegistry(&global, 2);
     _ = reg;
-    const sync = try display.sync(&global);
+    const sync = try display.sync(&global, 3);
     _ = sync;
 
     const msg = try global.readEvent();
