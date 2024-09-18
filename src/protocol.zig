@@ -33,6 +33,7 @@ const Fixed = util.Fixed;
 const FD = util.FD;
 const WaylandState = util.WaylandState;
 const decodeEvent = util.decodeEvent;
+const DecodeError = util.DecodeError;
 
 
 /// The core global object.  This is a special singleton object.  It
@@ -117,8 +118,8 @@ pub const wl_display = struct {
         code: u32,
         message: [:0]const u8,
     };
-    pub fn decodeErrorEvent(event: []const u8) ErrorEvent {
-        return decodeEvent(event, ErrorEvent);
+    pub fn decodeErrorEvent(event: []const u8) DecodeError!ErrorEvent {
+        return try decodeEvent(event, ErrorEvent);
     }
 
     /// This event is used internally by the object ID management
@@ -130,8 +131,8 @@ pub const wl_display = struct {
         object: Self,
         id: u32,
     };
-    pub fn decodeDeleteIdEvent(event: []const u8) DeleteIdEvent {
-        return decodeEvent(event, DeleteIdEvent);
+    pub fn decodeDeleteIdEvent(event: []const u8) DecodeError!DeleteIdEvent {
+        return try decodeEvent(event, DeleteIdEvent);
     }
 
 };
@@ -195,8 +196,8 @@ pub const wl_registry = struct {
         interface: [:0]const u8,
         version: u32,
     };
-    pub fn decodeGlobalEvent(event: []const u8) GlobalEvent {
-        return decodeEvent(event, GlobalEvent);
+    pub fn decodeGlobalEvent(event: []const u8) DecodeError!GlobalEvent {
+        return try decodeEvent(event, GlobalEvent);
     }
 
     /// Notify the client of removed global objects.
@@ -213,8 +214,8 @@ pub const wl_registry = struct {
         object: Self,
         name: u32,
     };
-    pub fn decodeGlobalRemoveEvent(event: []const u8) GlobalRemoveEvent {
-        return decodeEvent(event, GlobalRemoveEvent);
+    pub fn decodeGlobalRemoveEvent(event: []const u8) DecodeError!GlobalRemoveEvent {
+        return try decodeEvent(event, GlobalRemoveEvent);
     }
 
 };
@@ -240,8 +241,8 @@ pub const wl_callback = struct {
         object: Self,
         callback_data: u32,
     };
-    pub fn decodeDoneEvent(event: []const u8) DoneEvent {
-        return decodeEvent(event, DoneEvent);
+    pub fn decodeDoneEvent(event: []const u8) DecodeError!DoneEvent {
+        return try decodeEvent(event, DoneEvent);
     }
 
 };
@@ -557,8 +558,8 @@ pub const wl_shm = struct {
         object: Self,
         format: Format,
     };
-    pub fn decodeFormatEvent(event: []const u8) FormatEvent {
-        return decodeEvent(event, FormatEvent);
+    pub fn decodeFormatEvent(event: []const u8) DecodeError!FormatEvent {
+        return try decodeEvent(event, FormatEvent);
     }
 
 };
@@ -616,8 +617,8 @@ pub const wl_buffer = struct {
     const ReleaseEvent = struct {
         object: Self,
     };
-    pub fn decodeReleaseEvent(event: []const u8) ReleaseEvent {
-        return decodeEvent(event, ReleaseEvent);
+    pub fn decodeReleaseEvent(event: []const u8) DecodeError!ReleaseEvent {
+        return try decodeEvent(event, ReleaseEvent);
     }
 
 };
@@ -761,8 +762,8 @@ pub const wl_data_offer = struct {
         object: Self,
         mime_type: [:0]const u8,
     };
-    pub fn decodeOfferEvent(event: []const u8) OfferEvent {
-        return decodeEvent(event, OfferEvent);
+    pub fn decodeOfferEvent(event: []const u8) DecodeError!OfferEvent {
+        return try decodeEvent(event, OfferEvent);
     }
 
     /// This event indicates the actions offered by the data source. It
@@ -773,8 +774,8 @@ pub const wl_data_offer = struct {
         object: Self,
         source_actions: ints.wl_data_device_manager.DndAction,
     };
-    pub fn decodeSourceActionsEvent(event: []const u8) SourceActionsEvent {
-        return decodeEvent(event, SourceActionsEvent);
+    pub fn decodeSourceActionsEvent(event: []const u8) DecodeError!SourceActionsEvent {
+        return try decodeEvent(event, SourceActionsEvent);
     }
 
     /// This event indicates the action selected by the compositor after
@@ -816,8 +817,8 @@ pub const wl_data_offer = struct {
         object: Self,
         dnd_action: ints.wl_data_device_manager.DndAction,
     };
-    pub fn decodeActionEvent(event: []const u8) ActionEvent {
-        return decodeEvent(event, ActionEvent);
+    pub fn decodeActionEvent(event: []const u8) DecodeError!ActionEvent {
+        return try decodeEvent(event, ActionEvent);
     }
 
 };
@@ -892,8 +893,8 @@ pub const wl_data_source = struct {
         object: Self,
         mime_type: ?[:0]const u8,
     };
-    pub fn decodeTargetEvent(event: []const u8) TargetEvent {
-        return decodeEvent(event, TargetEvent);
+    pub fn decodeTargetEvent(event: []const u8) DecodeError!TargetEvent {
+        return try decodeEvent(event, TargetEvent);
     }
 
     /// Request for data from the client.  Send the data as the
@@ -904,8 +905,8 @@ pub const wl_data_source = struct {
         mime_type: [:0]const u8,
         fd: FD,
     };
-    pub fn decodeSendEvent(event: []const u8) SendEvent {
-        return decodeEvent(event, SendEvent);
+    pub fn decodeSendEvent(event: []const u8) DecodeError!SendEvent {
+        return try decodeEvent(event, SendEvent);
     }
 
     /// This data source is no longer valid. There are several reasons why
@@ -931,8 +932,8 @@ pub const wl_data_source = struct {
     const CancelledEvent = struct {
         object: Self,
     };
-    pub fn decodeCancelledEvent(event: []const u8) CancelledEvent {
-        return decodeEvent(event, CancelledEvent);
+    pub fn decodeCancelledEvent(event: []const u8) DecodeError!CancelledEvent {
+        return try decodeEvent(event, CancelledEvent);
     }
 
     /// The user performed the drop action. This event does not indicate
@@ -947,8 +948,8 @@ pub const wl_data_source = struct {
     const DndDropPerformedEvent = struct {
         object: Self,
     };
-    pub fn decodeDndDropPerformedEvent(event: []const u8) DndDropPerformedEvent {
-        return decodeEvent(event, DndDropPerformedEvent);
+    pub fn decodeDndDropPerformedEvent(event: []const u8) DecodeError!DndDropPerformedEvent {
+        return try decodeEvent(event, DndDropPerformedEvent);
     }
 
     /// The drop destination finished interoperating with this data
@@ -960,8 +961,8 @@ pub const wl_data_source = struct {
     const DndFinishedEvent = struct {
         object: Self,
     };
-    pub fn decodeDndFinishedEvent(event: []const u8) DndFinishedEvent {
-        return decodeEvent(event, DndFinishedEvent);
+    pub fn decodeDndFinishedEvent(event: []const u8) DecodeError!DndFinishedEvent {
+        return try decodeEvent(event, DndFinishedEvent);
     }
 
     /// This event indicates the action selected by the compositor after
@@ -993,8 +994,8 @@ pub const wl_data_source = struct {
         object: Self,
         dnd_action: ints.wl_data_device_manager.DndAction,
     };
-    pub fn decodeActionEvent(event: []const u8) ActionEvent {
-        return decodeEvent(event, ActionEvent);
+    pub fn decodeActionEvent(event: []const u8) DecodeError!ActionEvent {
+        return try decodeEvent(event, ActionEvent);
     }
 
 };
@@ -1094,8 +1095,8 @@ pub const wl_data_device = struct {
         object: Self,
         id: ints.wl_data_offer,
     };
-    pub fn decodeDataOfferEvent(event: []const u8) DataOfferEvent {
-        return decodeEvent(event, DataOfferEvent);
+    pub fn decodeDataOfferEvent(event: []const u8) DecodeError!DataOfferEvent {
+        return try decodeEvent(event, DataOfferEvent);
     }
 
     /// This event is sent when an active drag-and-drop pointer enters
@@ -1110,8 +1111,8 @@ pub const wl_data_device = struct {
         y: Fixed,
         id: ?ints.wl_data_offer,
     };
-    pub fn decodeEnterEvent(event: []const u8) EnterEvent {
-        return decodeEvent(event, EnterEvent);
+    pub fn decodeEnterEvent(event: []const u8) DecodeError!EnterEvent {
+        return try decodeEvent(event, EnterEvent);
     }
 
     /// This event is sent when the drag-and-drop pointer leaves the
@@ -1120,8 +1121,8 @@ pub const wl_data_device = struct {
     const LeaveEvent = struct {
         object: Self,
     };
-    pub fn decodeLeaveEvent(event: []const u8) LeaveEvent {
-        return decodeEvent(event, LeaveEvent);
+    pub fn decodeLeaveEvent(event: []const u8) DecodeError!LeaveEvent {
+        return try decodeEvent(event, LeaveEvent);
     }
 
     /// This event is sent when the drag-and-drop pointer moves within
@@ -1134,8 +1135,8 @@ pub const wl_data_device = struct {
         x: Fixed,
         y: Fixed,
     };
-    pub fn decodeMotionEvent(event: []const u8) MotionEvent {
-        return decodeEvent(event, MotionEvent);
+    pub fn decodeMotionEvent(event: []const u8) DecodeError!MotionEvent {
+        return try decodeEvent(event, MotionEvent);
     }
 
     /// The event is sent when a drag-and-drop operation is ended
@@ -1154,8 +1155,8 @@ pub const wl_data_device = struct {
     const DropEvent = struct {
         object: Self,
     };
-    pub fn decodeDropEvent(event: []const u8) DropEvent {
-        return decodeEvent(event, DropEvent);
+    pub fn decodeDropEvent(event: []const u8) DecodeError!DropEvent {
+        return try decodeEvent(event, DropEvent);
     }
 
     /// The selection event is sent out to notify the client of a new
@@ -1174,8 +1175,8 @@ pub const wl_data_device = struct {
         object: Self,
         id: ?ints.wl_data_offer,
     };
-    pub fn decodeSelectionEvent(event: []const u8) SelectionEvent {
-        return decodeEvent(event, SelectionEvent);
+    pub fn decodeSelectionEvent(event: []const u8) DecodeError!SelectionEvent {
+        return try decodeEvent(event, SelectionEvent);
     }
 
 };
@@ -1529,8 +1530,8 @@ pub const wl_shell_surface = struct {
         object: Self,
         serial: u32,
     };
-    pub fn decodePingEvent(event: []const u8) PingEvent {
-        return decodeEvent(event, PingEvent);
+    pub fn decodePingEvent(event: []const u8) DecodeError!PingEvent {
+        return try decodeEvent(event, PingEvent);
     }
 
     /// The configure event asks the client to resize its surface.
@@ -1556,8 +1557,8 @@ pub const wl_shell_surface = struct {
         width: i32,
         height: i32,
     };
-    pub fn decodeConfigureEvent(event: []const u8) ConfigureEvent {
-        return decodeEvent(event, ConfigureEvent);
+    pub fn decodeConfigureEvent(event: []const u8) DecodeError!ConfigureEvent {
+        return try decodeEvent(event, ConfigureEvent);
     }
 
     /// The popup_done event is sent out when a popup grab is broken,
@@ -1566,8 +1567,8 @@ pub const wl_shell_surface = struct {
     const PopupDoneEvent = struct {
         object: Self,
     };
-    pub fn decodePopupDoneEvent(event: []const u8) PopupDoneEvent {
-        return decodeEvent(event, PopupDoneEvent);
+    pub fn decodePopupDoneEvent(event: []const u8) DecodeError!PopupDoneEvent {
+        return try decodeEvent(event, PopupDoneEvent);
     }
 
 };
@@ -2001,8 +2002,8 @@ pub const wl_surface = struct {
         object: Self,
         output: ints.wl_output,
     };
-    pub fn decodeEnterEvent(event: []const u8) EnterEvent {
-        return decodeEvent(event, EnterEvent);
+    pub fn decodeEnterEvent(event: []const u8) DecodeError!EnterEvent {
+        return try decodeEvent(event, EnterEvent);
     }
 
     /// This is emitted whenever a surface's creation, movement, or resizing
@@ -2018,8 +2019,8 @@ pub const wl_surface = struct {
         object: Self,
         output: ints.wl_output,
     };
-    pub fn decodeLeaveEvent(event: []const u8) LeaveEvent {
-        return decodeEvent(event, LeaveEvent);
+    pub fn decodeLeaveEvent(event: []const u8) DecodeError!LeaveEvent {
+        return try decodeEvent(event, LeaveEvent);
     }
 
     /// This event indicates the preferred buffer scale for this surface. It is
@@ -2038,8 +2039,8 @@ pub const wl_surface = struct {
         object: Self,
         factor: i32,
     };
-    pub fn decodePreferredBufferScaleEvent(event: []const u8) PreferredBufferScaleEvent {
-        return decodeEvent(event, PreferredBufferScaleEvent);
+    pub fn decodePreferredBufferScaleEvent(event: []const u8) DecodeError!PreferredBufferScaleEvent {
+        return try decodeEvent(event, PreferredBufferScaleEvent);
     }
 
     /// This event indicates the preferred buffer transform for this surface.
@@ -2055,8 +2056,8 @@ pub const wl_surface = struct {
         object: Self,
         transform: ints.wl_output.Transform,
     };
-    pub fn decodePreferredBufferTransformEvent(event: []const u8) PreferredBufferTransformEvent {
-        return decodeEvent(event, PreferredBufferTransformEvent);
+    pub fn decodePreferredBufferTransformEvent(event: []const u8) DecodeError!PreferredBufferTransformEvent {
+        return try decodeEvent(event, PreferredBufferTransformEvent);
     }
 
 };
@@ -2188,8 +2189,8 @@ pub const wl_seat = struct {
         object: Self,
         capabilities: Capability,
     };
-    pub fn decodeCapabilitiesEvent(event: []const u8) CapabilitiesEvent {
-        return decodeEvent(event, CapabilitiesEvent);
+    pub fn decodeCapabilitiesEvent(event: []const u8) DecodeError!CapabilitiesEvent {
+        return try decodeEvent(event, CapabilitiesEvent);
     }
 
     /// In a multi-seat configuration the seat name can be used by clients to
@@ -2212,8 +2213,8 @@ pub const wl_seat = struct {
         object: Self,
         name: [:0]const u8,
     };
-    pub fn decodeNameEvent(event: []const u8) NameEvent {
-        return decodeEvent(event, NameEvent);
+    pub fn decodeNameEvent(event: []const u8) DecodeError!NameEvent {
+        return try decodeEvent(event, NameEvent);
     }
 
 };
@@ -2359,8 +2360,8 @@ pub const wl_pointer = struct {
         surface_x: Fixed,
         surface_y: Fixed,
     };
-    pub fn decodeEnterEvent(event: []const u8) EnterEvent {
-        return decodeEvent(event, EnterEvent);
+    pub fn decodeEnterEvent(event: []const u8) DecodeError!EnterEvent {
+        return try decodeEvent(event, EnterEvent);
     }
 
     /// Notification that this seat's pointer is no longer focused on
@@ -2373,8 +2374,8 @@ pub const wl_pointer = struct {
         serial: u32,
         surface: ints.wl_surface,
     };
-    pub fn decodeLeaveEvent(event: []const u8) LeaveEvent {
-        return decodeEvent(event, LeaveEvent);
+    pub fn decodeLeaveEvent(event: []const u8) DecodeError!LeaveEvent {
+        return try decodeEvent(event, LeaveEvent);
     }
 
     /// Notification of pointer location change. The arguments
@@ -2386,8 +2387,8 @@ pub const wl_pointer = struct {
         surface_x: Fixed,
         surface_y: Fixed,
     };
-    pub fn decodeMotionEvent(event: []const u8) MotionEvent {
-        return decodeEvent(event, MotionEvent);
+    pub fn decodeMotionEvent(event: []const u8) DecodeError!MotionEvent {
+        return try decodeEvent(event, MotionEvent);
     }
 
     /// Mouse button click and release notifications.
@@ -2411,8 +2412,8 @@ pub const wl_pointer = struct {
         button: u32,
         state: ButtonState,
     };
-    pub fn decodeButtonEvent(event: []const u8) ButtonEvent {
-        return decodeEvent(event, ButtonEvent);
+    pub fn decodeButtonEvent(event: []const u8) DecodeError!ButtonEvent {
+        return try decodeEvent(event, ButtonEvent);
     }
 
     /// Scroll and other axis notifications.
@@ -2437,8 +2438,8 @@ pub const wl_pointer = struct {
         axis: Axis,
         value: Fixed,
     };
-    pub fn decodeAxisEvent(event: []const u8) AxisEvent {
-        return decodeEvent(event, AxisEvent);
+    pub fn decodeAxisEvent(event: []const u8) DecodeError!AxisEvent {
+        return try decodeEvent(event, AxisEvent);
     }
 
     /// Indicates the end of a set of events that logically belong together.
@@ -2478,8 +2479,8 @@ pub const wl_pointer = struct {
     const FrameEvent = struct {
         object: Self,
     };
-    pub fn decodeFrameEvent(event: []const u8) FrameEvent {
-        return decodeEvent(event, FrameEvent);
+    pub fn decodeFrameEvent(event: []const u8) DecodeError!FrameEvent {
+        return try decodeEvent(event, FrameEvent);
     }
 
     /// Source information for scroll and other axes.
@@ -2511,8 +2512,8 @@ pub const wl_pointer = struct {
         object: Self,
         axis_source: AxisSource,
     };
-    pub fn decodeAxisSourceEvent(event: []const u8) AxisSourceEvent {
-        return decodeEvent(event, AxisSourceEvent);
+    pub fn decodeAxisSourceEvent(event: []const u8) DecodeError!AxisSourceEvent {
+        return try decodeEvent(event, AxisSourceEvent);
     }
 
     /// Stop notification for scroll and other axes.
@@ -2534,8 +2535,8 @@ pub const wl_pointer = struct {
         time: u32,
         axis: Axis,
     };
-    pub fn decodeAxisStopEvent(event: []const u8) AxisStopEvent {
-        return decodeEvent(event, AxisStopEvent);
+    pub fn decodeAxisStopEvent(event: []const u8) DecodeError!AxisStopEvent {
+        return try decodeEvent(event, AxisStopEvent);
     }
 
     /// Discrete step information for scroll and other axes.
@@ -2573,8 +2574,8 @@ pub const wl_pointer = struct {
         axis: Axis,
         discrete: i32,
     };
-    pub fn decodeAxisDiscreteEvent(event: []const u8) AxisDiscreteEvent {
-        return decodeEvent(event, AxisDiscreteEvent);
+    pub fn decodeAxisDiscreteEvent(event: []const u8) DecodeError!AxisDiscreteEvent {
+        return try decodeEvent(event, AxisDiscreteEvent);
     }
 
     /// Discrete high-resolution scroll information.
@@ -2603,8 +2604,8 @@ pub const wl_pointer = struct {
         axis: Axis,
         value120: i32,
     };
-    pub fn decodeAxisValue120Event(event: []const u8) AxisValue120Event {
-        return decodeEvent(event, AxisValue120Event);
+    pub fn decodeAxisValue120Event(event: []const u8) DecodeError!AxisValue120Event {
+        return try decodeEvent(event, AxisValue120Event);
     }
 
     /// Relative directional information of the entity causing the axis
@@ -2647,8 +2648,8 @@ pub const wl_pointer = struct {
         axis: Axis,
         direction: AxisRelativeDirection,
     };
-    pub fn decodeAxisRelativeDirectionEvent(event: []const u8) AxisRelativeDirectionEvent {
-        return decodeEvent(event, AxisRelativeDirectionEvent);
+    pub fn decodeAxisRelativeDirectionEvent(event: []const u8) DecodeError!AxisRelativeDirectionEvent {
+        return try decodeEvent(event, AxisRelativeDirectionEvent);
     }
 
 };
@@ -2714,8 +2715,8 @@ pub const wl_keyboard = struct {
         fd: FD,
         size: u32,
     };
-    pub fn decodeKeymapEvent(event: []const u8) KeymapEvent {
-        return decodeEvent(event, KeymapEvent);
+    pub fn decodeKeymapEvent(event: []const u8) DecodeError!KeymapEvent {
+        return try decodeEvent(event, KeymapEvent);
     }
 
     /// Notification that this seat's keyboard focus is on a certain
@@ -2734,8 +2735,8 @@ pub const wl_keyboard = struct {
         surface: ints.wl_surface,
         keys: []const u8,
     };
-    pub fn decodeEnterEvent(event: []const u8) EnterEvent {
-        return decodeEvent(event, EnterEvent);
+    pub fn decodeEnterEvent(event: []const u8) DecodeError!EnterEvent {
+        return try decodeEvent(event, EnterEvent);
     }
 
     /// Notification that this seat's keyboard focus is no longer on
@@ -2753,8 +2754,8 @@ pub const wl_keyboard = struct {
         serial: u32,
         surface: ints.wl_surface,
     };
-    pub fn decodeLeaveEvent(event: []const u8) LeaveEvent {
-        return decodeEvent(event, LeaveEvent);
+    pub fn decodeLeaveEvent(event: []const u8) DecodeError!LeaveEvent {
+        return try decodeEvent(event, LeaveEvent);
     }
 
     /// A key was pressed or released.
@@ -2782,8 +2783,8 @@ pub const wl_keyboard = struct {
         key: u32,
         state: KeyState,
     };
-    pub fn decodeKeyEvent(event: []const u8) KeyEvent {
-        return decodeEvent(event, KeyEvent);
+    pub fn decodeKeyEvent(event: []const u8) DecodeError!KeyEvent {
+        return try decodeEvent(event, KeyEvent);
     }
 
     /// Notifies clients that the modifier and/or group state has
@@ -2807,8 +2808,8 @@ pub const wl_keyboard = struct {
         mods_locked: u32,
         group: u32,
     };
-    pub fn decodeModifiersEvent(event: []const u8) ModifiersEvent {
-        return decodeEvent(event, ModifiersEvent);
+    pub fn decodeModifiersEvent(event: []const u8) DecodeError!ModifiersEvent {
+        return try decodeEvent(event, ModifiersEvent);
     }
 
     /// Informs the client about the keyboard's repeat rate and delay.
@@ -2828,8 +2829,8 @@ pub const wl_keyboard = struct {
         rate: i32,
         delay: i32,
     };
-    pub fn decodeRepeatInfoEvent(event: []const u8) RepeatInfoEvent {
-        return decodeEvent(event, RepeatInfoEvent);
+    pub fn decodeRepeatInfoEvent(event: []const u8) DecodeError!RepeatInfoEvent {
+        return try decodeEvent(event, RepeatInfoEvent);
     }
 
 };
@@ -2880,8 +2881,8 @@ pub const wl_touch = struct {
         x: Fixed,
         y: Fixed,
     };
-    pub fn decodeDownEvent(event: []const u8) DownEvent {
-        return decodeEvent(event, DownEvent);
+    pub fn decodeDownEvent(event: []const u8) DecodeError!DownEvent {
+        return try decodeEvent(event, DownEvent);
     }
 
     /// The touch point has disappeared. No further events will be sent for
@@ -2893,8 +2894,8 @@ pub const wl_touch = struct {
         time: u32,
         id: i32,
     };
-    pub fn decodeUpEvent(event: []const u8) UpEvent {
-        return decodeEvent(event, UpEvent);
+    pub fn decodeUpEvent(event: []const u8) DecodeError!UpEvent {
+        return try decodeEvent(event, UpEvent);
     }
 
     /// A touch point has changed coordinates.
@@ -2905,8 +2906,8 @@ pub const wl_touch = struct {
         x: Fixed,
         y: Fixed,
     };
-    pub fn decodeMotionEvent(event: []const u8) MotionEvent {
-        return decodeEvent(event, MotionEvent);
+    pub fn decodeMotionEvent(event: []const u8) DecodeError!MotionEvent {
+        return try decodeEvent(event, MotionEvent);
     }
 
     /// Indicates the end of a set of events that logically belong together.
@@ -2920,8 +2921,8 @@ pub const wl_touch = struct {
     const FrameEvent = struct {
         object: Self,
     };
-    pub fn decodeFrameEvent(event: []const u8) FrameEvent {
-        return decodeEvent(event, FrameEvent);
+    pub fn decodeFrameEvent(event: []const u8) DecodeError!FrameEvent {
+        return try decodeEvent(event, FrameEvent);
     }
 
     /// Sent if the compositor decides the touch stream is a global
@@ -2935,8 +2936,8 @@ pub const wl_touch = struct {
     const CancelEvent = struct {
         object: Self,
     };
-    pub fn decodeCancelEvent(event: []const u8) CancelEvent {
-        return decodeEvent(event, CancelEvent);
+    pub fn decodeCancelEvent(event: []const u8) DecodeError!CancelEvent {
+        return try decodeEvent(event, CancelEvent);
     }
 
     /// Sent when a touchpoint has changed its shape.
@@ -2970,8 +2971,8 @@ pub const wl_touch = struct {
         major: Fixed,
         minor: Fixed,
     };
-    pub fn decodeShapeEvent(event: []const u8) ShapeEvent {
-        return decodeEvent(event, ShapeEvent);
+    pub fn decodeShapeEvent(event: []const u8) DecodeError!ShapeEvent {
+        return try decodeEvent(event, ShapeEvent);
     }
 
     /// Sent when a touchpoint has changed its orientation.
@@ -3002,8 +3003,8 @@ pub const wl_touch = struct {
         id: i32,
         orientation: Fixed,
     };
-    pub fn decodeOrientationEvent(event: []const u8) OrientationEvent {
-        return decodeEvent(event, OrientationEvent);
+    pub fn decodeOrientationEvent(event: []const u8) DecodeError!OrientationEvent {
+        return try decodeEvent(event, OrientationEvent);
     }
 
 };
@@ -3110,8 +3111,8 @@ pub const wl_output = struct {
         model: [:0]const u8,
         transform: Transform,
     };
-    pub fn decodeGeometryEvent(event: []const u8) GeometryEvent {
-        return decodeEvent(event, GeometryEvent);
+    pub fn decodeGeometryEvent(event: []const u8) DecodeError!GeometryEvent {
+        return try decodeEvent(event, GeometryEvent);
     }
 
     /// The mode event describes an available mode for the output.
@@ -3154,8 +3155,8 @@ pub const wl_output = struct {
         height: i32,
         refresh: i32,
     };
-    pub fn decodeModeEvent(event: []const u8) ModeEvent {
-        return decodeEvent(event, ModeEvent);
+    pub fn decodeModeEvent(event: []const u8) DecodeError!ModeEvent {
+        return try decodeEvent(event, ModeEvent);
     }
 
     /// This event is sent after all other properties have been
@@ -3166,8 +3167,8 @@ pub const wl_output = struct {
     const DoneEvent = struct {
         object: Self,
     };
-    pub fn decodeDoneEvent(event: []const u8) DoneEvent {
-        return decodeEvent(event, DoneEvent);
+    pub fn decodeDoneEvent(event: []const u8) DecodeError!DoneEvent {
+        return try decodeEvent(event, DoneEvent);
     }
 
     /// This event contains scaling geometry information
@@ -3192,8 +3193,8 @@ pub const wl_output = struct {
         object: Self,
         factor: i32,
     };
-    pub fn decodeScaleEvent(event: []const u8) ScaleEvent {
-        return decodeEvent(event, ScaleEvent);
+    pub fn decodeScaleEvent(event: []const u8) DecodeError!ScaleEvent {
+        return try decodeEvent(event, ScaleEvent);
     }
 
     /// Many compositors will assign user-friendly names to their outputs, show
@@ -3228,8 +3229,8 @@ pub const wl_output = struct {
         object: Self,
         name: [:0]const u8,
     };
-    pub fn decodeNameEvent(event: []const u8) NameEvent {
-        return decodeEvent(event, NameEvent);
+    pub fn decodeNameEvent(event: []const u8) DecodeError!NameEvent {
+        return try decodeEvent(event, NameEvent);
     }
 
     /// Many compositors can produce human-readable descriptions of their
@@ -3250,8 +3251,8 @@ pub const wl_output = struct {
         object: Self,
         description: [:0]const u8,
     };
-    pub fn decodeDescriptionEvent(event: []const u8) DescriptionEvent {
-        return decodeEvent(event, DescriptionEvent);
+    pub fn decodeDescriptionEvent(event: []const u8) DecodeError!DescriptionEvent {
+        return try decodeEvent(event, DescriptionEvent);
     }
 
 };

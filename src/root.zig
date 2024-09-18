@@ -39,7 +39,7 @@ test "functionality" {
     _ = sync;
 
     const msg = try global.readEvent();
-    const event = protocol.wl_registry.decodeGlobalEvent(msg);
+    const event = try protocol.wl_registry.decodeGlobalEvent(msg);
     std.debug.print(
         \\Response {{
         \\  name = {d},
