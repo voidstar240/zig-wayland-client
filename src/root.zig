@@ -35,17 +35,28 @@ test "functionality" {
     var global = util.WaylandState.init(sock);
     const display = util.WaylandState.getDisplay();
     const reg = try display.getRegistry(&global, 2);
-    _ = reg;
     const sync = try display.sync(&global, 3);
-    _ = sync;
 
-    const msg = try global.readEvent();
-    const event = try protocol.wl_registry.decodeGlobalEvent(msg);
-    std.debug.print(
-        \\Response {{
-        \\  name = {d},
-        \\  interface = {s},
-        \\  version = {d},
-        \\}}
-        , .{event.name, event.interface, event.version});
+    while (true) {
+        const anon = try global.readEvent();
+        if (try reg.decodeGlobalEvent(anon)) |event| {
+            std.debug.print(
+                \\{d}: {s} v{d}
+                \\
+                , .{event.name, event.interface, event.version});
+        } else if (try sync.decodeDoneEvent(anon)) |_| {
+            std.debug.print("DONE!\n", .{});
+            break;
+        } else if (try display.decodeErrorEvent(anon)) |event| {
+            std.debug.print(
+                \\ERROR: {d} on object {d}: {s}
+                \\
+                , .{event.code, event.object_id.id, event.message});
+        } else {
+            std.debug.print(
+                \\Unkown Event: obj: {d} op: {d}\n
+                \\
+                , .{anon.self.id, anon.opcode});
+        }
+    }
 }

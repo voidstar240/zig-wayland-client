@@ -167,9 +167,22 @@ fn generateEvent(event: *const Method, writer: anytype) !void {
     try generateEventStruct(event, writer);
     try writer.print("    pub fn decode", .{});
     try writeEnumName(event.name, writer);
-    try writer.print("Event(event: AnonymousEvent) DecodeError!", .{});
+    try writer.print(
+        \\Event(self: Self, event: AnonymousEvent) DecodeError!?
+        , .{});
     try generateEventStructName(event, writer);
     try writer.print(" {{\n", .{});
+    try writer.print(
+        \\        if (event.self.id != self.id) return null;
+        \\
+        , .{});
+    try writer.print("        const op = Self.opcode.event.", .{});
+    try writeName(event.name, writer);
+    try writer.print(";\n", .{});
+    try writer.print(
+        \\        if (event.opcode != op) return null;
+        \\
+        , .{});
     try writer.print("        return try decodeEvent(event, ", .{});
     try generateEventStructName(event, writer);
     try writer.print(");\n", .{});
@@ -177,11 +190,11 @@ fn generateEvent(event: *const Method, writer: anytype) !void {
 }
 
 fn generateEventStruct(event: *const Method, writer: anytype) !void {
-    try writer.print("    const ", .{});
+    try writer.print("    pub const ", .{});
     try generateEventStructName(event, writer);
     try writer.print(
         \\ = struct {{
-        \\        object: Self,
+        \\        self: Self,
         \\
         , .{});
     for (event.args) |arg| {

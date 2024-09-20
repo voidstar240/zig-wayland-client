@@ -107,7 +107,7 @@ pub const WaylandState = struct {
     pub fn readEvent(self: *WaylandState) !AnonymousEvent {
         const head = try readEventRaw(self.reader(), &self.read_buffer);
         return AnonymousEvent {
-            .object_id = head.object_id,
+            .self = Object { .id = head.object_id },
             .opcode = head.opcode,
             .arg_data = self.read_buffer[@sizeOf(Header)..head.length],
         };
@@ -253,7 +253,7 @@ pub fn readEventRaw(
 }
 
 pub const AnonymousEvent = struct {
-    object_id: u32,
+    self: Object,
     opcode: u16,
     arg_data: []const u8,
 };
@@ -278,8 +278,8 @@ pub fn decodeEvent(
         if (i == 0) {
             if (info != .Struct)
                 @compileError("First field must be an object.");
-            if (event.object_id == 0) return DecodeError.NullNonNullObject;
-            val_ptr.id = event.object_id; 
+            if (event.self.id == 0) return DecodeError.NullNonNullObject;
+            val_ptr.id = event.self.id; 
             continue;
         }
         switch (field.type) {

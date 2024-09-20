@@ -111,13 +111,16 @@ pub const wl_display = struct {
     /// by the object interface.  As such, each interface defines its
     /// own set of error codes.  The message is a brief description
     /// of the error, for (debugging) convenience.
-    const ErrorEvent = struct {
-        object: Self,
+    pub const ErrorEvent = struct {
+        self: Self,
         object_id: Object,
         code: u32,
         message: [:0]const u8,
     };
-    pub fn decodeErrorEvent(event: AnonymousEvent) DecodeError!ErrorEvent {
+    pub fn decodeErrorEvent(self: Self, event: AnonymousEvent) DecodeError!?ErrorEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.@"error";
+        if (event.opcode != op) return null;
         return try decodeEvent(event, ErrorEvent);
     }
 
@@ -126,11 +129,14 @@ pub const wl_display = struct {
     /// the server will send this event to acknowledge that it has
     /// seen the delete request. When the client receives this event,
     /// it will know that it can safely reuse the object ID.
-    const DeleteIdEvent = struct {
-        object: Self,
+    pub const DeleteIdEvent = struct {
+        self: Self,
         id: u32,
     };
-    pub fn decodeDeleteIdEvent(event: AnonymousEvent) DecodeError!DeleteIdEvent {
+    pub fn decodeDeleteIdEvent(self: Self, event: AnonymousEvent) DecodeError!?DeleteIdEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.delete_id;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, DeleteIdEvent);
     }
 
@@ -188,13 +194,16 @@ pub const wl_registry = struct {
     /// The event notifies the client that a global object with
     /// the given name is now available, and it implements the
     /// given version of the given interface.
-    const GlobalEvent = struct {
-        object: Self,
+    pub const GlobalEvent = struct {
+        self: Self,
         name: u32,
         interface: [:0]const u8,
         version: u32,
     };
-    pub fn decodeGlobalEvent(event: AnonymousEvent) DecodeError!GlobalEvent {
+    pub fn decodeGlobalEvent(self: Self, event: AnonymousEvent) DecodeError!?GlobalEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.global;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, GlobalEvent);
     }
 
@@ -208,11 +217,14 @@ pub const wl_registry = struct {
     /// The object remains valid and requests to the object will be
     /// ignored until the client destroys it, to avoid races between
     /// the global going away and a client sending a request to it.
-    const GlobalRemoveEvent = struct {
-        object: Self,
+    pub const GlobalRemoveEvent = struct {
+        self: Self,
         name: u32,
     };
-    pub fn decodeGlobalRemoveEvent(event: AnonymousEvent) DecodeError!GlobalRemoveEvent {
+    pub fn decodeGlobalRemoveEvent(self: Self, event: AnonymousEvent) DecodeError!?GlobalRemoveEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.global_remove;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, GlobalRemoveEvent);
     }
 
@@ -235,11 +247,14 @@ pub const wl_callback = struct {
     };
 
     /// Notify the client when the related request is done.
-    const DoneEvent = struct {
-        object: Self,
+    pub const DoneEvent = struct {
+        self: Self,
         callback_data: u32,
     };
-    pub fn decodeDoneEvent(event: AnonymousEvent) DecodeError!DoneEvent {
+    pub fn decodeDoneEvent(self: Self, event: AnonymousEvent) DecodeError!?DoneEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.done;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, DoneEvent);
     }
 
@@ -548,11 +563,14 @@ pub const wl_shm = struct {
     /// Informs the client about a valid pixel format that
     /// can be used for buffers. Known formats include
     /// argb8888 and xrgb8888.
-    const FormatEvent = struct {
-        object: Self,
+    pub const FormatEvent = struct {
+        self: Self,
         format: Format,
     };
-    pub fn decodeFormatEvent(event: AnonymousEvent) DecodeError!FormatEvent {
+    pub fn decodeFormatEvent(self: Self, event: AnonymousEvent) DecodeError!?FormatEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.format;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, FormatEvent);
     }
 
@@ -608,10 +626,13 @@ pub const wl_buffer = struct {
     /// this is possible, when the compositor maintains a copy of the
     /// wl_surface contents, e.g. as a GL texture. This is an important
     /// optimization for GL(ES) compositors with wl_shm clients.
-    const ReleaseEvent = struct {
-        object: Self,
+    pub const ReleaseEvent = struct {
+        self: Self,
     };
-    pub fn decodeReleaseEvent(event: AnonymousEvent) DecodeError!ReleaseEvent {
+    pub fn decodeReleaseEvent(self: Self, event: AnonymousEvent) DecodeError!?ReleaseEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.release;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, ReleaseEvent);
     }
 
@@ -752,11 +773,14 @@ pub const wl_data_offer = struct {
 
     /// Sent immediately after creating the wl_data_offer object.  One
     /// event per offered mime type.
-    const OfferEvent = struct {
-        object: Self,
+    pub const OfferEvent = struct {
+        self: Self,
         mime_type: [:0]const u8,
     };
-    pub fn decodeOfferEvent(event: AnonymousEvent) DecodeError!OfferEvent {
+    pub fn decodeOfferEvent(self: Self, event: AnonymousEvent) DecodeError!?OfferEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.offer;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, OfferEvent);
     }
 
@@ -764,11 +788,14 @@ pub const wl_data_offer = struct {
     /// will be sent immediately after creating the wl_data_offer object,
     /// or anytime the source side changes its offered actions through
     /// wl_data_source.set_actions.
-    const SourceActionsEvent = struct {
-        object: Self,
+    pub const SourceActionsEvent = struct {
+        self: Self,
         source_actions: ints.wl_data_device_manager.DndAction,
     };
-    pub fn decodeSourceActionsEvent(event: AnonymousEvent) DecodeError!SourceActionsEvent {
+    pub fn decodeSourceActionsEvent(self: Self, event: AnonymousEvent) DecodeError!?SourceActionsEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.source_actions;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, SourceActionsEvent);
     }
 
@@ -807,11 +834,14 @@ pub const wl_data_offer = struct {
     /// user (e.g. popping up a menu with the available options). The
     /// final wl_data_offer.set_actions and wl_data_offer.accept requests
     /// must happen before the call to wl_data_offer.finish.
-    const ActionEvent = struct {
-        object: Self,
+    pub const ActionEvent = struct {
+        self: Self,
         dnd_action: ints.wl_data_device_manager.DndAction,
     };
-    pub fn decodeActionEvent(event: AnonymousEvent) DecodeError!ActionEvent {
+    pub fn decodeActionEvent(self: Self, event: AnonymousEvent) DecodeError!?ActionEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.action;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, ActionEvent);
     }
 
@@ -883,23 +913,29 @@ pub const wl_data_source = struct {
     /// a target does not accept any of the offered types, type is NULL.
     /// 
     /// Used for feedback during drag-and-drop.
-    const TargetEvent = struct {
-        object: Self,
+    pub const TargetEvent = struct {
+        self: Self,
         mime_type: ?[:0]const u8,
     };
-    pub fn decodeTargetEvent(event: AnonymousEvent) DecodeError!TargetEvent {
+    pub fn decodeTargetEvent(self: Self, event: AnonymousEvent) DecodeError!?TargetEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.target;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, TargetEvent);
     }
 
     /// Request for data from the client.  Send the data as the
     /// specified mime type over the passed file descriptor, then
     /// close it.
-    const SendEvent = struct {
-        object: Self,
+    pub const SendEvent = struct {
+        self: Self,
         mime_type: [:0]const u8,
         fd: FD,
     };
-    pub fn decodeSendEvent(event: AnonymousEvent) DecodeError!SendEvent {
+    pub fn decodeSendEvent(self: Self, event: AnonymousEvent) DecodeError!?SendEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.send;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, SendEvent);
     }
 
@@ -923,10 +959,13 @@ pub const wl_data_source = struct {
     /// For objects of version 2 or older, wl_data_source.cancelled will
     /// only be emitted if the data source was replaced by another data
     /// source.
-    const CancelledEvent = struct {
-        object: Self,
+    pub const CancelledEvent = struct {
+        self: Self,
     };
-    pub fn decodeCancelledEvent(event: AnonymousEvent) DecodeError!CancelledEvent {
+    pub fn decodeCancelledEvent(self: Self, event: AnonymousEvent) DecodeError!?CancelledEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.cancelled;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, CancelledEvent);
     }
 
@@ -939,10 +978,13 @@ pub const wl_data_source = struct {
     /// 
     /// Note that the data_source may still be used in the future and should
     /// not be destroyed here.
-    const DndDropPerformedEvent = struct {
-        object: Self,
+    pub const DndDropPerformedEvent = struct {
+        self: Self,
     };
-    pub fn decodeDndDropPerformedEvent(event: AnonymousEvent) DecodeError!DndDropPerformedEvent {
+    pub fn decodeDndDropPerformedEvent(self: Self, event: AnonymousEvent) DecodeError!?DndDropPerformedEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.dnd_drop_performed;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, DndDropPerformedEvent);
     }
 
@@ -952,10 +994,13 @@ pub const wl_data_source = struct {
     /// 
     /// If the action used to perform the operation was "move", the
     /// source can now delete the transferred data.
-    const DndFinishedEvent = struct {
-        object: Self,
+    pub const DndFinishedEvent = struct {
+        self: Self,
     };
-    pub fn decodeDndFinishedEvent(event: AnonymousEvent) DecodeError!DndFinishedEvent {
+    pub fn decodeDndFinishedEvent(self: Self, event: AnonymousEvent) DecodeError!?DndFinishedEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.dnd_finished;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, DndFinishedEvent);
     }
 
@@ -984,11 +1029,14 @@ pub const wl_data_source = struct {
     /// 
     /// Clients can trigger cursor surface changes from this point, so
     /// they reflect the current action.
-    const ActionEvent = struct {
-        object: Self,
+    pub const ActionEvent = struct {
+        self: Self,
         dnd_action: ints.wl_data_device_manager.DndAction,
     };
-    pub fn decodeActionEvent(event: AnonymousEvent) DecodeError!ActionEvent {
+    pub fn decodeActionEvent(self: Self, event: AnonymousEvent) DecodeError!?ActionEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.action;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, ActionEvent);
     }
 
@@ -1085,11 +1133,14 @@ pub const wl_data_device = struct {
     /// following the data_device.data_offer event, the new data_offer
     /// object will send out data_offer.offer events to describe the
     /// mime types it offers.
-    const DataOfferEvent = struct {
-        object: Self,
+    pub const DataOfferEvent = struct {
+        self: Self,
         id: u32,
     };
-    pub fn decodeDataOfferEvent(event: AnonymousEvent) DecodeError!DataOfferEvent {
+    pub fn decodeDataOfferEvent(self: Self, event: AnonymousEvent) DecodeError!?DataOfferEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.data_offer;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, DataOfferEvent);
     }
 
@@ -1097,25 +1148,31 @@ pub const wl_data_device = struct {
     /// a surface owned by the client.  The position of the pointer at
     /// enter time is provided by the x and y arguments, in surface-local
     /// coordinates.
-    const EnterEvent = struct {
-        object: Self,
+    pub const EnterEvent = struct {
+        self: Self,
         serial: u32,
         surface: ints.wl_surface,
         x: Fixed,
         y: Fixed,
         id: ?ints.wl_data_offer,
     };
-    pub fn decodeEnterEvent(event: AnonymousEvent) DecodeError!EnterEvent {
+    pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.enter;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, EnterEvent);
     }
 
     /// This event is sent when the drag-and-drop pointer leaves the
     /// surface and the session ends.  The client must destroy the
     /// wl_data_offer introduced at enter time at this point.
-    const LeaveEvent = struct {
-        object: Self,
+    pub const LeaveEvent = struct {
+        self: Self,
     };
-    pub fn decodeLeaveEvent(event: AnonymousEvent) DecodeError!LeaveEvent {
+    pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.leave;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, LeaveEvent);
     }
 
@@ -1123,13 +1180,16 @@ pub const wl_data_device = struct {
     /// the currently focused surface. The new position of the pointer
     /// is provided by the x and y arguments, in surface-local
     /// coordinates.
-    const MotionEvent = struct {
-        object: Self,
+    pub const MotionEvent = struct {
+        self: Self,
         time: u32,
         x: Fixed,
         y: Fixed,
     };
-    pub fn decodeMotionEvent(event: AnonymousEvent) DecodeError!MotionEvent {
+    pub fn decodeMotionEvent(self: Self, event: AnonymousEvent) DecodeError!?MotionEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.motion;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, MotionEvent);
     }
 
@@ -1146,10 +1206,13 @@ pub const wl_data_device = struct {
     /// final. The drag-and-drop destination is expected to perform one last
     /// wl_data_offer.set_actions request, or wl_data_offer.destroy in order
     /// to cancel the operation.
-    const DropEvent = struct {
-        object: Self,
+    pub const DropEvent = struct {
+        self: Self,
     };
-    pub fn decodeDropEvent(event: AnonymousEvent) DecodeError!DropEvent {
+    pub fn decodeDropEvent(self: Self, event: AnonymousEvent) DecodeError!?DropEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.drop;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, DropEvent);
     }
 
@@ -1165,11 +1228,14 @@ pub const wl_data_device = struct {
     /// keyboard focus within the same client doesn't mean a new selection
     /// will be sent.  The client must destroy the previous selection
     /// data_offer, if any, upon receiving this event.
-    const SelectionEvent = struct {
-        object: Self,
+    pub const SelectionEvent = struct {
+        self: Self,
         id: ?ints.wl_data_offer,
     };
-    pub fn decodeSelectionEvent(event: AnonymousEvent) DecodeError!SelectionEvent {
+    pub fn decodeSelectionEvent(self: Self, event: AnonymousEvent) DecodeError!?SelectionEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.selection;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, SelectionEvent);
     }
 
@@ -1517,11 +1583,14 @@ pub const wl_shell_surface = struct {
 
     /// Ping a client to check if it is receiving events and sending
     /// requests. A client is expected to reply with a pong request.
-    const PingEvent = struct {
-        object: Self,
+    pub const PingEvent = struct {
+        self: Self,
         serial: u32,
     };
-    pub fn decodePingEvent(event: AnonymousEvent) DecodeError!PingEvent {
+    pub fn decodePingEvent(self: Self, event: AnonymousEvent) DecodeError!?PingEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.ping;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, PingEvent);
     }
 
@@ -1542,23 +1611,29 @@ pub const wl_shell_surface = struct {
     /// 
     /// The width and height arguments specify the size of the window
     /// in surface-local coordinates.
-    const ConfigureEvent = struct {
-        object: Self,
+    pub const ConfigureEvent = struct {
+        self: Self,
         edges: Resize,
         width: i32,
         height: i32,
     };
-    pub fn decodeConfigureEvent(event: AnonymousEvent) DecodeError!ConfigureEvent {
+    pub fn decodeConfigureEvent(self: Self, event: AnonymousEvent) DecodeError!?ConfigureEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.configure;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, ConfigureEvent);
     }
 
     /// The popup_done event is sent out when a popup grab is broken,
     /// that is, when the user clicks a surface that doesn't belong
     /// to the client owning the popup surface.
-    const PopupDoneEvent = struct {
-        object: Self,
+    pub const PopupDoneEvent = struct {
+        self: Self,
     };
-    pub fn decodePopupDoneEvent(event: AnonymousEvent) DecodeError!PopupDoneEvent {
+    pub fn decodePopupDoneEvent(self: Self, event: AnonymousEvent) DecodeError!?PopupDoneEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.popup_done;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, PopupDoneEvent);
     }
 
@@ -1988,11 +2063,14 @@ pub const wl_surface = struct {
     /// output.
     /// 
     /// Note that a surface may be overlapping with zero or more outputs.
-    const EnterEvent = struct {
-        object: Self,
+    pub const EnterEvent = struct {
+        self: Self,
         output: ints.wl_output,
     };
-    pub fn decodeEnterEvent(event: AnonymousEvent) DecodeError!EnterEvent {
+    pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.enter;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, EnterEvent);
     }
 
@@ -2005,11 +2083,14 @@ pub const wl_surface = struct {
     /// has been sent, and the compositor might expect new surface content
     /// updates even if no enter event has been sent. The frame event should be
     /// used instead.
-    const LeaveEvent = struct {
-        object: Self,
+    pub const LeaveEvent = struct {
+        self: Self,
         output: ints.wl_output,
     };
-    pub fn decodeLeaveEvent(event: AnonymousEvent) DecodeError!LeaveEvent {
+    pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.leave;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, LeaveEvent);
     }
 
@@ -2025,11 +2106,14 @@ pub const wl_surface = struct {
     /// buffer.
     /// 
     /// The compositor shall emit a scale value greater than 0.
-    const PreferredBufferScaleEvent = struct {
-        object: Self,
+    pub const PreferredBufferScaleEvent = struct {
+        self: Self,
         factor: i32,
     };
-    pub fn decodePreferredBufferScaleEvent(event: AnonymousEvent) DecodeError!PreferredBufferScaleEvent {
+    pub fn decodePreferredBufferScaleEvent(self: Self, event: AnonymousEvent) DecodeError!?PreferredBufferScaleEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.preferred_buffer_scale;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, PreferredBufferScaleEvent);
     }
 
@@ -2042,11 +2126,14 @@ pub const wl_surface = struct {
     /// Applying this transformation to the surface buffer contents and using
     /// wl_surface.set_buffer_transform might allow the compositor to use the
     /// surface buffer more efficiently.
-    const PreferredBufferTransformEvent = struct {
-        object: Self,
+    pub const PreferredBufferTransformEvent = struct {
+        self: Self,
         transform: ints.wl_output.Transform,
     };
-    pub fn decodePreferredBufferTransformEvent(event: AnonymousEvent) DecodeError!PreferredBufferTransformEvent {
+    pub fn decodePreferredBufferTransformEvent(self: Self, event: AnonymousEvent) DecodeError!?PreferredBufferTransformEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.preferred_buffer_transform;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, PreferredBufferTransformEvent);
     }
 
@@ -2172,11 +2259,14 @@ pub const wl_seat = struct {
     /// 
     /// The above behavior also applies to wl_keyboard and wl_touch with the
     /// keyboard and touch capabilities, respectively.
-    const CapabilitiesEvent = struct {
-        object: Self,
+    pub const CapabilitiesEvent = struct {
+        self: Self,
         capabilities: Capability,
     };
-    pub fn decodeCapabilitiesEvent(event: AnonymousEvent) DecodeError!CapabilitiesEvent {
+    pub fn decodeCapabilitiesEvent(self: Self, event: AnonymousEvent) DecodeError!?CapabilitiesEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.capabilities;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, CapabilitiesEvent);
     }
 
@@ -2196,11 +2286,14 @@ pub const wl_seat = struct {
     /// 
     /// Compositors may re-use the same seat name if the wl_seat global is
     /// destroyed and re-created later.
-    const NameEvent = struct {
-        object: Self,
+    pub const NameEvent = struct {
+        self: Self,
         name: [:0]const u8,
     };
-    pub fn decodeNameEvent(event: AnonymousEvent) DecodeError!NameEvent {
+    pub fn decodeNameEvent(self: Self, event: AnonymousEvent) DecodeError!?NameEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.name;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, NameEvent);
     }
 
@@ -2340,14 +2433,17 @@ pub const wl_pointer = struct {
     /// When a seat's focus enters a surface, the pointer image
     /// is undefined and a client should respond to this event by setting
     /// an appropriate pointer image with the set_cursor request.
-    const EnterEvent = struct {
-        object: Self,
+    pub const EnterEvent = struct {
+        self: Self,
         serial: u32,
         surface: ints.wl_surface,
         surface_x: Fixed,
         surface_y: Fixed,
     };
-    pub fn decodeEnterEvent(event: AnonymousEvent) DecodeError!EnterEvent {
+    pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.enter;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, EnterEvent);
     }
 
@@ -2356,25 +2452,31 @@ pub const wl_pointer = struct {
     /// 
     /// The leave notification is sent before the enter notification
     /// for the new focus.
-    const LeaveEvent = struct {
-        object: Self,
+    pub const LeaveEvent = struct {
+        self: Self,
         serial: u32,
         surface: ints.wl_surface,
     };
-    pub fn decodeLeaveEvent(event: AnonymousEvent) DecodeError!LeaveEvent {
+    pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.leave;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, LeaveEvent);
     }
 
     /// Notification of pointer location change. The arguments
     /// surface_x and surface_y are the location relative to the
     /// focused surface.
-    const MotionEvent = struct {
-        object: Self,
+    pub const MotionEvent = struct {
+        self: Self,
         time: u32,
         surface_x: Fixed,
         surface_y: Fixed,
     };
-    pub fn decodeMotionEvent(event: AnonymousEvent) DecodeError!MotionEvent {
+    pub fn decodeMotionEvent(self: Self, event: AnonymousEvent) DecodeError!?MotionEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.motion;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, MotionEvent);
     }
 
@@ -2392,14 +2494,17 @@ pub const wl_pointer = struct {
     /// kernel's event code list. All other button codes above 0xFFFF are
     /// currently undefined but may be used in future versions of this
     /// protocol.
-    const ButtonEvent = struct {
-        object: Self,
+    pub const ButtonEvent = struct {
+        self: Self,
         serial: u32,
         time: u32,
         button: u32,
         state: ButtonState,
     };
-    pub fn decodeButtonEvent(event: AnonymousEvent) DecodeError!ButtonEvent {
+    pub fn decodeButtonEvent(self: Self, event: AnonymousEvent) DecodeError!?ButtonEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.button;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, ButtonEvent);
     }
 
@@ -2419,13 +2524,16 @@ pub const wl_pointer = struct {
     /// 
     /// When applicable, a client can transform its content relative to the
     /// scroll distance.
-    const AxisEvent = struct {
-        object: Self,
+    pub const AxisEvent = struct {
+        self: Self,
         time: u32,
         axis: Axis,
         value: Fixed,
     };
-    pub fn decodeAxisEvent(event: AnonymousEvent) DecodeError!AxisEvent {
+    pub fn decodeAxisEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.axis;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, AxisEvent);
     }
 
@@ -2463,10 +2571,13 @@ pub const wl_pointer = struct {
     /// Compositor-specific policies may require the wl_pointer.leave and
     /// wl_pointer.enter event being split across multiple wl_pointer.frame
     /// groups.
-    const FrameEvent = struct {
-        object: Self,
+    pub const FrameEvent = struct {
+        self: Self,
     };
-    pub fn decodeFrameEvent(event: AnonymousEvent) DecodeError!FrameEvent {
+    pub fn decodeFrameEvent(self: Self, event: AnonymousEvent) DecodeError!?FrameEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.frame;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, FrameEvent);
     }
 
@@ -2495,11 +2606,14 @@ pub const wl_pointer = struct {
     /// 
     /// The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
     /// not guaranteed.
-    const AxisSourceEvent = struct {
-        object: Self,
+    pub const AxisSourceEvent = struct {
+        self: Self,
         axis_source: AxisSource,
     };
-    pub fn decodeAxisSourceEvent(event: AnonymousEvent) DecodeError!AxisSourceEvent {
+    pub fn decodeAxisSourceEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisSourceEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.axis_source;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, AxisSourceEvent);
     }
 
@@ -2517,12 +2631,15 @@ pub const wl_pointer = struct {
     /// The timestamp is to be interpreted identical to the timestamp in the
     /// wl_pointer.axis event. The timestamp value may be the same as a
     /// preceding wl_pointer.axis event.
-    const AxisStopEvent = struct {
-        object: Self,
+    pub const AxisStopEvent = struct {
+        self: Self,
         time: u32,
         axis: Axis,
     };
-    pub fn decodeAxisStopEvent(event: AnonymousEvent) DecodeError!AxisStopEvent {
+    pub fn decodeAxisStopEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisStopEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.axis_stop;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, AxisStopEvent);
     }
 
@@ -2556,12 +2673,15 @@ pub const wl_pointer = struct {
     /// 
     /// The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
     /// not guaranteed.
-    const AxisDiscreteEvent = struct {
-        object: Self,
+    pub const AxisDiscreteEvent = struct {
+        self: Self,
         axis: Axis,
         discrete: i32,
     };
-    pub fn decodeAxisDiscreteEvent(event: AnonymousEvent) DecodeError!AxisDiscreteEvent {
+    pub fn decodeAxisDiscreteEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisDiscreteEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.axis_discrete;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, AxisDiscreteEvent);
     }
 
@@ -2586,12 +2706,15 @@ pub const wl_pointer = struct {
     /// 
     /// The order of wl_pointer.axis_value120 and wl_pointer.axis_source is
     /// not guaranteed.
-    const AxisValue120Event = struct {
-        object: Self,
+    pub const AxisValue120Event = struct {
+        self: Self,
         axis: Axis,
         value120: i32,
     };
-    pub fn decodeAxisValue120Event(event: AnonymousEvent) DecodeError!AxisValue120Event {
+    pub fn decodeAxisValue120Event(self: Self, event: AnonymousEvent) DecodeError!?AxisValue120Event {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.axis_value120;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, AxisValue120Event);
     }
 
@@ -2630,12 +2753,15 @@ pub const wl_pointer = struct {
     /// The order of wl_pointer.axis_relative_direction,
     /// wl_pointer.axis_discrete and wl_pointer.axis_source is not
     /// guaranteed.
-    const AxisRelativeDirectionEvent = struct {
-        object: Self,
+    pub const AxisRelativeDirectionEvent = struct {
+        self: Self,
         axis: Axis,
         direction: AxisRelativeDirection,
     };
-    pub fn decodeAxisRelativeDirectionEvent(event: AnonymousEvent) DecodeError!AxisRelativeDirectionEvent {
+    pub fn decodeAxisRelativeDirectionEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisRelativeDirectionEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.axis_relative_direction;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, AxisRelativeDirectionEvent);
     }
 
@@ -2696,13 +2822,16 @@ pub const wl_keyboard = struct {
     /// 
     /// From version 7 onwards, the fd must be mapped with MAP_PRIVATE by
     /// the recipient, as MAP_SHARED may fail.
-    const KeymapEvent = struct {
-        object: Self,
+    pub const KeymapEvent = struct {
+        self: Self,
         format: KeymapFormat,
         fd: FD,
         size: u32,
     };
-    pub fn decodeKeymapEvent(event: AnonymousEvent) DecodeError!KeymapEvent {
+    pub fn decodeKeymapEvent(self: Self, event: AnonymousEvent) DecodeError!?KeymapEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.keymap;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, KeymapEvent);
     }
 
@@ -2716,13 +2845,16 @@ pub const wl_keyboard = struct {
     /// the surface argument and the keys currently logically down to the keys
     /// in the keys argument. The compositor must not send this event if the
     /// wl_keyboard already had an active surface immediately before this event.
-    const EnterEvent = struct {
-        object: Self,
+    pub const EnterEvent = struct {
+        self: Self,
         serial: u32,
         surface: ints.wl_surface,
         keys: []const u8,
     };
-    pub fn decodeEnterEvent(event: AnonymousEvent) DecodeError!EnterEvent {
+    pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.enter;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, EnterEvent);
     }
 
@@ -2736,12 +2868,15 @@ pub const wl_keyboard = struct {
     /// defaults. The compositor must not send this event if the active surface
     /// of the wl_keyboard was not equal to the surface argument immediately
     /// before this event.
-    const LeaveEvent = struct {
-        object: Self,
+    pub const LeaveEvent = struct {
+        self: Self,
         serial: u32,
         surface: ints.wl_surface,
     };
-    pub fn decodeLeaveEvent(event: AnonymousEvent) DecodeError!LeaveEvent {
+    pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.leave;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, LeaveEvent);
     }
 
@@ -2763,14 +2898,17 @@ pub const wl_keyboard = struct {
     /// compositor must not send this event if state is pressed (resp. released)
     /// and the key was already logically down (resp. was not logically down)
     /// immediately before this event.
-    const KeyEvent = struct {
-        object: Self,
+    pub const KeyEvent = struct {
+        self: Self,
         serial: u32,
         time: u32,
         key: u32,
         state: KeyState,
     };
-    pub fn decodeKeyEvent(event: AnonymousEvent) DecodeError!KeyEvent {
+    pub fn decodeKeyEvent(self: Self, event: AnonymousEvent) DecodeError!?KeyEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.key;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, KeyEvent);
     }
 
@@ -2787,15 +2925,18 @@ pub const wl_keyboard = struct {
     /// 
     /// In the wl_keyboard logical state, this event updates the modifiers and
     /// group.
-    const ModifiersEvent = struct {
-        object: Self,
+    pub const ModifiersEvent = struct {
+        self: Self,
         serial: u32,
         mods_depressed: u32,
         mods_latched: u32,
         mods_locked: u32,
         group: u32,
     };
-    pub fn decodeModifiersEvent(event: AnonymousEvent) DecodeError!ModifiersEvent {
+    pub fn decodeModifiersEvent(self: Self, event: AnonymousEvent) DecodeError!?ModifiersEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.modifiers;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, ModifiersEvent);
     }
 
@@ -2811,12 +2952,15 @@ pub const wl_keyboard = struct {
     /// This event can be sent later on as well with a new value if necessary,
     /// so clients should continue listening for the event past the creation
     /// of wl_keyboard.
-    const RepeatInfoEvent = struct {
-        object: Self,
+    pub const RepeatInfoEvent = struct {
+        self: Self,
         rate: i32,
         delay: i32,
     };
-    pub fn decodeRepeatInfoEvent(event: AnonymousEvent) DecodeError!RepeatInfoEvent {
+    pub fn decodeRepeatInfoEvent(self: Self, event: AnonymousEvent) DecodeError!?RepeatInfoEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.repeat_info;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, RepeatInfoEvent);
     }
 
@@ -2859,8 +3003,8 @@ pub const wl_touch = struct {
     /// assigned a unique ID. Future events from this touch point reference
     /// this ID. The ID ceases to be valid after a touch up event and may be
     /// reused in the future.
-    const DownEvent = struct {
-        object: Self,
+    pub const DownEvent = struct {
+        self: Self,
         serial: u32,
         time: u32,
         surface: ints.wl_surface,
@@ -2868,32 +3012,41 @@ pub const wl_touch = struct {
         x: Fixed,
         y: Fixed,
     };
-    pub fn decodeDownEvent(event: AnonymousEvent) DecodeError!DownEvent {
+    pub fn decodeDownEvent(self: Self, event: AnonymousEvent) DecodeError!?DownEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.down;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, DownEvent);
     }
 
     /// The touch point has disappeared. No further events will be sent for
     /// this touch point and the touch point's ID is released and may be
     /// reused in a future touch down event.
-    const UpEvent = struct {
-        object: Self,
+    pub const UpEvent = struct {
+        self: Self,
         serial: u32,
         time: u32,
         id: i32,
     };
-    pub fn decodeUpEvent(event: AnonymousEvent) DecodeError!UpEvent {
+    pub fn decodeUpEvent(self: Self, event: AnonymousEvent) DecodeError!?UpEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.up;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, UpEvent);
     }
 
     /// A touch point has changed coordinates.
-    const MotionEvent = struct {
-        object: Self,
+    pub const MotionEvent = struct {
+        self: Self,
         time: u32,
         id: i32,
         x: Fixed,
         y: Fixed,
     };
-    pub fn decodeMotionEvent(event: AnonymousEvent) DecodeError!MotionEvent {
+    pub fn decodeMotionEvent(self: Self, event: AnonymousEvent) DecodeError!?MotionEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.motion;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, MotionEvent);
     }
 
@@ -2905,10 +3058,13 @@ pub const wl_touch = struct {
     /// guarantee is provided about the set of events within a frame. A client
     /// must assume that any state not updated in a frame is unchanged from the
     /// previously known state.
-    const FrameEvent = struct {
-        object: Self,
+    pub const FrameEvent = struct {
+        self: Self,
     };
-    pub fn decodeFrameEvent(event: AnonymousEvent) DecodeError!FrameEvent {
+    pub fn decodeFrameEvent(self: Self, event: AnonymousEvent) DecodeError!?FrameEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.frame;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, FrameEvent);
     }
 
@@ -2920,10 +3076,13 @@ pub const wl_touch = struct {
     /// this surface may reuse the touch point ID.
     /// 
     /// No frame event is required after the cancel event.
-    const CancelEvent = struct {
-        object: Self,
+    pub const CancelEvent = struct {
+        self: Self,
     };
-    pub fn decodeCancelEvent(event: AnonymousEvent) DecodeError!CancelEvent {
+    pub fn decodeCancelEvent(self: Self, event: AnonymousEvent) DecodeError!?CancelEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.cancel;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, CancelEvent);
     }
 
@@ -2952,13 +3111,16 @@ pub const wl_touch = struct {
     /// This event is only sent by the compositor if the touch device supports
     /// shape reports. The client has to make reasonable assumptions about the
     /// shape if it did not receive this event.
-    const ShapeEvent = struct {
-        object: Self,
+    pub const ShapeEvent = struct {
+        self: Self,
         id: i32,
         major: Fixed,
         minor: Fixed,
     };
-    pub fn decodeShapeEvent(event: AnonymousEvent) DecodeError!ShapeEvent {
+    pub fn decodeShapeEvent(self: Self, event: AnonymousEvent) DecodeError!?ShapeEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.shape;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, ShapeEvent);
     }
 
@@ -2985,12 +3147,15 @@ pub const wl_touch = struct {
     /// 
     /// This event is only sent by the compositor if the touch device supports
     /// orientation reports.
-    const OrientationEvent = struct {
-        object: Self,
+    pub const OrientationEvent = struct {
+        self: Self,
         id: i32,
         orientation: Fixed,
     };
-    pub fn decodeOrientationEvent(event: AnonymousEvent) DecodeError!OrientationEvent {
+    pub fn decodeOrientationEvent(self: Self, event: AnonymousEvent) DecodeError!?OrientationEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.orientation;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, OrientationEvent);
     }
 
@@ -3087,8 +3252,8 @@ pub const wl_output = struct {
     /// outputs, might fake this information. Instead of using x and y, clients
     /// should use xdg_output.logical_position. Instead of using make and model,
     /// clients should use name and description.
-    const GeometryEvent = struct {
-        object: Self,
+    pub const GeometryEvent = struct {
+        self: Self,
         x: i32,
         y: i32,
         physical_width: i32,
@@ -3098,7 +3263,10 @@ pub const wl_output = struct {
         model: [:0]const u8,
         transform: Transform,
     };
-    pub fn decodeGeometryEvent(event: AnonymousEvent) DecodeError!GeometryEvent {
+    pub fn decodeGeometryEvent(self: Self, event: AnonymousEvent) DecodeError!?GeometryEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.geometry;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, GeometryEvent);
     }
 
@@ -3135,14 +3303,17 @@ pub const wl_output = struct {
     /// Note: this information is not always meaningful for all outputs. Some
     /// compositors, such as those exposing virtual outputs, might fake the
     /// refresh rate or the size.
-    const ModeEvent = struct {
-        object: Self,
+    pub const ModeEvent = struct {
+        self: Self,
         flags: Mode,
         width: i32,
         height: i32,
         refresh: i32,
     };
-    pub fn decodeModeEvent(event: AnonymousEvent) DecodeError!ModeEvent {
+    pub fn decodeModeEvent(self: Self, event: AnonymousEvent) DecodeError!?ModeEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.mode;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, ModeEvent);
     }
 
@@ -3151,10 +3322,13 @@ pub const wl_output = struct {
     /// other property changes done after that. This allows
     /// changes to the output properties to be seen as
     /// atomic, even if they happen via multiple events.
-    const DoneEvent = struct {
-        object: Self,
+    pub const DoneEvent = struct {
+        self: Self,
     };
-    pub fn decodeDoneEvent(event: AnonymousEvent) DecodeError!DoneEvent {
+    pub fn decodeDoneEvent(self: Self, event: AnonymousEvent) DecodeError!?DoneEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.done;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, DoneEvent);
     }
 
@@ -3176,11 +3350,14 @@ pub const wl_output = struct {
     /// scale to use for a surface.
     /// 
     /// The scale event will be followed by a done event.
-    const ScaleEvent = struct {
-        object: Self,
+    pub const ScaleEvent = struct {
+        self: Self,
         factor: i32,
     };
-    pub fn decodeScaleEvent(event: AnonymousEvent) DecodeError!ScaleEvent {
+    pub fn decodeScaleEvent(self: Self, event: AnonymousEvent) DecodeError!?ScaleEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.scale;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, ScaleEvent);
     }
 
@@ -3212,11 +3389,14 @@ pub const wl_output = struct {
     /// same name if possible.
     /// 
     /// The name event will be followed by a done event.
-    const NameEvent = struct {
-        object: Self,
+    pub const NameEvent = struct {
+        self: Self,
         name: [:0]const u8,
     };
-    pub fn decodeNameEvent(event: AnonymousEvent) DecodeError!NameEvent {
+    pub fn decodeNameEvent(self: Self, event: AnonymousEvent) DecodeError!?NameEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.name;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, NameEvent);
     }
 
@@ -3234,11 +3414,14 @@ pub const wl_output = struct {
     /// not be sent at all.
     /// 
     /// The description event will be followed by a done event.
-    const DescriptionEvent = struct {
-        object: Self,
+    pub const DescriptionEvent = struct {
+        self: Self,
         description: [:0]const u8,
     };
-    pub fn decodeDescriptionEvent(event: AnonymousEvent) DecodeError!DescriptionEvent {
+    pub fn decodeDescriptionEvent(self: Self, event: AnonymousEvent) DecodeError!?DescriptionEvent {
+        if (event.self.id != self.id) return null;
+        const op = Self.opcode.event.description;
+        if (event.opcode != op) return null;
         return try decodeEvent(event, DescriptionEvent);
     }
 
