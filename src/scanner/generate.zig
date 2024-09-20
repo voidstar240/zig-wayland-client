@@ -19,7 +19,8 @@ pub fn generateProtocol(
         try writer.print("\n", .{});
     }
 
-    try writer.print("const util = @import(\"util.zig\");\n", .{});
+    try writer.print("const wire = @import(\"wire.zig\");\n", .{});
+    try writer.print("const root = @import(\"root.zig\");\n", .{});
     try writer.print("const ints = struct {{\n", .{});
     try writer.print("    usingnamespace @import(\"protocol.zig\");\n", .{});
     for (dependencies) |dep| {
@@ -27,13 +28,13 @@ pub fn generateProtocol(
     }
     try writer.print("}};\n\n", .{});
 
-    try writer.print("const Object = util.Object;\n", .{});
-    try writer.print("const Fixed = util.Fixed;\n", .{});
-    try writer.print("const FD = util.FD;\n", .{});
-    try writer.print("const WaylandState = util.WaylandState;\n", .{});
-    try writer.print("const decodeEvent = util.decodeEvent;\n", .{});
-    try writer.print("const DecodeError = util.DecodeError;\n", .{});
-    try writer.print("const AnonymousEvent = util.AnonymousEvent;\n\n\n", .{});
+    try writer.print("const Fixed = wire.Fixed;\n", .{});
+    try writer.print("const FD = wire.FD;\n", .{});
+    try writer.print("const Object = wire.Object;\n", .{});
+    try writer.print("const AnonymousEvent = wire.AnonymousEvent;\n", .{});
+    try writer.print("const DecodeError = wire.DecodeError;\n", .{});
+    try writer.print("const decodeEvent = wire.decodeEvent;\n", .{});
+    try writer.print("const WaylandState = root.WaylandState;\n\n\n", .{});
 
     for (protocol.interfaces) |*interface| {
         try generateInterface(interface, writer);

@@ -23,18 +23,19 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-const util = @import("util.zig");
+const wire = @import("wire.zig");
+const root = @import("root.zig");
 const ints = struct {
     usingnamespace @import("protocol.zig");
 };
 
-const Object = util.Object;
-const Fixed = util.Fixed;
-const FD = util.FD;
-const WaylandState = util.WaylandState;
-const decodeEvent = util.decodeEvent;
-const DecodeError = util.DecodeError;
-const AnonymousEvent = util.AnonymousEvent;
+const Fixed = wire.Fixed;
+const FD = wire.FD;
+const Object = wire.Object;
+const AnonymousEvent = wire.AnonymousEvent;
+const DecodeError = wire.DecodeError;
+const decodeEvent = wire.decodeEvent;
+const WaylandState = root.WaylandState;
 
 
 /// The core global object.  This is a special singleton object.  It
