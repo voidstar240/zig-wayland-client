@@ -263,7 +263,8 @@ fn generateEnum(enum_: *const Enum, writer: anytype) !void {
         try writeName(entry.name, writer);
         try writer.print(" = {d},", .{entry.value});
         if (entry.summary) |summary| {
-            try writer.print(" // {s}", .{summary});
+            try writer.print(" ", .{});
+            try writeComment(summary, writer);
         }
         try writer.print("\n", .{});
     }
@@ -412,4 +413,24 @@ fn writeParsedText(
             },
         }
     }
+}
+
+/// Writes a single line comment removing newlines if needed.
+fn writeComment(text: []const u8, writer: anytype) !void {
+    try writer.print("// ", .{});
+    var rem_text = text;
+    var i: usize = 0;
+    while (i < rem_text.len) {
+        switch (rem_text[i]) {
+            '\r', '\n' => {
+                try writer.print("{s}", .{rem_text[0..i]});
+                rem_text = rem_text[i+1..];
+                i = 0;
+            },
+            else => {
+                i += 1;
+            },
+        }
+    }
+    try writer.print("{s}", .{rem_text});
 }
