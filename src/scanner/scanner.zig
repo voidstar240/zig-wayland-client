@@ -242,7 +242,6 @@ pub const Scanner = struct {
         const start = self.cursor;
         while (self.peek(0) catch null) |char| {
             switch (char) {
-                '\r', '\n' => return ScannerError.OpenValue,
                 '"' => {
                     self.cursor += 1;
                     if (!single) break;
