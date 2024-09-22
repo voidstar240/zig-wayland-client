@@ -23,19 +23,18 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-const wire = @import("wire.zig");
-const root = @import("root.zig");
-const ints = struct {
+const deps = struct {
     usingnamespace @import("protocol.zig");
+    usingnamespace @import("root.zig");
 };
 
-const Fixed = wire.Fixed;
-const FD = wire.FD;
-const Object = wire.Object;
-const AnonymousEvent = wire.AnonymousEvent;
-const DecodeError = wire.DecodeError;
-const decodeEvent = wire.decodeEvent;
-const WaylandState = root.WaylandState;
+const Fixed = deps.Fixed;
+const FD = deps.FD;
+const Object = deps.Object;
+const AnonymousEvent = deps.AnonymousEvent;
+const DecodeError = deps.DecodeError;
+const decodeEvent = deps.decodeEvent;
+const WaylandState = deps.WaylandState;
 
 
 /// The core global object.  This is a special singleton object.  It
@@ -76,8 +75,8 @@ pub const wl_display = struct {
     /// attempt to use it after that point.
     /// 
     /// The callback_data passed in the callback is undefined and should be ignored.
-    pub fn sync(self: Self, global: *WaylandState, callback: u32) !ints.wl_callback {
-        const new_obj = ints.wl_callback {
+    pub fn sync(self: Self, global: *WaylandState, callback: u32) !deps.wl_callback {
+        const new_obj = deps.wl_callback {
             .id = callback,
         };
 
@@ -95,8 +94,8 @@ pub const wl_display = struct {
     /// client disconnects, not when the client side proxy is destroyed.
     /// Therefore, clients should invoke get_registry as infrequently as
     /// possible to avoid wasting memory.
-    pub fn getRegistry(self: Self, global: *WaylandState, registry: u32) !ints.wl_registry {
-        const new_obj = ints.wl_registry {
+    pub fn getRegistry(self: Self, global: *WaylandState, registry: u32) !deps.wl_registry {
+        const new_obj = deps.wl_registry {
             .id = registry,
         };
 
@@ -277,8 +276,8 @@ pub const wl_compositor = struct {
     };
 
     /// Ask the compositor to create a new surface.
-    pub fn createSurface(self: Self, global: *WaylandState, id: u32) !ints.wl_surface {
-        const new_obj = ints.wl_surface {
+    pub fn createSurface(self: Self, global: *WaylandState, id: u32) !deps.wl_surface {
+        const new_obj = deps.wl_surface {
             .id = id,
         };
 
@@ -288,8 +287,8 @@ pub const wl_compositor = struct {
     }
 
     /// Ask the compositor to create a new region.
-    pub fn createRegion(self: Self, global: *WaylandState, id: u32) !ints.wl_region {
-        const new_obj = ints.wl_region {
+    pub fn createRegion(self: Self, global: *WaylandState, id: u32) !deps.wl_region {
+        const new_obj = deps.wl_region {
             .id = id,
         };
 
@@ -331,8 +330,8 @@ pub const wl_shm_pool = struct {
     /// A buffer will keep a reference to the pool it was created from
     /// so it is valid to destroy the pool immediately after creating
     /// a buffer from it.
-    pub fn createBuffer(self: Self, global: *WaylandState, id: u32, offset: i32, width: i32, height: i32, stride: i32, format: ints.wl_shm.Format) !ints.wl_buffer {
-        const new_obj = ints.wl_buffer {
+    pub fn createBuffer(self: Self, global: *WaylandState, id: u32, offset: i32, width: i32, height: i32, stride: i32, format: deps.wl_shm.Format) !deps.wl_buffer {
+        const new_obj = deps.wl_buffer {
             .id = id,
         };
 
@@ -542,8 +541,8 @@ pub const wl_shm = struct {
     /// The pool can be used to create shared memory based buffer
     /// objects.  The server will mmap size bytes of the passed file
     /// descriptor, to use as backing memory for the pool.
-    pub fn createPool(self: Self, global: *WaylandState, id: u32, fd: FD, size: i32) !ints.wl_shm_pool {
-        const new_obj = ints.wl_shm_pool {
+    pub fn createPool(self: Self, global: *WaylandState, id: u32, fd: FD, size: i32) !deps.wl_shm_pool {
+        const new_obj = deps.wl_shm_pool {
             .id = id,
         };
 
@@ -767,7 +766,7 @@ pub const wl_data_offer = struct {
     /// 
     /// This request can only be made on drag-and-drop offers, a protocol error
     /// will be raised otherwise.
-    pub fn setActions(self: Self, global: *WaylandState, dnd_actions: ints.wl_data_device_manager.DndAction, preferred_action: ints.wl_data_device_manager.DndAction) !void {
+    pub fn setActions(self: Self, global: *WaylandState, dnd_actions: deps.wl_data_device_manager.DndAction, preferred_action: deps.wl_data_device_manager.DndAction) !void {
         const op = Self.opcode.request.set_actions;
         try global.sendRequest(self.id, op, .{ dnd_actions, preferred_action, });
     }
@@ -791,7 +790,7 @@ pub const wl_data_offer = struct {
     /// wl_data_source.set_actions.
     pub const SourceActionsEvent = struct {
         self: Self,
-        source_actions: ints.wl_data_device_manager.DndAction,
+        source_actions: deps.wl_data_device_manager.DndAction,
     };
     pub fn decodeSourceActionsEvent(self: Self, event: AnonymousEvent) DecodeError!?SourceActionsEvent {
         if (event.self.id != self.id) return null;
@@ -837,7 +836,7 @@ pub const wl_data_offer = struct {
     /// must happen before the call to wl_data_offer.finish.
     pub const ActionEvent = struct {
         self: Self,
-        dnd_action: ints.wl_data_device_manager.DndAction,
+        dnd_action: deps.wl_data_device_manager.DndAction,
     };
     pub fn decodeActionEvent(self: Self, event: AnonymousEvent) DecodeError!?ActionEvent {
         if (event.self.id != self.id) return null;
@@ -905,7 +904,7 @@ pub const wl_data_source = struct {
     /// used in drag-and-drop, so it must be performed before
     /// wl_data_device.start_drag. Attempting to use the source other than
     /// for drag-and-drop will raise a protocol error.
-    pub fn setActions(self: Self, global: *WaylandState, dnd_actions: ints.wl_data_device_manager.DndAction) !void {
+    pub fn setActions(self: Self, global: *WaylandState, dnd_actions: deps.wl_data_device_manager.DndAction) !void {
         const op = Self.opcode.request.set_actions;
         try global.sendRequest(self.id, op, .{ dnd_actions, });
     }
@@ -1032,7 +1031,7 @@ pub const wl_data_source = struct {
     /// they reflect the current action.
     pub const ActionEvent = struct {
         self: Self,
-        dnd_action: ints.wl_data_device_manager.DndAction,
+        dnd_action: deps.wl_data_device_manager.DndAction,
     };
     pub fn decodeActionEvent(self: Self, event: AnonymousEvent) DecodeError!?ActionEvent {
         if (event.self.id != self.id) return null;
@@ -1103,7 +1102,7 @@ pub const wl_data_device = struct {
     /// The given source may not be used in any further set_selection or
     /// start_drag requests. Attempting to reuse a previously-used source
     /// may send a used_source error.
-    pub fn startDrag(self: Self, global: *WaylandState, source: ?ints.wl_data_source, origin: ints.wl_surface, icon: ?ints.wl_surface, serial: u32) !void {
+    pub fn startDrag(self: Self, global: *WaylandState, source: ?deps.wl_data_source, origin: deps.wl_surface, icon: ?deps.wl_surface, serial: u32) !void {
         const op = Self.opcode.request.start_drag;
         try global.sendRequest(self.id, op, .{ source, origin, icon, serial, });
     }
@@ -1116,7 +1115,7 @@ pub const wl_data_device = struct {
     /// The given source may not be used in any further set_selection or
     /// start_drag requests. Attempting to reuse a previously-used source
     /// may send a used_source error.
-    pub fn setSelection(self: Self, global: *WaylandState, source: ?ints.wl_data_source, serial: u32) !void {
+    pub fn setSelection(self: Self, global: *WaylandState, source: ?deps.wl_data_source, serial: u32) !void {
         const op = Self.opcode.request.set_selection;
         try global.sendRequest(self.id, op, .{ source, serial, });
     }
@@ -1152,10 +1151,10 @@ pub const wl_data_device = struct {
     pub const EnterEvent = struct {
         self: Self,
         serial: u32,
-        surface: ints.wl_surface,
+        surface: deps.wl_surface,
         x: Fixed,
         y: Fixed,
-        id: ?ints.wl_data_offer,
+        id: ?deps.wl_data_offer,
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
         if (event.self.id != self.id) return null;
@@ -1231,7 +1230,7 @@ pub const wl_data_device = struct {
     /// data_offer, if any, upon receiving this event.
     pub const SelectionEvent = struct {
         self: Self,
-        id: ?ints.wl_data_offer,
+        id: ?deps.wl_data_offer,
     };
     pub fn decodeSelectionEvent(self: Self, event: AnonymousEvent) DecodeError!?SelectionEvent {
         if (event.self.id != self.id) return null;
@@ -1295,8 +1294,8 @@ pub const wl_data_device_manager = struct {
     };
 
     /// Create a new data source.
-    pub fn createDataSource(self: Self, global: *WaylandState, id: u32) !ints.wl_data_source {
-        const new_obj = ints.wl_data_source {
+    pub fn createDataSource(self: Self, global: *WaylandState, id: u32) !deps.wl_data_source {
+        const new_obj = deps.wl_data_source {
             .id = id,
         };
 
@@ -1306,8 +1305,8 @@ pub const wl_data_device_manager = struct {
     }
 
     /// Create a new data device for a given seat.
-    pub fn getDataDevice(self: Self, global: *WaylandState, id: u32, seat: ints.wl_seat) !ints.wl_data_device {
-        const new_obj = ints.wl_data_device {
+    pub fn getDataDevice(self: Self, global: *WaylandState, id: u32, seat: deps.wl_seat) !deps.wl_data_device {
+        const new_obj = deps.wl_data_device {
             .id = id,
         };
 
@@ -1347,8 +1346,8 @@ pub const wl_shell = struct {
     /// already has another role, it raises a protocol error.
     /// 
     /// Only one shell surface can be associated with a given surface.
-    pub fn getShellSurface(self: Self, global: *WaylandState, id: u32, surface: ints.wl_surface) !ints.wl_shell_surface {
-        const new_obj = ints.wl_shell_surface {
+    pub fn getShellSurface(self: Self, global: *WaylandState, id: u32, surface: deps.wl_surface) !deps.wl_shell_surface {
+        const new_obj = deps.wl_shell_surface {
             .id = id,
         };
 
@@ -1439,7 +1438,7 @@ pub const wl_shell_surface = struct {
     /// This request must be used in response to a button press event.
     /// The server may ignore move requests depending on the state of
     /// the surface (e.g. fullscreen or maximized).
-    pub fn move(self: Self, global: *WaylandState, seat: ints.wl_seat, serial: u32) !void {
+    pub fn move(self: Self, global: *WaylandState, seat: deps.wl_seat, serial: u32) !void {
         const op = Self.opcode.request.move;
         try global.sendRequest(self.id, op, .{ seat, serial, });
     }
@@ -1449,7 +1448,7 @@ pub const wl_shell_surface = struct {
     /// This request must be used in response to a button press event.
     /// The server may ignore resize requests depending on the state of
     /// the surface (e.g. fullscreen or maximized).
-    pub fn resize(self: Self, global: *WaylandState, seat: ints.wl_seat, serial: u32, edges: Resize) !void {
+    pub fn resize(self: Self, global: *WaylandState, seat: deps.wl_seat, serial: u32, edges: Resize) !void {
         const op = Self.opcode.request.resize;
         try global.sendRequest(self.id, op, .{ seat, serial, edges, });
     }
@@ -1469,7 +1468,7 @@ pub const wl_shell_surface = struct {
     /// parent surface, in surface-local coordinates.
     /// 
     /// The flags argument controls details of the transient behaviour.
-    pub fn setTransient(self: Self, global: *WaylandState, parent: ints.wl_surface, x: i32, y: i32, flags: Transient) !void {
+    pub fn setTransient(self: Self, global: *WaylandState, parent: deps.wl_surface, x: i32, y: i32, flags: Transient) !void {
         const op = Self.opcode.request.set_transient;
         try global.sendRequest(self.id, op, .{ parent, x, y, flags, });
     }
@@ -1507,7 +1506,7 @@ pub const wl_shell_surface = struct {
     /// The compositor must reply to this request with a configure event
     /// with the dimensions for the output on which the surface will
     /// be made fullscreen.
-    pub fn setFullscreen(self: Self, global: *WaylandState, method: FullscreenMethod, framerate: u32, output: ?ints.wl_output) !void {
+    pub fn setFullscreen(self: Self, global: *WaylandState, method: FullscreenMethod, framerate: u32, output: ?deps.wl_output) !void {
         const op = Self.opcode.request.set_fullscreen;
         try global.sendRequest(self.id, op, .{ method, framerate, output, });
     }
@@ -1531,7 +1530,7 @@ pub const wl_shell_surface = struct {
     /// The x and y arguments specify the location of the upper left
     /// corner of the surface relative to the upper left corner of the
     /// parent surface, in surface-local coordinates.
-    pub fn setPopup(self: Self, global: *WaylandState, seat: ints.wl_seat, serial: u32, parent: ints.wl_surface, x: i32, y: i32, flags: Transient) !void {
+    pub fn setPopup(self: Self, global: *WaylandState, seat: deps.wl_seat, serial: u32, parent: deps.wl_surface, x: i32, y: i32, flags: Transient) !void {
         const op = Self.opcode.request.set_popup;
         try global.sendRequest(self.id, op, .{ seat, serial, parent, x, y, flags, });
     }
@@ -1554,7 +1553,7 @@ pub const wl_shell_surface = struct {
     /// fullscreen shell surface.
     /// 
     /// The details depend on the compositor implementation.
-    pub fn setMaximized(self: Self, global: *WaylandState, output: ?ints.wl_output) !void {
+    pub fn setMaximized(self: Self, global: *WaylandState, output: ?deps.wl_output) !void {
         const op = Self.opcode.request.set_maximized;
         try global.sendRequest(self.id, op, .{ output, });
     }
@@ -1788,7 +1787,7 @@ pub const wl_surface = struct {
     /// maximise compatibility should not destroy pending buffers and should
     /// ensure that they explicitly remove content from surfaces, even after
     /// destroying buffers.
-    pub fn attach(self: Self, global: *WaylandState, buffer: ?ints.wl_buffer, x: i32, y: i32) !void {
+    pub fn attach(self: Self, global: *WaylandState, buffer: ?deps.wl_buffer, x: i32, y: i32) !void {
         const op = Self.opcode.request.attach;
         try global.sendRequest(self.id, op, .{ buffer, x, y, });
     }
@@ -1851,8 +1850,8 @@ pub const wl_surface = struct {
     /// 
     /// The callback_data passed in the callback is the current time, in
     /// milliseconds, with an undefined base.
-    pub fn frame(self: Self, global: *WaylandState, callback: u32) !ints.wl_callback {
-        const new_obj = ints.wl_callback {
+    pub fn frame(self: Self, global: *WaylandState, callback: u32) !deps.wl_callback {
+        const new_obj = deps.wl_callback {
             .id = callback,
         };
 
@@ -1885,7 +1884,7 @@ pub const wl_surface = struct {
     /// opaque region has copy semantics, and the wl_region object can be
     /// destroyed immediately. A NULL wl_region causes the pending opaque
     /// region to be set to empty.
-    pub fn setOpaqueRegion(self: Self, global: *WaylandState, region: ?ints.wl_region) !void {
+    pub fn setOpaqueRegion(self: Self, global: *WaylandState, region: ?deps.wl_region) !void {
         const op = Self.opcode.request.set_opaque_region;
         try global.sendRequest(self.id, op, .{ region, });
     }
@@ -1912,7 +1911,7 @@ pub const wl_surface = struct {
     /// has copy semantics, and the wl_region object can be destroyed
     /// immediately. A NULL wl_region causes the input region to be set
     /// to infinite.
-    pub fn setInputRegion(self: Self, global: *WaylandState, region: ?ints.wl_region) !void {
+    pub fn setInputRegion(self: Self, global: *WaylandState, region: ?deps.wl_region) !void {
         const op = Self.opcode.request.set_input_region;
         try global.sendRequest(self.id, op, .{ region, });
     }
@@ -1972,7 +1971,7 @@ pub const wl_surface = struct {
     /// If transform is not one of the values from the
     /// wl_output.transform enum the invalid_transform protocol error
     /// is raised.
-    pub fn setBufferTransform(self: Self, global: *WaylandState, transform: ints.wl_output.Transform) !void {
+    pub fn setBufferTransform(self: Self, global: *WaylandState, transform: deps.wl_output.Transform) !void {
         const op = Self.opcode.request.set_buffer_transform;
         try global.sendRequest(self.id, op, .{ transform, });
     }
@@ -2066,7 +2065,7 @@ pub const wl_surface = struct {
     /// Note that a surface may be overlapping with zero or more outputs.
     pub const EnterEvent = struct {
         self: Self,
-        output: ints.wl_output,
+        output: deps.wl_output,
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
         if (event.self.id != self.id) return null;
@@ -2086,7 +2085,7 @@ pub const wl_surface = struct {
     /// used instead.
     pub const LeaveEvent = struct {
         self: Self,
-        output: ints.wl_output,
+        output: deps.wl_output,
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
         if (event.self.id != self.id) return null;
@@ -2129,7 +2128,7 @@ pub const wl_surface = struct {
     /// surface buffer more efficiently.
     pub const PreferredBufferTransformEvent = struct {
         self: Self,
-        transform: ints.wl_output.Transform,
+        transform: deps.wl_output.Transform,
     };
     pub fn decodePreferredBufferTransformEvent(self: Self, event: AnonymousEvent) DecodeError!?PreferredBufferTransformEvent {
         if (event.self.id != self.id) return null;
@@ -2183,8 +2182,8 @@ pub const wl_seat = struct {
     /// It is a protocol violation to issue this request on a seat that has
     /// never had the pointer capability. The missing_capability error will
     /// be sent in this case.
-    pub fn getPointer(self: Self, global: *WaylandState, id: u32) !ints.wl_pointer {
-        const new_obj = ints.wl_pointer {
+    pub fn getPointer(self: Self, global: *WaylandState, id: u32) !deps.wl_pointer {
+        const new_obj = deps.wl_pointer {
             .id = id,
         };
 
@@ -2201,8 +2200,8 @@ pub const wl_seat = struct {
     /// It is a protocol violation to issue this request on a seat that has
     /// never had the keyboard capability. The missing_capability error will
     /// be sent in this case.
-    pub fn getKeyboard(self: Self, global: *WaylandState, id: u32) !ints.wl_keyboard {
-        const new_obj = ints.wl_keyboard {
+    pub fn getKeyboard(self: Self, global: *WaylandState, id: u32) !deps.wl_keyboard {
+        const new_obj = deps.wl_keyboard {
             .id = id,
         };
 
@@ -2219,8 +2218,8 @@ pub const wl_seat = struct {
     /// It is a protocol violation to issue this request on a seat that has
     /// never had the touch capability. The missing_capability error will
     /// be sent in this case.
-    pub fn getTouch(self: Self, global: *WaylandState, id: u32) !ints.wl_touch {
-        const new_obj = ints.wl_touch {
+    pub fn getTouch(self: Self, global: *WaylandState, id: u32) !deps.wl_touch {
+        const new_obj = deps.wl_touch {
             .id = id,
         };
 
@@ -2413,7 +2412,7 @@ pub const wl_pointer = struct {
     /// The serial parameter must match the latest wl_pointer.enter
     /// serial number sent to the client. Otherwise the request will be
     /// ignored.
-    pub fn setCursor(self: Self, global: *WaylandState, serial: u32, surface: ?ints.wl_surface, hotspot_x: i32, hotspot_y: i32) !void {
+    pub fn setCursor(self: Self, global: *WaylandState, serial: u32, surface: ?deps.wl_surface, hotspot_x: i32, hotspot_y: i32) !void {
         const op = Self.opcode.request.set_cursor;
         try global.sendRequest(self.id, op, .{ serial, surface, hotspot_x, hotspot_y, });
     }
@@ -2437,7 +2436,7 @@ pub const wl_pointer = struct {
     pub const EnterEvent = struct {
         self: Self,
         serial: u32,
-        surface: ints.wl_surface,
+        surface: deps.wl_surface,
         surface_x: Fixed,
         surface_y: Fixed,
     };
@@ -2456,7 +2455,7 @@ pub const wl_pointer = struct {
     pub const LeaveEvent = struct {
         self: Self,
         serial: u32,
-        surface: ints.wl_surface,
+        surface: deps.wl_surface,
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
         if (event.self.id != self.id) return null;
@@ -2849,7 +2848,7 @@ pub const wl_keyboard = struct {
     pub const EnterEvent = struct {
         self: Self,
         serial: u32,
-        surface: ints.wl_surface,
+        surface: deps.wl_surface,
         keys: []const u8,
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
@@ -2872,7 +2871,7 @@ pub const wl_keyboard = struct {
     pub const LeaveEvent = struct {
         self: Self,
         serial: u32,
-        surface: ints.wl_surface,
+        surface: deps.wl_surface,
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
         if (event.self.id != self.id) return null;
@@ -3008,7 +3007,7 @@ pub const wl_touch = struct {
         self: Self,
         serial: u32,
         time: u32,
-        surface: ints.wl_surface,
+        surface: deps.wl_surface,
         id: i32,
         x: Fixed,
         y: Fixed,
@@ -3528,8 +3527,8 @@ pub const wl_subcompositor = struct {
     /// 
     /// This request modifies the behaviour of wl_surface.commit request on
     /// the sub-surface, see the documentation on wl_subsurface interface.
-    pub fn getSubsurface(self: Self, global: *WaylandState, id: u32, surface: ints.wl_surface, parent: ints.wl_surface) !ints.wl_subsurface {
-        const new_obj = ints.wl_subsurface {
+    pub fn getSubsurface(self: Self, global: *WaylandState, id: u32, surface: deps.wl_surface, parent: deps.wl_surface) !deps.wl_subsurface {
+        const new_obj = deps.wl_subsurface {
             .id = id,
         };
 
@@ -3653,14 +3652,14 @@ pub const wl_subsurface = struct {
     /// 
     /// A new sub-surface is initially added as the top-most in the stack
     /// of its siblings and parent.
-    pub fn placeAbove(self: Self, global: *WaylandState, sibling: ints.wl_surface) !void {
+    pub fn placeAbove(self: Self, global: *WaylandState, sibling: deps.wl_surface) !void {
         const op = Self.opcode.request.place_above;
         try global.sendRequest(self.id, op, .{ sibling, });
     }
 
     /// The sub-surface is placed just below the reference surface.
     /// See wl_subsurface.place_above.
-    pub fn placeBelow(self: Self, global: *WaylandState, sibling: ints.wl_surface) !void {
+    pub fn placeBelow(self: Self, global: *WaylandState, sibling: deps.wl_surface) !void {
         const op = Self.opcode.request.place_below;
         try global.sendRequest(self.id, op, .{ sibling, });
     }

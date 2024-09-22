@@ -19,22 +19,20 @@ pub fn generateProtocol(
         try writer.print("\n", .{});
     }
 
-    try writer.print("const wire = @import(\"wire.zig\");\n", .{});
-    try writer.print("const root = @import(\"root.zig\");\n", .{});
-    try writer.print("const ints = struct {{\n", .{});
+    try writer.print("const deps = struct {{\n", .{});
     try writer.print("    usingnamespace @import(\"protocol.zig\");\n", .{});
     for (dependencies) |dep| {
         try writer.print("    usingnamespace @import(\"{s}\");\n", .{dep});
     }
     try writer.print("}};\n\n", .{});
 
-    try writer.print("const Fixed = wire.Fixed;\n", .{});
-    try writer.print("const FD = wire.FD;\n", .{});
-    try writer.print("const Object = wire.Object;\n", .{});
-    try writer.print("const AnonymousEvent = wire.AnonymousEvent;\n", .{});
-    try writer.print("const DecodeError = wire.DecodeError;\n", .{});
-    try writer.print("const decodeEvent = wire.decodeEvent;\n", .{});
-    try writer.print("const WaylandState = root.WaylandState;\n\n\n", .{});
+    try writer.print("const Fixed = deps.Fixed;\n", .{});
+    try writer.print("const FD = deps.FD;\n", .{});
+    try writer.print("const Object = deps.Object;\n", .{});
+    try writer.print("const AnonymousEvent = deps.AnonymousEvent;\n", .{});
+    try writer.print("const DecodeError = deps.DecodeError;\n", .{});
+    try writer.print("const decodeEvent = deps.decodeEvent;\n", .{});
+    try writer.print("const WaylandState = deps.WaylandState;\n\n\n", .{});
 
     for (protocol.interfaces) |*interface| {
         try generateInterface(interface, writer);
@@ -118,11 +116,11 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
 
     if (return_obj) {
         if (return_arg.type.new_id.interface) |name| {
-            try writer.print(") !ints.", .{});
+            try writer.print(") !deps.", .{});
             try writeName(name, writer);
             try writer.print(" {{\n", .{});
 
-            try writer.print("        const new_obj = ints.", .{});
+            try writer.print("        const new_obj = deps.", .{});
             try writeName(name, writer);
             try writer.print(" {{\n            .id = ", .{});
             try writeName(return_arg.name, writer);
@@ -229,7 +227,7 @@ fn generateArgType(arg_type: Arg.Type, writer: anytype) !void {
             if (meta.allow_null)
                 try writer.print("?", .{});
             if (meta.interface) |interface| {
-                try writer.print("ints.", .{});
+                try writer.print("deps.", .{});
                 try writeName(interface, writer);
             } else {
                 try writer.print("Object", .{});
@@ -238,7 +236,7 @@ fn generateArgType(arg_type: Arg.Type, writer: anytype) !void {
         .new_id => try writer.print("u32", .{}),
         .enum_ => |meta| {
             if (std.mem.indexOfScalar(u8, meta.enum_name, '.')) |i| {
-                try writer.print("ints.", .{});
+                try writer.print("deps.", .{});
                 try writeName(meta.enum_name[0..i], writer);
                 try writer.print(".", .{});
                 try writeEnumName(meta.enum_name[(i + 1)..], writer);

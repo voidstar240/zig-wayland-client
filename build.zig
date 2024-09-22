@@ -17,6 +17,7 @@ pub fn build(b: *std.Build) void {
     const output = scanner_step.addOutputFileArg("wayland.zig");
     const wf = b.addWriteFiles();
     wf.addCopyFileToSource(output, "src/protocol.zig");
+    scanner_step.addArg("root.zig");
 
     const update_step = b.step("update", "update protocol using system files");
     update_step.dependOn(&wf.step);

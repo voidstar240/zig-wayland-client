@@ -19,7 +19,7 @@ pub fn main() !void {
     const alloc = gpa.allocator();
 
     const args = try std.process.argsAlloc(alloc);
-    if (args.len < 3) { return error.TooFewArgs; }
+    if (args.len < 4) { return error.TooFewArgs; }
 
     const in_path = args[1];
     var in_file = try std.fs.cwd().openFile(in_path, .{});

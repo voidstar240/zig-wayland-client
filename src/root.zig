@@ -1,6 +1,6 @@
 const std = @import("std");
-const protocol = @import("protocol.zig");
 pub const wire = @import("wire.zig");
+const protocol = @import("protocol.zig");
 pub usingnamespace protocol;
 
 const Stream = std.net.Stream;
@@ -12,6 +12,7 @@ pub const FD = wire.FD;
 pub const Object = wire.Object;
 pub const AnonymousEvent = wire.AnonymousEvent;
 pub const DecodeError = wire.DecodeError;
+pub const decodeEvent = wire.decodeEvent;
 
 pub const WaylandState = struct {
     socket: Stream,
