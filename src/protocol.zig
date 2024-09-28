@@ -44,6 +44,9 @@ pub const wl_display = struct {
 
     const Self = @This();
 
+    pub const interface_str = "wl_display";
+    pub const version: u32 = 1;
+
     pub const opcode = struct {
         pub const request = struct {
             pub const sync: u16 = 0;
@@ -77,7 +80,7 @@ pub const wl_display = struct {
     /// The callback_data passed in the callback is undefined and should be ignored.
     pub fn sync(self: Self, global: *WaylandState, callback: u32) !deps.wl_callback {
         const new_obj = deps.wl_callback {
-            .id = callback,
+            .id = callback
         };
 
         const op = Self.opcode.request.sync;
@@ -96,7 +99,7 @@ pub const wl_display = struct {
     /// possible to avoid wasting memory.
     pub fn getRegistry(self: Self, global: *WaylandState, registry: u32) !deps.wl_registry {
         const new_obj = deps.wl_registry {
-            .id = registry,
+            .id = registry
         };
 
         const op = Self.opcode.request.get_registry;
@@ -119,8 +122,10 @@ pub const wl_display = struct {
     };
     pub fn decodeErrorEvent(self: Self, event: AnonymousEvent) DecodeError!?ErrorEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.@"error";
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, ErrorEvent);
     }
 
@@ -135,8 +140,10 @@ pub const wl_display = struct {
     };
     pub fn decodeDeleteIdEvent(self: Self, event: AnonymousEvent) DecodeError!?DeleteIdEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.delete_id;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, DeleteIdEvent);
     }
 
@@ -167,6 +174,9 @@ pub const wl_registry = struct {
 
     const Self = @This();
 
+    pub const interface_str = "wl_registry";
+    pub const version: u32 = 1;
+
     pub const opcode = struct {
         pub const request = struct {
             pub const bind: u16 = 0;
@@ -181,7 +191,7 @@ pub const wl_registry = struct {
     /// specified name as the identifier.
     pub fn bind(self: Self, global: *WaylandState, name: u32, id: u32) !Object {
         const new_obj = Object {
-            .id = id,
+            .id = id
         };
 
         const op = Self.opcode.request.bind;
@@ -202,8 +212,10 @@ pub const wl_registry = struct {
     };
     pub fn decodeGlobalEvent(self: Self, event: AnonymousEvent) DecodeError!?GlobalEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.global;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, GlobalEvent);
     }
 
@@ -223,8 +235,10 @@ pub const wl_registry = struct {
     };
     pub fn decodeGlobalRemoveEvent(self: Self, event: AnonymousEvent) DecodeError!?GlobalRemoveEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.global_remove;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, GlobalRemoveEvent);
     }
 
@@ -240,6 +254,9 @@ pub const wl_callback = struct {
 
     const Self = @This();
 
+    pub const interface_str = "wl_callback";
+    pub const version: u32 = 1;
+
     pub const opcode = struct {
         pub const event = struct {
             pub const done: u16 = 0;
@@ -253,8 +270,10 @@ pub const wl_callback = struct {
     };
     pub fn decodeDoneEvent(self: Self, event: AnonymousEvent) DecodeError!?DoneEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.done;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, DoneEvent);
     }
 
@@ -268,6 +287,9 @@ pub const wl_compositor = struct {
 
     const Self = @This();
 
+    pub const interface_str = "wl_compositor";
+    pub const version: u32 = 6;
+
     pub const opcode = struct {
         pub const request = struct {
             pub const create_surface: u16 = 0;
@@ -278,7 +300,7 @@ pub const wl_compositor = struct {
     /// Ask the compositor to create a new surface.
     pub fn createSurface(self: Self, global: *WaylandState, id: u32) !deps.wl_surface {
         const new_obj = deps.wl_surface {
-            .id = id,
+            .id = id
         };
 
         const op = Self.opcode.request.create_surface;
@@ -289,7 +311,7 @@ pub const wl_compositor = struct {
     /// Ask the compositor to create a new region.
     pub fn createRegion(self: Self, global: *WaylandState, id: u32) !deps.wl_region {
         const new_obj = deps.wl_region {
-            .id = id,
+            .id = id
         };
 
         const op = Self.opcode.request.create_region;
@@ -310,6 +332,9 @@ pub const wl_shm_pool = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_shm_pool";
+    pub const version: u32 = 2;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -332,7 +357,7 @@ pub const wl_shm_pool = struct {
     /// a buffer from it.
     pub fn createBuffer(self: Self, global: *WaylandState, id: u32, offset: i32, width: i32, height: i32, stride: i32, format: deps.wl_shm.Format) !deps.wl_buffer {
         const new_obj = deps.wl_buffer {
-            .id = id,
+            .id = id
         };
 
         const op = Self.opcode.request.create_buffer;
@@ -380,6 +405,9 @@ pub const wl_shm = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_shm";
+    pub const version: u32 = 2;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -543,7 +571,7 @@ pub const wl_shm = struct {
     /// descriptor, to use as backing memory for the pool.
     pub fn createPool(self: Self, global: *WaylandState, id: u32, fd: FD, size: i32) !deps.wl_shm_pool {
         const new_obj = deps.wl_shm_pool {
-            .id = id,
+            .id = id
         };
 
         const op = Self.opcode.request.create_pool;
@@ -569,8 +597,10 @@ pub const wl_shm = struct {
     };
     pub fn decodeFormatEvent(self: Self, event: AnonymousEvent) DecodeError!?FormatEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.format;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, FormatEvent);
     }
 
@@ -595,6 +625,9 @@ pub const wl_buffer = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_buffer";
+    pub const version: u32 = 1;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -631,8 +664,10 @@ pub const wl_buffer = struct {
     };
     pub fn decodeReleaseEvent(self: Self, event: AnonymousEvent) DecodeError!?ReleaseEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.release;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, ReleaseEvent);
     }
 
@@ -648,6 +683,9 @@ pub const wl_data_offer = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_data_offer";
+    pub const version: u32 = 3;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -779,8 +817,10 @@ pub const wl_data_offer = struct {
     };
     pub fn decodeOfferEvent(self: Self, event: AnonymousEvent) DecodeError!?OfferEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.offer;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, OfferEvent);
     }
 
@@ -794,8 +834,10 @@ pub const wl_data_offer = struct {
     };
     pub fn decodeSourceActionsEvent(self: Self, event: AnonymousEvent) DecodeError!?SourceActionsEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.source_actions;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, SourceActionsEvent);
     }
 
@@ -840,8 +882,10 @@ pub const wl_data_offer = struct {
     };
     pub fn decodeActionEvent(self: Self, event: AnonymousEvent) DecodeError!?ActionEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.action;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, ActionEvent);
     }
 
@@ -855,6 +899,9 @@ pub const wl_data_source = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_data_source";
+    pub const version: u32 = 3;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -919,8 +966,10 @@ pub const wl_data_source = struct {
     };
     pub fn decodeTargetEvent(self: Self, event: AnonymousEvent) DecodeError!?TargetEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.target;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, TargetEvent);
     }
 
@@ -934,8 +983,10 @@ pub const wl_data_source = struct {
     };
     pub fn decodeSendEvent(self: Self, event: AnonymousEvent) DecodeError!?SendEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.send;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, SendEvent);
     }
 
@@ -964,8 +1015,10 @@ pub const wl_data_source = struct {
     };
     pub fn decodeCancelledEvent(self: Self, event: AnonymousEvent) DecodeError!?CancelledEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.cancelled;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, CancelledEvent);
     }
 
@@ -983,8 +1036,10 @@ pub const wl_data_source = struct {
     };
     pub fn decodeDndDropPerformedEvent(self: Self, event: AnonymousEvent) DecodeError!?DndDropPerformedEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.dnd_drop_performed;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, DndDropPerformedEvent);
     }
 
@@ -999,8 +1054,10 @@ pub const wl_data_source = struct {
     };
     pub fn decodeDndFinishedEvent(self: Self, event: AnonymousEvent) DecodeError!?DndFinishedEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.dnd_finished;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, DndFinishedEvent);
     }
 
@@ -1035,8 +1092,10 @@ pub const wl_data_source = struct {
     };
     pub fn decodeActionEvent(self: Self, event: AnonymousEvent) DecodeError!?ActionEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.action;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, ActionEvent);
     }
 
@@ -1051,6 +1110,9 @@ pub const wl_data_device = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_data_device";
+    pub const version: u32 = 3;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1139,8 +1201,10 @@ pub const wl_data_device = struct {
     };
     pub fn decodeDataOfferEvent(self: Self, event: AnonymousEvent) DecodeError!?DataOfferEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.data_offer;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, DataOfferEvent);
     }
 
@@ -1158,8 +1222,10 @@ pub const wl_data_device = struct {
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.enter;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, EnterEvent);
     }
 
@@ -1171,8 +1237,10 @@ pub const wl_data_device = struct {
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.leave;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, LeaveEvent);
     }
 
@@ -1188,8 +1256,10 @@ pub const wl_data_device = struct {
     };
     pub fn decodeMotionEvent(self: Self, event: AnonymousEvent) DecodeError!?MotionEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.motion;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, MotionEvent);
     }
 
@@ -1211,8 +1281,10 @@ pub const wl_data_device = struct {
     };
     pub fn decodeDropEvent(self: Self, event: AnonymousEvent) DecodeError!?DropEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.drop;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, DropEvent);
     }
 
@@ -1234,8 +1306,10 @@ pub const wl_data_device = struct {
     };
     pub fn decodeSelectionEvent(self: Self, event: AnonymousEvent) DecodeError!?SelectionEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.selection;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, SelectionEvent);
     }
 
@@ -1255,6 +1329,9 @@ pub const wl_data_device_manager = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_data_device_manager";
+    pub const version: u32 = 3;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1296,7 +1373,7 @@ pub const wl_data_device_manager = struct {
     /// Create a new data source.
     pub fn createDataSource(self: Self, global: *WaylandState, id: u32) !deps.wl_data_source {
         const new_obj = deps.wl_data_source {
-            .id = id,
+            .id = id
         };
 
         const op = Self.opcode.request.create_data_source;
@@ -1307,7 +1384,7 @@ pub const wl_data_device_manager = struct {
     /// Create a new data device for a given seat.
     pub fn getDataDevice(self: Self, global: *WaylandState, id: u32, seat: deps.wl_seat) !deps.wl_data_device {
         const new_obj = deps.wl_data_device {
-            .id = id,
+            .id = id
         };
 
         const op = Self.opcode.request.get_data_device;
@@ -1331,6 +1408,9 @@ pub const wl_shell = struct {
 
     const Self = @This();
 
+    pub const interface_str = "wl_shell";
+    pub const version: u32 = 1;
+
     pub const opcode = struct {
         pub const request = struct {
             pub const get_shell_surface: u16 = 0;
@@ -1348,7 +1428,7 @@ pub const wl_shell = struct {
     /// Only one shell surface can be associated with a given surface.
     pub fn getShellSurface(self: Self, global: *WaylandState, id: u32, surface: deps.wl_surface) !deps.wl_shell_surface {
         const new_obj = deps.wl_shell_surface {
-            .id = id,
+            .id = id
         };
 
         const op = Self.opcode.request.get_shell_surface;
@@ -1373,6 +1453,9 @@ pub const wl_shell_surface = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_shell_surface";
+    pub const version: u32 = 1;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1589,8 +1672,10 @@ pub const wl_shell_surface = struct {
     };
     pub fn decodePingEvent(self: Self, event: AnonymousEvent) DecodeError!?PingEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.ping;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, PingEvent);
     }
 
@@ -1619,8 +1704,10 @@ pub const wl_shell_surface = struct {
     };
     pub fn decodeConfigureEvent(self: Self, event: AnonymousEvent) DecodeError!?ConfigureEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.configure;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, ConfigureEvent);
     }
 
@@ -1632,8 +1719,10 @@ pub const wl_shell_surface = struct {
     };
     pub fn decodePopupDoneEvent(self: Self, event: AnonymousEvent) DecodeError!?PopupDoneEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.popup_done;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, PopupDoneEvent);
     }
 
@@ -1685,6 +1774,9 @@ pub const wl_surface = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_surface";
+    pub const version: u32 = 6;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1852,7 +1944,7 @@ pub const wl_surface = struct {
     /// milliseconds, with an undefined base.
     pub fn frame(self: Self, global: *WaylandState, callback: u32) !deps.wl_callback {
         const new_obj = deps.wl_callback {
-            .id = callback,
+            .id = callback
         };
 
         const op = Self.opcode.request.frame;
@@ -2069,8 +2161,10 @@ pub const wl_surface = struct {
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.enter;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, EnterEvent);
     }
 
@@ -2089,8 +2183,10 @@ pub const wl_surface = struct {
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.leave;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, LeaveEvent);
     }
 
@@ -2112,8 +2208,10 @@ pub const wl_surface = struct {
     };
     pub fn decodePreferredBufferScaleEvent(self: Self, event: AnonymousEvent) DecodeError!?PreferredBufferScaleEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.preferred_buffer_scale;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, PreferredBufferScaleEvent);
     }
 
@@ -2132,8 +2230,10 @@ pub const wl_surface = struct {
     };
     pub fn decodePreferredBufferTransformEvent(self: Self, event: AnonymousEvent) DecodeError!?PreferredBufferTransformEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.preferred_buffer_transform;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, PreferredBufferTransformEvent);
     }
 
@@ -2147,6 +2247,9 @@ pub const wl_seat = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_seat";
+    pub const version: u32 = 9;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -2184,7 +2287,7 @@ pub const wl_seat = struct {
     /// be sent in this case.
     pub fn getPointer(self: Self, global: *WaylandState, id: u32) !deps.wl_pointer {
         const new_obj = deps.wl_pointer {
-            .id = id,
+            .id = id
         };
 
         const op = Self.opcode.request.get_pointer;
@@ -2202,7 +2305,7 @@ pub const wl_seat = struct {
     /// be sent in this case.
     pub fn getKeyboard(self: Self, global: *WaylandState, id: u32) !deps.wl_keyboard {
         const new_obj = deps.wl_keyboard {
-            .id = id,
+            .id = id
         };
 
         const op = Self.opcode.request.get_keyboard;
@@ -2220,7 +2323,7 @@ pub const wl_seat = struct {
     /// be sent in this case.
     pub fn getTouch(self: Self, global: *WaylandState, id: u32) !deps.wl_touch {
         const new_obj = deps.wl_touch {
-            .id = id,
+            .id = id
         };
 
         const op = Self.opcode.request.get_touch;
@@ -2265,8 +2368,10 @@ pub const wl_seat = struct {
     };
     pub fn decodeCapabilitiesEvent(self: Self, event: AnonymousEvent) DecodeError!?CapabilitiesEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.capabilities;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, CapabilitiesEvent);
     }
 
@@ -2292,8 +2397,10 @@ pub const wl_seat = struct {
     };
     pub fn decodeNameEvent(self: Self, event: AnonymousEvent) DecodeError!?NameEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.name;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, NameEvent);
     }
 
@@ -2311,6 +2418,9 @@ pub const wl_pointer = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_pointer";
+    pub const version: u32 = 9;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -2442,8 +2552,10 @@ pub const wl_pointer = struct {
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.enter;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, EnterEvent);
     }
 
@@ -2459,8 +2571,10 @@ pub const wl_pointer = struct {
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.leave;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, LeaveEvent);
     }
 
@@ -2475,8 +2589,10 @@ pub const wl_pointer = struct {
     };
     pub fn decodeMotionEvent(self: Self, event: AnonymousEvent) DecodeError!?MotionEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.motion;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, MotionEvent);
     }
 
@@ -2503,8 +2619,10 @@ pub const wl_pointer = struct {
     };
     pub fn decodeButtonEvent(self: Self, event: AnonymousEvent) DecodeError!?ButtonEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.button;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, ButtonEvent);
     }
 
@@ -2532,8 +2650,10 @@ pub const wl_pointer = struct {
     };
     pub fn decodeAxisEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.axis;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, AxisEvent);
     }
 
@@ -2576,8 +2696,10 @@ pub const wl_pointer = struct {
     };
     pub fn decodeFrameEvent(self: Self, event: AnonymousEvent) DecodeError!?FrameEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.frame;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, FrameEvent);
     }
 
@@ -2612,8 +2734,10 @@ pub const wl_pointer = struct {
     };
     pub fn decodeAxisSourceEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisSourceEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.axis_source;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, AxisSourceEvent);
     }
 
@@ -2638,8 +2762,10 @@ pub const wl_pointer = struct {
     };
     pub fn decodeAxisStopEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisStopEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.axis_stop;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, AxisStopEvent);
     }
 
@@ -2680,8 +2806,10 @@ pub const wl_pointer = struct {
     };
     pub fn decodeAxisDiscreteEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisDiscreteEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.axis_discrete;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, AxisDiscreteEvent);
     }
 
@@ -2713,8 +2841,10 @@ pub const wl_pointer = struct {
     };
     pub fn decodeAxisValue120Event(self: Self, event: AnonymousEvent) DecodeError!?AxisValue120Event {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.axis_value120;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, AxisValue120Event);
     }
 
@@ -2760,8 +2890,10 @@ pub const wl_pointer = struct {
     };
     pub fn decodeAxisRelativeDirectionEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisRelativeDirectionEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.axis_relative_direction;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, AxisRelativeDirectionEvent);
     }
 
@@ -2783,6 +2915,9 @@ pub const wl_keyboard = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_keyboard";
+    pub const version: u32 = 9;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -2830,8 +2965,10 @@ pub const wl_keyboard = struct {
     };
     pub fn decodeKeymapEvent(self: Self, event: AnonymousEvent) DecodeError!?KeymapEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.keymap;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, KeymapEvent);
     }
 
@@ -2853,8 +2990,10 @@ pub const wl_keyboard = struct {
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.enter;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, EnterEvent);
     }
 
@@ -2875,8 +3014,10 @@ pub const wl_keyboard = struct {
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.leave;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, LeaveEvent);
     }
 
@@ -2907,8 +3048,10 @@ pub const wl_keyboard = struct {
     };
     pub fn decodeKeyEvent(self: Self, event: AnonymousEvent) DecodeError!?KeyEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.key;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, KeyEvent);
     }
 
@@ -2935,8 +3078,10 @@ pub const wl_keyboard = struct {
     };
     pub fn decodeModifiersEvent(self: Self, event: AnonymousEvent) DecodeError!?ModifiersEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.modifiers;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, ModifiersEvent);
     }
 
@@ -2959,8 +3104,10 @@ pub const wl_keyboard = struct {
     };
     pub fn decodeRepeatInfoEvent(self: Self, event: AnonymousEvent) DecodeError!?RepeatInfoEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.repeat_info;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, RepeatInfoEvent);
     }
 
@@ -2978,6 +3125,9 @@ pub const wl_touch = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_touch";
+    pub const version: u32 = 9;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -3014,8 +3164,10 @@ pub const wl_touch = struct {
     };
     pub fn decodeDownEvent(self: Self, event: AnonymousEvent) DecodeError!?DownEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.down;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, DownEvent);
     }
 
@@ -3030,8 +3182,10 @@ pub const wl_touch = struct {
     };
     pub fn decodeUpEvent(self: Self, event: AnonymousEvent) DecodeError!?UpEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.up;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, UpEvent);
     }
 
@@ -3045,8 +3199,10 @@ pub const wl_touch = struct {
     };
     pub fn decodeMotionEvent(self: Self, event: AnonymousEvent) DecodeError!?MotionEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.motion;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, MotionEvent);
     }
 
@@ -3063,8 +3219,10 @@ pub const wl_touch = struct {
     };
     pub fn decodeFrameEvent(self: Self, event: AnonymousEvent) DecodeError!?FrameEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.frame;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, FrameEvent);
     }
 
@@ -3081,8 +3239,10 @@ pub const wl_touch = struct {
     };
     pub fn decodeCancelEvent(self: Self, event: AnonymousEvent) DecodeError!?CancelEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.cancel;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, CancelEvent);
     }
 
@@ -3119,8 +3279,10 @@ pub const wl_touch = struct {
     };
     pub fn decodeShapeEvent(self: Self, event: AnonymousEvent) DecodeError!?ShapeEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.shape;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, ShapeEvent);
     }
 
@@ -3154,8 +3316,10 @@ pub const wl_touch = struct {
     };
     pub fn decodeOrientationEvent(self: Self, event: AnonymousEvent) DecodeError!?OrientationEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.orientation;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, OrientationEvent);
     }
 
@@ -3171,6 +3335,9 @@ pub const wl_output = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_output";
+    pub const version: u32 = 4;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -3265,8 +3432,10 @@ pub const wl_output = struct {
     };
     pub fn decodeGeometryEvent(self: Self, event: AnonymousEvent) DecodeError!?GeometryEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.geometry;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, GeometryEvent);
     }
 
@@ -3312,8 +3481,10 @@ pub const wl_output = struct {
     };
     pub fn decodeModeEvent(self: Self, event: AnonymousEvent) DecodeError!?ModeEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.mode;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, ModeEvent);
     }
 
@@ -3327,8 +3498,10 @@ pub const wl_output = struct {
     };
     pub fn decodeDoneEvent(self: Self, event: AnonymousEvent) DecodeError!?DoneEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.done;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, DoneEvent);
     }
 
@@ -3356,8 +3529,10 @@ pub const wl_output = struct {
     };
     pub fn decodeScaleEvent(self: Self, event: AnonymousEvent) DecodeError!?ScaleEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.scale;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, ScaleEvent);
     }
 
@@ -3395,8 +3570,10 @@ pub const wl_output = struct {
     };
     pub fn decodeNameEvent(self: Self, event: AnonymousEvent) DecodeError!?NameEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.name;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, NameEvent);
     }
 
@@ -3420,8 +3597,10 @@ pub const wl_output = struct {
     };
     pub fn decodeDescriptionEvent(self: Self, event: AnonymousEvent) DecodeError!?DescriptionEvent {
         if (event.self.id != self.id) return null;
+
         const op = Self.opcode.event.description;
         if (event.opcode != op) return null;
+
         return try decodeEvent(event, DescriptionEvent);
     }
 
@@ -3435,6 +3614,9 @@ pub const wl_region = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_region";
+    pub const version: u32 = 1;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -3488,6 +3670,9 @@ pub const wl_subcompositor = struct {
 
     const Self = @This();
 
+    pub const interface_str = "wl_subcompositor";
+    pub const version: u32 = 1;
+
     pub const opcode = struct {
         pub const request = struct {
             pub const destroy: u16 = 0;
@@ -3529,7 +3714,7 @@ pub const wl_subcompositor = struct {
     /// the sub-surface, see the documentation on wl_subsurface interface.
     pub fn getSubsurface(self: Self, global: *WaylandState, id: u32, surface: deps.wl_surface, parent: deps.wl_surface) !deps.wl_subsurface {
         const new_obj = deps.wl_subsurface {
-            .id = id,
+            .id = id
         };
 
         const op = Self.opcode.request.get_subsurface;
@@ -3595,6 +3780,9 @@ pub const wl_subsurface = struct {
     id: u32,
 
     const Self = @This();
+
+    pub const interface_str = "wl_subsurface";
+    pub const version: u32 = 1;
 
     pub const opcode = struct {
         pub const request = struct {

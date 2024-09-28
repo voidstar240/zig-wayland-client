@@ -16,23 +16,28 @@ pub fn generateProtocol(
 ) !void {
     if (protocol.copyright) |copyright| {
         try writeParsedText(copyright, "// ", writer);
-        try writer.print("\n", .{});
+        try writer.writeByte('\n');
     }
 
-    try writer.print("const deps = struct {{\n", .{});
-    try writer.print("    usingnamespace @import(\"protocol.zig\");\n", .{});
+    try writer.writeAll("const deps = struct {\n");
+    try writer.writeAll("    usingnamespace @import(\"protocol.zig\");\n");
     for (dependencies) |dep| {
         try writer.print("    usingnamespace @import(\"{s}\");\n", .{dep});
     }
-    try writer.print("}};\n\n", .{});
+    try writer.writeAll("};\n\n");
 
-    try writer.print("const Fixed = deps.Fixed;\n", .{});
-    try writer.print("const FD = deps.FD;\n", .{});
-    try writer.print("const Object = deps.Object;\n", .{});
-    try writer.print("const AnonymousEvent = deps.AnonymousEvent;\n", .{});
-    try writer.print("const DecodeError = deps.DecodeError;\n", .{});
-    try writer.print("const decodeEvent = deps.decodeEvent;\n", .{});
-    try writer.print("const WaylandState = deps.WaylandState;\n\n\n", .{});
+    try writer.writeAll(
+        \\const Fixed = deps.Fixed;
+        \\const FD = deps.FD;
+        \\const Object = deps.Object;
+        \\const AnonymousEvent = deps.AnonymousEvent;
+        \\const DecodeError = deps.DecodeError;
+        \\const decodeEvent = deps.decodeEvent;
+        \\const WaylandState = deps.WaylandState;
+        \\
+        \\
+        \\
+    );
 
     for (protocol.interfaces) |*interface| {
         try generateInterface(interface, writer);
@@ -45,11 +50,17 @@ fn generateInterface(interface: *const Interface, writer: anytype) !void {
             try writeParsedText(body, "/// ", writer);
         }
     }
-    try writer.print("pub const ", .{});
-    try writeName(interface.name, writer);
-    try writer.print(" = struct {{\n", .{});
-    try writer.print("    id: u32,\n\n", .{});
-    try writer.print("    const Self = @This();\n\n", .{});
+    try writer.print(
+        \\pub const {s} = struct {{
+        \\    id: u32,
+        \\
+        \\    const Self = @This();
+        \\
+        \\    pub const interface_str = "{s}";
+        \\    pub const version: u32 = {d};
+        \\
+        \\    pub const opcode = 
+        , .{interface.name, interface.name, interface.version});
     try generateOpcodes(interface, writer);
     for (interface.enums) |*enum_| {
         try generateEnum(enum_, writer);
@@ -60,34 +71,36 @@ fn generateInterface(interface: *const Interface, writer: anytype) !void {
     for (interface.events) |*event| {
         try generateEvent(event, writer);
     }
-    try writer.print("}};\n\n", .{});
+    try writer.writeAll("};\n\n");
 }
 
 fn generateOpcodes(interface: *const Interface, writer: anytype) !void {
-    try writer.print("    pub const opcode = struct {{\n", .{});
+    try writer.writeAll("struct {\n");
     if (interface.requests.len > 0) {
-        try writer.print("        pub const request = struct {{\n", .{});
+        try writer.writeAll("        pub const request = struct {\n");
     }
     for (interface.requests, 0..) |*request, i| {
-        try writer.print("            pub const ", .{});
-        try writeName(request.name, writer);
-        try writer.print(": u16 = {d};\n", .{i});
+        try writer.print(
+            \\            pub const {}: u16 = {d};
+            \\
+            , .{escBadName(request.name), i});
     }
     if (interface.requests.len > 0) {
-        try writer.print("        }};\n", .{});
+        try writer.writeAll("        };\n");
     }
     if (interface.events.len > 0) {
-        try writer.print("        pub const event = struct {{\n", .{});
+        try writer.writeAll("        pub const event = struct {\n");
     }
     for (interface.events, 0..) |*event, i| {
-        try writer.print("            pub const ", .{});
-        try writeName(event.name, writer);
-        try writer.print(": u16 = {d};\n", .{i});
+        try writer.print(
+            \\            pub const {}: u16 = {d};
+            \\
+            , .{escBadName(event.name), i});
     }
     if (interface.events.len > 0) {
-        try writer.print("        }};\n", .{});
+        try writer.writeAll("        };\n");
     }
-    try writer.print("    }};\n\n", .{});
+    try writer.writeAll("    };\n\n");
 }
 
 fn generateRequest(request: *const Method, writer: anytype) !void {
@@ -96,9 +109,10 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
             try writeParsedText(body, "    /// ", writer);
         }
     }
-    try writer.print("    pub fn ", .{});
-    try writeMethodName(request.name, writer);
-    try writer.print("(self: Self, global: *WaylandState", .{});
+
+    try writer.print(
+        \\    pub fn {}(self: Self, global: *WaylandState
+        , .{camelCase(request.name)});
 
     const return_obj = newIdArgCount(request) == 1;
     var return_arg: Arg = undefined;
@@ -108,53 +122,48 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
                 return_arg = arg;
             }
         }
-        try writer.print(", ", .{});
-        try writeName(arg.name, writer);
-        try writer.print(": ", .{});
+        try writer.print(", {}: ", .{escBadName(arg.name)});
         try generateArgType(arg.type, writer);
     }
 
     if (return_obj) {
-        if (return_arg.type.new_id.interface) |name| {
-            try writer.print(") !deps.", .{});
-            try writeName(name, writer);
-            try writer.print(" {{\n", .{});
-
-            try writer.print("        const new_obj = deps.", .{});
-            try writeName(name, writer);
-            try writer.print(" {{\n            .id = ", .{});
-            try writeName(return_arg.name, writer);
-            try writer.print(",\n        }};\n\n", .{});
-        } else {
-            try writer.print(") !Object {{\n", .{});
-
+        if (return_arg.type.new_id.interface) |interface| {
             try writer.print(
+                \\) !deps.{s} {{
+                \\        const new_obj = deps.{s} {{
+                \\            .id = {}
+                \\        }};
+                \\
+                \\
+                , .{interface, interface, escBadName(return_arg.name)});
+        } else {
+            try writer.print(
+                \\) !Object {{
                 \\        const new_obj = Object {{
-                \\            .id = 
-                , .{});
-            try writeName(return_arg.name, writer);
-            try writer.print(",\n        }};\n\n", .{});
+                \\            .id = {}
+                \\        }};
+                \\
+                \\
+                , .{escBadName(return_arg.name)});
         }
     } else {
-        try writer.print(") !void {{\n", .{}); // TODO return specific error
+        try writer.writeAll(") !void {\n"); // TODO return specific error
     }
 
-    try writer.print("        const op = Self.opcode.request.", .{});
-    try writeName(request.name, writer);
-    try writer.print(";\n", .{});
-
-    try writer.print("        try global.sendRequest(self.id, op, .{{ ", .{});
+    try writer.print(
+        \\        const op = Self.opcode.request.{};
+        \\        try global.sendRequest(self.id, op, .{{ 
+        , .{escBadName(request.name)});
     for (request.args) |arg| {
-        try writeName(arg.name, writer);
-        try writer.print(", ", .{});
+        try writer.print("{}, ", .{escBadName(arg.name)});
     }
-    try writer.print("}});\n", .{});
+    try writer.writeAll("});\n");
 
     if (return_obj) {
-        try writer.print("        return new_obj;\n", .{});
+        try writer.writeAll("        return new_obj;\n");
     }
 
-    try writer.print("    }}\n\n", .{});
+    try writer.writeAll("    }\n\n");
 }
 
 fn generateEvent(event: *const Method, writer: anytype) !void {
@@ -164,85 +173,63 @@ fn generateEvent(event: *const Method, writer: anytype) !void {
         }
     }
     try generateEventStruct(event, writer);
-    try writer.print("    pub fn decode", .{});
-    try writeEnumName(event.name, writer);
     try writer.print(
-        \\Event(self: Self, event: AnonymousEvent) DecodeError!?
-        , .{});
-    try generateEventStructName(event, writer);
-    try writer.print(" {{\n", .{});
-    try writer.print(
+        \\    pub fn decode{}Event(self: Self, event: AnonymousEvent) DecodeError!?{}Event {{
         \\        if (event.self.id != self.id) return null;
         \\
-        , .{});
-    try writer.print("        const op = Self.opcode.event.", .{});
-    try writeName(event.name, writer);
-    try writer.print(";\n", .{});
-    try writer.print(
+        \\        const op = Self.opcode.event.{};
         \\        if (event.opcode != op) return null;
         \\
-        , .{});
-    try writer.print("        return try decodeEvent(event, ", .{});
-    try generateEventStructName(event, writer);
-    try writer.print(");\n", .{});
-    try writer.print("    }}\n\n", .{});
+        \\        return try decodeEvent(event, {}Event);
+        \\    }}
+        \\
+        \\
+        , .{
+            titleCase(event.name),
+            titleCase(event.name),
+            escBadName(event.name),
+            titleCase(event.name)
+        });
 }
 
 fn generateEventStruct(event: *const Method, writer: anytype) !void {
-    try writer.print("    pub const ", .{});
-    try generateEventStructName(event, writer);
     try writer.print(
-        \\ = struct {{
+        \\    pub const {}Event = struct {{
         \\        self: Self,
         \\
-        , .{});
+        , .{titleCase(event.name)});
     for (event.args) |arg| {
-        try writer.print("        ", .{});
-        try writeName(arg.name, writer);
-        try writer.print(": ", .{});
+        try writer.print("        {}: ", .{escBadName(arg.name)});
         try generateArgType(arg.type, writer);
-        try writer.print(",\n", .{});
+        try writer.writeAll(",\n");
     }
-    try writer.print("    }};\n", .{});
-}
-
-fn generateEventStructName(event: *const Method, writer: anytype) !void {
-    try writeEnumName(event.name, writer);
-    try writer.print("Event", .{});
+    try writer.writeAll("    };\n");
 }
 
 fn generateArgType(arg_type: Arg.Type, writer: anytype) !void {
     switch (arg_type) {
-        .int => try writer.print("i32", .{}),
-        .uint => try writer.print("u32", .{}),
-        .fixed => try writer.print("Fixed", .{}),
-        .array => try writer.print("[]const u8", .{}),
-        .fd => try writer.print("FD", .{}),
+        .int => try writer.writeAll("i32"),
+        .uint => try writer.writeAll("u32"),
+        .fixed => try writer.writeAll("Fixed"),
+        .array => try writer.writeAll("[]const u8"),
+        .fd => try writer.writeAll("FD"),
         .string => |meta| {
             if (meta.allow_null)
-                try writer.print("?", .{});
-            try writer.print("[:0]const u8", .{});
+                try writer.writeAll("?");
+            try writer.writeAll("[:0]const u8");
         },
         .object => |meta| {
             if (meta.allow_null)
-                try writer.print("?", .{});
+                try writer.writeAll("?");
             if (meta.interface) |interface| {
-                try writer.print("deps.", .{});
-                try writeName(interface, writer);
+                try writer.print("deps.{s}", .{interface});
             } else {
-                try writer.print("Object", .{});
+                try writer.writeAll("Object");
             }
         },
-        .new_id => try writer.print("u32", .{}),
+        .new_id => try writer.writeAll("u32"),
         .enum_ => |meta| {
-            if (std.mem.indexOfScalar(u8, meta.enum_name, '.')) |i| {
-                try writer.print("deps.", .{});
-                try writeName(meta.enum_name[0..i], writer);
-                try writer.print(".", .{});
-                try writeEnumName(meta.enum_name[(i + 1)..], writer);
-            } else {
-                try writeEnumName(meta.enum_name, writer);
-            }
+            try writer.print("{}", .{enumType(meta.enum_name)});
         },
     }
 }
@@ -253,24 +240,21 @@ fn generateEnum(enum_: *const Enum, writer: anytype) !void {
             try writeParsedText(body, "    /// ", writer);
         }
     }
-    try writer.print("    pub const ", .{});
-    try writeEnumName(enum_.name, writer);
-    try writer.print(" = enum(u32) {{\n", .{});
+    try writer.print(
+        \\    pub const {} = enum(u32) {{
+        \\
+        , .{titleCase(enum_.name)});
     for (enum_.entries) |*entry| {
-        try writer.print("        ", .{});
-        try writeName(entry.name, writer);
-        try writer.print(" = {d},", .{entry.value});
+        try writer.print(
+            \\        {} = {d},
+            , .{escBadName(entry.name), entry.value});
         if (entry.summary) |summary| {
             try writer.print(" ", .{});
             try writeComment(summary, writer);
         }
         try writer.print("\n", .{});
     }
-    try writer.print(
-        \\    }};
-        \\
-        \\
-        , .{});
+    try writer.writeAll("    };\n\n");
 }
 
 fn newIdArgCount(request: *const Method) usize {
@@ -282,82 +266,6 @@ fn newIdArgCount(request: *const Method) usize {
         }
     }
     return count;
-}
-
-/// Prints `name` to `writer` escaping `name` if needed.
-fn writeName(name: []const u8, writer: anytype) !void {
-    if (isBadName(name)) {
-        try writer.print("@\"{s}\"", .{name});
-    } else {
-        try writer.print("{s}", .{name});
-    }
-}
-
-/// If `name` is an invalid identifier returns true.
-fn isBadName(name: []const u8) bool {
-    if (name.len == 0) return true;
-
-    const keywords = [_][]const u8 {
-        "addrspace", "align", "allowzero", "and", "anyframe", "anytype", "asm",
-        "async", "await", "break", "callconv", "catch", "comptime", "const",
-        "continue", "defer", "else", "enum", "errdefer", "error", "export",
-        "extern", "fn", "for", "if", "inline", "noalias", "nosuspend",
-        "noinline", "opaque", "or", "orelse", "packed", "pub", "resume",
-        "return", "linksection", "struct", "suspend", "switch", "test",
-        "threadlocal", "try", "union", "unreachable", "usingnamespace", "var",
-        "volatile", "while"
-    };
-
-    inline for (keywords) |keyword| {
-        if (std.mem.eql(u8, name, keyword)) {
-            return true;
-        }
-    }
-
-    if (std.ascii.isDigit(name[0])) {
-        return true;
-    }
-    
-    return false;
-}
-
-/// Prints `name` in Pascal case.
-fn writeEnumName(name: []const u8, writer: anytype) !void {
-    var word_start = true;
-    for (name) |c| {
-        if (c == '_') {
-            word_start = true;
-            continue;
-        }
-        if (word_start) {
-            try writer.print("{c}", .{std.ascii.toUpper(c)});
-        } else {
-            try writer.print("{c}", .{c});
-        }
-        word_start = false;
-    }
-}
-
-/// Prints `name` in camel case.
-fn writeMethodName(name: []const u8, writer: anytype) !void {
-    const bad = isBadName(name);
-    if (bad) try writer.print("@\"", .{});
-
-    var word_start = false;
-    for (name) |c| {
-        if (c == '_') {
-            word_start = true;
-            continue;
-        }
-        if (word_start) {
-            try writer.print("{c}", .{std.ascii.toUpper(c)});
-        } else {
-            try writer.print("{c}", .{c});
-        }
-        word_start = false;
-    }
-
-    if (bad) try writer.print("\"", .{});
 }
 
 /// Prints `text` with XML escape sequences properly escaped.
@@ -381,19 +289,19 @@ fn writeParsedText(
                 try writer.print("{s}{s}", .{prefix, rem_text[0..i]});
                 rem_text = rem_text[i..];
                 if (std.mem.eql(u8, rem_text[0..5], "&quot")) {
-                    try writer.print("\"", .{});
+                    try writer.writeByte('"');
                     rem_text = rem_text[5..];
                 } else if (std.mem.eql(u8, rem_text[0..5], "&apos")) {
-                    try writer.print("'", .{});
+                    try writer.writeByte('\'');
                     rem_text = rem_text[5..];
                 } else if (std.mem.eql(u8, rem_text[0..3], "&lt")) {
-                    try writer.print("<", .{});
+                    try writer.writeByte('<');
                     rem_text = rem_text[3..];
                 } else if (std.mem.eql(u8, rem_text[0..3], "&gt")) {
-                    try writer.print(">", .{});
+                    try writer.writeByte('>');
                     rem_text = rem_text[4..];
                 } else if (std.mem.eql(u8, rem_text[0..4], "&amp")) {
-                    try writer.print("&", .{});
+                    try writer.writeByte('&');
                     rem_text = rem_text[4..];
                 }
                 new_line = false;
@@ -415,13 +323,13 @@ fn writeParsedText(
 
 /// Writes a single line comment removing newlines if needed.
 fn writeComment(text: []const u8, writer: anytype) !void {
-    try writer.print("// ", .{});
+    try writer.writeAll("// ");
     var rem_text = text;
     var i: usize = 0;
     while (i < rem_text.len) {
         switch (rem_text[i]) {
             '\r', '\n' => {
-                try writer.print("{s}", .{rem_text[0..i]});
+                try writer.writeAll(rem_text[0..i]);
                 rem_text = rem_text[i+1..];
                 i = 0;
             },
@@ -430,5 +338,84 @@ fn writeComment(text: []const u8, writer: anytype) !void {
             },
         }
     }
-    try writer.print("{s}", .{rem_text});
+    try writer.writeAll(rem_text);
+}
+
+fn escBadName(bytes: []const u8) std.fmt.Formatter(escBadNameFormatFn) {
+    return .{ .data = bytes };
+}
+
+fn camelCase(bytes: []const u8) std.fmt.Formatter(camelCaseFormatFn) {
+    return .{ .data = bytes };
+}
+
+fn titleCase(bytes: []const u8) std.fmt.Formatter(titleCaseFormatFn) {
+    return .{ .data = bytes };
+}
+
+fn enumType(bytes: []const u8) std.fmt.Formatter(enumTypeFormatFn) {
+    return .{ .data = bytes };
+}
+
+fn escBadNameFormatFn(
+    bytes: []const u8,
+    comptime _: []const u8,
+    _: std.fmt.FormatOptions,
+    writer: anytype
+) !void {
+    if (bytes.len == 0) return;
+    if (std.zig.Token.keywords.has(bytes) or std.ascii.isDigit(bytes[0])) {
+        try writer.print("@\"{s}\"", .{bytes});
+    } else {
+        try writer.writeAll(bytes);
+    }
+}
+
+fn camelCaseFormatFn(
+    bytes: []const u8,
+    comptime _: []const u8,
+    _: std.fmt.FormatOptions,
+    writer: anytype
+) !void {
+    var upper = false;
+    for (bytes) |c| {
+        if (c == '_') {
+            upper = true;
+            continue;
+        }
+        try writer.writeByte(if (upper) std.ascii.toUpper(c) else c);
+        upper = false;
+    }
+}
+
+fn titleCaseFormatFn(
+    bytes: []const u8,
+    comptime _: []const u8,
+    _: std.fmt.FormatOptions,
+    writer: anytype
+) !void {
+    var upper = true;
+    for (bytes) |c| {
+        if (c == '_') {
+            upper = true;
+            continue;
+        }
+        try writer.writeByte(if (upper) std.ascii.toUpper(c) else c);
+        upper = false;
+    }
+}
+
+fn enumTypeFormatFn(
+    bytes: []const u8,
+    comptime _: []const u8,
+    _: std.fmt.FormatOptions,
+    writer: anytype
+) !void {
+    if (std.mem.indexOfScalar(u8, bytes, '.')) |i| {
+        const interface = bytes[0..i];
+        const enum_type = bytes[(i+1)..];
+        try writer.print("deps.{s}.{}", .{interface, titleCase(enum_type)});
+    } else {
+        try writer.print("{}", .{titleCase(bytes)});
+    }
 }
