@@ -15,8 +15,7 @@ pub fn generateProtocol(
     dependencies: [][]const u8
 ) !void {
     if (protocol.copyright) |copyright| {
-        try writeParsedText(copyright, "// ", writer);
-        try writer.writeByte('\n');
+        try writer.print("{// }\n", .{parsedText(copyright)});
     }
 
     try writer.writeAll("const deps = struct {\n");
@@ -47,7 +46,7 @@ pub fn generateProtocol(
 fn generateInterface(interface: *const Interface, writer: anytype) !void {
     if (interface.description) |desc| {
         if (desc.body) |body| {
-            try writeParsedText(body, "/// ", writer);
+            try writer.print("{/// }", .{parsedText(body)});
         }
     }
     try writer.print(
@@ -106,7 +105,7 @@ fn generateOpcodes(interface: *const Interface, writer: anytype) !void {
 fn generateRequest(request: *const Method, writer: anytype) !void {
     if (request.description) |desc| {
         if (desc.body) |body| {
-            try writeParsedText(body, "    /// ", writer);
+            try writer.print("{    /// }", .{parsedText(body)});
         }
     }
 
@@ -169,7 +168,7 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
 fn generateEvent(event: *const Method, writer: anytype) !void {
     if (event.description) |desc| {
         if (desc.body) |body| {
-            try writeParsedText(body, "    /// ", writer);
+            try writer.print("{    /// }", .{parsedText(body)});
         }
     }
     try generateEventStruct(event, writer);
@@ -237,7 +236,7 @@ fn generateArgType(arg_type: Arg.Type, writer: anytype) !void {
 fn generateEnum(enum_: *const Enum, writer: anytype) !void {
     if (enum_.description) |desc| {
         if (desc.body) |body| {
-            try writeParsedText(body, "    /// ", writer);
+            try writer.print("{    /// }", .{parsedText(body)});
         }
     }
     try writer.print(
@@ -249,8 +248,7 @@ fn generateEnum(enum_: *const Enum, writer: anytype) !void {
             \\        {} = {d},
             , .{escBadName(entry.name), entry.value});
         if (entry.summary) |summary| {
-            try writer.print(" ", .{});
-            try writeComment(summary, writer);
+            try writer.print(" // {}", .{singleLine(summary)});
         }
         try writer.print("\n", .{});
     }
@@ -268,79 +266,6 @@ fn newIdArgCount(request: *const Method) usize {
     return count;
 }
 
-/// Prints `text` with XML escape sequences properly escaped.
-fn writeParsedText(
-    text: []const u8,
-    prefix: []const u8,
-    writer: anytype
-) !void {
-    var rem_text = text;
-    var i: usize = 0;
-    var new_line = true;
-    while (i < rem_text.len) {
-        switch (rem_text[i]) {
-            ' ', '\t' => if (new_line) {
-                rem_text = rem_text[i+1..];
-                i = 0;
-            } else {
-                i += 1;
-            },
-            '&' => {
-                try writer.print("{s}{s}", .{prefix, rem_text[0..i]});
-                rem_text = rem_text[i..];
-                if (std.mem.eql(u8, rem_text[0..5], "&quot")) {
-                    try writer.writeByte('"');
-                    rem_text = rem_text[5..];
-                } else if (std.mem.eql(u8, rem_text[0..5], "&apos")) {
-                    try writer.writeByte('\'');
-                    rem_text = rem_text[5..];
-                } else if (std.mem.eql(u8, rem_text[0..3], "&lt")) {
-                    try writer.writeByte('<');
-                    rem_text = rem_text[3..];
-                } else if (std.mem.eql(u8, rem_text[0..3], "&gt")) {
-                    try writer.writeByte('>');
-                    rem_text = rem_text[4..];
-                } else if (std.mem.eql(u8, rem_text[0..4], "&amp")) {
-                    try writer.writeByte('&');
-                    rem_text = rem_text[4..];
-                }
-                new_line = false;
-                i = 0;
-            },
-            '\n' => {
-                try writer.print("{s}{s}", .{prefix, rem_text[0..i+1]});
-                rem_text = rem_text[i+1..];
-                new_line = true;
-                i = 0;
-            },
-            else => {
-                new_line = false;
-                i += 1;
-            },
-        }
-    }
-}
-
-/// Writes a single line comment removing newlines if needed.
-fn writeComment(text: []const u8, writer: anytype) !void {
-    try writer.writeAll("// ");
-    var rem_text = text;
-    var i: usize = 0;
-    while (i < rem_text.len) {
-        switch (rem_text[i]) {
-            '\r', '\n' => {
-                try writer.writeAll(rem_text[0..i]);
-                rem_text = rem_text[i+1..];
-                i = 0;
-            },
-            else => {
-                i += 1;
-            },
-        }
-    }
-    try writer.writeAll(rem_text);
-}
-
 fn escBadName(bytes: []const u8) std.fmt.Formatter(escBadNameFormatFn) {
     return .{ .data = bytes };
 }
@@ -354,6 +279,14 @@ fn titleCase(bytes: []const u8) std.fmt.Formatter(titleCaseFormatFn) {
 }
 
 fn enumType(bytes: []const u8) std.fmt.Formatter(enumTypeFormatFn) {
+    return .{ .data = bytes };
+}
+
+fn singleLine(bytes: []const u8) std.fmt.Formatter(singleLineFormatFn) {
+    return .{ .data = bytes };
+}
+
+fn parsedText(bytes: []const u8) std.fmt.Formatter(parsedTextFormatFn) {
     return .{ .data = bytes };
 }
 
@@ -417,5 +350,82 @@ fn enumTypeFormatFn(
         try writer.print("deps.{s}.{}", .{interface, titleCase(enum_type)});
     } else {
         try writer.print("{}", .{titleCase(bytes)});
+    }
+}
+
+fn singleLineFormatFn(
+    bytes: []const u8,
+    comptime _: []const u8,
+    _: std.fmt.FormatOptions,
+    writer: anytype
+) !void {
+    var rem_bytes = bytes;
+    var i: usize = 0;
+    while (i < rem_bytes.len) {
+        switch (rem_bytes[i]) {
+            '\r', '\n' => {
+                try writer.writeAll(rem_bytes[0..i]);
+                rem_bytes = rem_bytes[i+1..];
+                i = 0;
+            },
+            else => {
+                i += 1;
+            },
+        }
+    }
+    try writer.writeAll(rem_bytes);
+}
+
+/// Prints `text` with XML escape sequences properly escaped.
+fn parsedTextFormatFn(
+    bytes: []const u8,
+    comptime prefix: []const u8,
+    _: std.fmt.FormatOptions,
+    writer: anytype
+) !void {
+    var rem_bytes = bytes;
+    var i: usize = 0;
+    var new_line = true;
+    while (i < rem_bytes.len) {
+        switch (rem_bytes[i]) {
+            ' ', '\t' => if (new_line) {
+                rem_bytes = rem_bytes[i+1..];
+                i = 0;
+            } else {
+                i += 1;
+            },
+            '&' => {
+                try writer.print("{s}{s}", .{prefix, rem_bytes[0..i]});
+                rem_bytes = rem_bytes[i..];
+                if (std.mem.eql(u8, rem_bytes[0..5], "&quot")) {
+                    try writer.writeByte('"');
+                    rem_bytes = rem_bytes[5..];
+                } else if (std.mem.eql(u8, rem_bytes[0..5], "&apos")) {
+                    try writer.writeByte('\'');
+                    rem_bytes = rem_bytes[5..];
+                } else if (std.mem.eql(u8, rem_bytes[0..3], "&lt")) {
+                    try writer.writeByte('<');
+                    rem_bytes = rem_bytes[3..];
+                } else if (std.mem.eql(u8, rem_bytes[0..3], "&gt")) {
+                    try writer.writeByte('>');
+                    rem_bytes = rem_bytes[4..];
+                } else if (std.mem.eql(u8, rem_bytes[0..4], "&amp")) {
+                    try writer.writeByte('&');
+                    rem_bytes = rem_bytes[4..];
+                }
+                new_line = false;
+                i = 0;
+            },
+            '\n' => {
+                try writer.print("{s}{s}", .{prefix, rem_bytes[0..i+1]});
+                rem_bytes = rem_bytes[i+1..];
+                new_line = true;
+                i = 0;
+            },
+            else => {
+                new_line = false;
+                i += 1;
+            },
+        }
     }
 }
