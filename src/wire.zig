@@ -35,6 +35,8 @@ pub const AnonymousEvent = struct {
     arg_data: []const u8,
 };
 
+pub const RequestError = std.posix.SendMsgError;
+
 pub const DecodeError = error {
     UnexpectedEnd,
     NullNonNullString,
@@ -194,7 +196,7 @@ pub fn sendRequestRaw(
     comptime N: comptime_int,
     args: anytype,
     fds: anytype,
-) !void {
+) RequestError!void {
     comptime if (N < 1) @compileError("N must be at least 1");
     var iovecs: [N]std.posix.iovec_const = undefined;
     var i: usize = 1;

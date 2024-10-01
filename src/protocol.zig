@@ -33,6 +33,7 @@ const Fixed = deps.Fixed;
 const FD = deps.FD;
 const Object = deps.Object;
 const AnonymousEvent = deps.AnonymousEvent;
+const RequestError = deps.RequestError;
 const DecodeError = deps.DecodeError;
 const decodeEvent = deps.decodeEvent;
 const WaylandContext = deps.WaylandContext;
@@ -80,7 +81,7 @@ pub const wl_display = struct {
     /// attempt to use it after that point.
     /// 
     /// The callback_data passed in the callback is undefined and should be ignored.
-    pub fn sync(self: Self, ctx: *const WaylandContext, callback: u32) !deps.wl_callback {
+    pub fn sync(self: Self, ctx: *const WaylandContext, callback: u32) RequestError!deps.wl_callback {
         const new_obj = deps.wl_callback {
             .id = callback
         };
@@ -103,7 +104,7 @@ pub const wl_display = struct {
     /// client disconnects, not when the client side proxy is destroyed.
     /// Therefore, clients should invoke get_registry as infrequently as
     /// possible to avoid wasting memory.
-    pub fn getRegistry(self: Self, ctx: *const WaylandContext, registry: u32) !deps.wl_registry {
+    pub fn getRegistry(self: Self, ctx: *const WaylandContext, registry: u32) RequestError!deps.wl_registry {
         const new_obj = deps.wl_registry {
             .id = registry
         };
@@ -199,7 +200,7 @@ pub const wl_registry = struct {
 
     /// Binds a new, client-created object to the server using the
     /// specified name as the identifier.
-    pub fn bind(self: Self, ctx: *const WaylandContext, name: u32, id_type: type, id: u32) !id_type {
+    pub fn bind(self: Self, ctx: *const WaylandContext, name: u32, id_type: type, id: u32) RequestError!id_type {
         const new_obj = Object {
             .id = id
         };
@@ -312,7 +313,7 @@ pub const wl_compositor = struct {
     };
 
     /// Ask the compositor to create a new surface.
-    pub fn createSurface(self: Self, ctx: *const WaylandContext, id: u32) !deps.wl_surface {
+    pub fn createSurface(self: Self, ctx: *const WaylandContext, id: u32) RequestError!deps.wl_surface {
         const new_obj = deps.wl_surface {
             .id = id
         };
@@ -327,7 +328,7 @@ pub const wl_compositor = struct {
     }
 
     /// Ask the compositor to create a new region.
-    pub fn createRegion(self: Self, ctx: *const WaylandContext, id: u32) !deps.wl_region {
+    pub fn createRegion(self: Self, ctx: *const WaylandContext, id: u32) RequestError!deps.wl_region {
         const new_obj = deps.wl_region {
             .id = id
         };
@@ -377,7 +378,7 @@ pub const wl_shm_pool = struct {
     /// A buffer will keep a reference to the pool it was created from
     /// so it is valid to destroy the pool immediately after creating
     /// a buffer from it.
-    pub fn createBuffer(self: Self, ctx: *const WaylandContext, id: u32, offset: i32, width: i32, height: i32, stride: i32, format: deps.wl_shm.Format) !deps.wl_buffer {
+    pub fn createBuffer(self: Self, ctx: *const WaylandContext, id: u32, offset: i32, width: i32, height: i32, stride: i32, format: deps.wl_shm.Format) RequestError!deps.wl_buffer {
         const new_obj = deps.wl_buffer {
             .id = id
         };
@@ -396,7 +397,7 @@ pub const wl_shm_pool = struct {
     /// The mmapped memory will be released when all
     /// buffers that have been created from this pool
     /// are gone.
-    pub fn destroy(self: Self, ctx: *const WaylandContext) !void {
+    pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -415,7 +416,7 @@ pub const wl_shm_pool = struct {
     /// file descriptor passed at creation time. It is the client's
     /// responsibility to ensure that the file is at least as big as
     /// the new pool size.
-    pub fn resize(self: Self, ctx: *const WaylandContext, size: i32) !void {
+    pub fn resize(self: Self, ctx: *const WaylandContext, size: i32) RequestError!void {
         const args = .{ size, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -603,7 +604,7 @@ pub const wl_shm = struct {
     /// The pool can be used to create shared memory based buffer
     /// objects.  The server will mmap size bytes of the passed file
     /// descriptor, to use as backing memory for the pool.
-    pub fn createPool(self: Self, ctx: *const WaylandContext, id: u32, fd: FD, size: i32) !deps.wl_shm_pool {
+    pub fn createPool(self: Self, ctx: *const WaylandContext, id: u32, fd: FD, size: i32) RequestError!deps.wl_shm_pool {
         const new_obj = deps.wl_shm_pool {
             .id = id
         };
@@ -621,7 +622,7 @@ pub const wl_shm = struct {
     /// use the shm object anymore.
     /// 
     /// Objects created via this interface remain unaffected.
-    pub fn release(self: Self, ctx: *const WaylandContext) !void {
+    pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -684,7 +685,7 @@ pub const wl_buffer = struct {
     /// storage is defined by the buffer factory interface.
     /// 
     /// For possible side-effects to a surface, see wl_surface.attach.
-    pub fn destroy(self: Self, ctx: *const WaylandContext) !void {
+    pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -769,7 +770,7 @@ pub const wl_data_offer = struct {
     /// will be cancelled and the corresponding drag source will receive
     /// wl_data_source.cancelled. Clients may still use this event in
     /// conjunction with wl_data_source.action for feedback.
-    pub fn accept(self: Self, ctx: *const WaylandContext, serial: u32, mime_type: ?[:0]const u8) !void {
+    pub fn accept(self: Self, ctx: *const WaylandContext, serial: u32, mime_type: ?[:0]const u8) RequestError!void {
         const args = .{ serial, mime_type, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -793,7 +794,7 @@ pub const wl_data_offer = struct {
     /// both before and after wl_data_device.drop. Drag-and-drop destination
     /// clients may preemptively fetch data or examine it more closely to
     /// determine acceptance.
-    pub fn receive(self: Self, ctx: *const WaylandContext, mime_type: [:0]const u8, fd: FD) !void {
+    pub fn receive(self: Self, ctx: *const WaylandContext, mime_type: [:0]const u8, fd: FD) RequestError!void {
         const args = .{ mime_type, };
         const fds = [_]FD{ fd, };
         const socket = ctx.socket.handle;
@@ -803,7 +804,7 @@ pub const wl_data_offer = struct {
     }
 
     /// Destroy the data offer.
-    pub fn destroy(self: Self, ctx: *const WaylandContext) !void {
+    pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -826,7 +827,7 @@ pub const wl_data_offer = struct {
     /// 
     /// If wl_data_offer.finish request is received for a non drag and drop
     /// operation, the invalid_finish protocol error is raised.
-    pub fn finish(self: Self, ctx: *const WaylandContext) !void {
+    pub fn finish(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -866,7 +867,7 @@ pub const wl_data_offer = struct {
     /// 
     /// This request can only be made on drag-and-drop offers, a protocol error
     /// will be raised otherwise.
-    pub fn setActions(self: Self, ctx: *const WaylandContext, dnd_actions: deps.wl_data_device_manager.DndAction, preferred_action: deps.wl_data_device_manager.DndAction) !void {
+    pub fn setActions(self: Self, ctx: *const WaylandContext, dnd_actions: deps.wl_data_device_manager.DndAction, preferred_action: deps.wl_data_device_manager.DndAction) RequestError!void {
         const args = .{ @intFromEnum(dnd_actions), @intFromEnum(preferred_action), };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -993,7 +994,7 @@ pub const wl_data_source = struct {
     /// This request adds a mime type to the set of mime types
     /// advertised to targets.  Can be called several times to offer
     /// multiple types.
-    pub fn offer(self: Self, ctx: *const WaylandContext, mime_type: [:0]const u8) !void {
+    pub fn offer(self: Self, ctx: *const WaylandContext, mime_type: [:0]const u8) RequestError!void {
         const args = .{ mime_type, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1003,7 +1004,7 @@ pub const wl_data_source = struct {
     }
 
     /// Destroy the data source.
-    pub fn destroy(self: Self, ctx: *const WaylandContext) !void {
+    pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1025,7 +1026,7 @@ pub const wl_data_source = struct {
     /// used in drag-and-drop, so it must be performed before
     /// wl_data_device.start_drag. Attempting to use the source other than
     /// for drag-and-drop will raise a protocol error.
-    pub fn setActions(self: Self, ctx: *const WaylandContext, dnd_actions: deps.wl_data_device_manager.DndAction) !void {
+    pub fn setActions(self: Self, ctx: *const WaylandContext, dnd_actions: deps.wl_data_device_manager.DndAction) RequestError!void {
         const args = .{ @intFromEnum(dnd_actions), };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1242,7 +1243,7 @@ pub const wl_data_device = struct {
     /// The given source may not be used in any further set_selection or
     /// start_drag requests. Attempting to reuse a previously-used source
     /// may send a used_source error.
-    pub fn startDrag(self: Self, ctx: *const WaylandContext, source: ?deps.wl_data_source, origin: deps.wl_surface, icon: ?deps.wl_surface, serial: u32) !void {
+    pub fn startDrag(self: Self, ctx: *const WaylandContext, source: ?deps.wl_data_source, origin: deps.wl_surface, icon: ?deps.wl_surface, serial: u32) RequestError!void {
         const args = .{ if (source) |obj| obj.id else 0, origin.id, if (icon) |obj| obj.id else 0, serial, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1259,7 +1260,7 @@ pub const wl_data_device = struct {
     /// The given source may not be used in any further set_selection or
     /// start_drag requests. Attempting to reuse a previously-used source
     /// may send a used_source error.
-    pub fn setSelection(self: Self, ctx: *const WaylandContext, source: ?deps.wl_data_source, serial: u32) !void {
+    pub fn setSelection(self: Self, ctx: *const WaylandContext, source: ?deps.wl_data_source, serial: u32) RequestError!void {
         const args = .{ if (source) |obj| obj.id else 0, serial, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1269,7 +1270,7 @@ pub const wl_data_device = struct {
     }
 
     /// This request destroys the data device.
-    pub fn release(self: Self, ctx: *const WaylandContext) !void {
+    pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1461,7 +1462,7 @@ pub const wl_data_device_manager = struct {
     };
 
     /// Create a new data source.
-    pub fn createDataSource(self: Self, ctx: *const WaylandContext, id: u32) !deps.wl_data_source {
+    pub fn createDataSource(self: Self, ctx: *const WaylandContext, id: u32) RequestError!deps.wl_data_source {
         const new_obj = deps.wl_data_source {
             .id = id
         };
@@ -1476,7 +1477,7 @@ pub const wl_data_device_manager = struct {
     }
 
     /// Create a new data device for a given seat.
-    pub fn getDataDevice(self: Self, ctx: *const WaylandContext, id: u32, seat: deps.wl_seat) !deps.wl_data_device {
+    pub fn getDataDevice(self: Self, ctx: *const WaylandContext, id: u32, seat: deps.wl_seat) RequestError!deps.wl_data_device {
         const new_obj = deps.wl_data_device {
             .id = id
         };
@@ -1524,7 +1525,7 @@ pub const wl_shell = struct {
     /// already has another role, it raises a protocol error.
     /// 
     /// Only one shell surface can be associated with a given surface.
-    pub fn getShellSurface(self: Self, ctx: *const WaylandContext, id: u32, surface: deps.wl_surface) !deps.wl_shell_surface {
+    pub fn getShellSurface(self: Self, ctx: *const WaylandContext, id: u32, surface: deps.wl_surface) RequestError!deps.wl_shell_surface {
         const new_obj = deps.wl_shell_surface {
             .id = id
         };
@@ -1613,7 +1614,7 @@ pub const wl_shell_surface = struct {
 
     /// A client must respond to a ping event with a pong request or
     /// the client may be deemed unresponsive.
-    pub fn pong(self: Self, ctx: *const WaylandContext, serial: u32) !void {
+    pub fn pong(self: Self, ctx: *const WaylandContext, serial: u32) RequestError!void {
         const args = .{ serial, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1627,7 +1628,7 @@ pub const wl_shell_surface = struct {
     /// This request must be used in response to a button press event.
     /// The server may ignore move requests depending on the state of
     /// the surface (e.g. fullscreen or maximized).
-    pub fn move(self: Self, ctx: *const WaylandContext, seat: deps.wl_seat, serial: u32) !void {
+    pub fn move(self: Self, ctx: *const WaylandContext, seat: deps.wl_seat, serial: u32) RequestError!void {
         const args = .{ seat.id, serial, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1641,7 +1642,7 @@ pub const wl_shell_surface = struct {
     /// This request must be used in response to a button press event.
     /// The server may ignore resize requests depending on the state of
     /// the surface (e.g. fullscreen or maximized).
-    pub fn resize(self: Self, ctx: *const WaylandContext, seat: deps.wl_seat, serial: u32, edges: Resize) !void {
+    pub fn resize(self: Self, ctx: *const WaylandContext, seat: deps.wl_seat, serial: u32, edges: Resize) RequestError!void {
         const args = .{ seat.id, serial, @intFromEnum(edges), };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1653,7 +1654,7 @@ pub const wl_shell_surface = struct {
     /// Map the surface as a toplevel surface.
     /// 
     /// A toplevel surface is not fullscreen, maximized or transient.
-    pub fn setToplevel(self: Self, ctx: *const WaylandContext) !void {
+    pub fn setToplevel(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1669,7 +1670,7 @@ pub const wl_shell_surface = struct {
     /// parent surface, in surface-local coordinates.
     /// 
     /// The flags argument controls details of the transient behaviour.
-    pub fn setTransient(self: Self, ctx: *const WaylandContext, parent: deps.wl_surface, x: i32, y: i32, flags: Transient) !void {
+    pub fn setTransient(self: Self, ctx: *const WaylandContext, parent: deps.wl_surface, x: i32, y: i32, flags: Transient) RequestError!void {
         const args = .{ parent.id, x, y, @intFromEnum(flags), };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1711,7 +1712,7 @@ pub const wl_shell_surface = struct {
     /// The compositor must reply to this request with a configure event
     /// with the dimensions for the output on which the surface will
     /// be made fullscreen.
-    pub fn setFullscreen(self: Self, ctx: *const WaylandContext, method: FullscreenMethod, framerate: u32, output: ?deps.wl_output) !void {
+    pub fn setFullscreen(self: Self, ctx: *const WaylandContext, method: FullscreenMethod, framerate: u32, output: ?deps.wl_output) RequestError!void {
         const args = .{ @intFromEnum(method), framerate, if (output) |obj| obj.id else 0, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1739,7 +1740,7 @@ pub const wl_shell_surface = struct {
     /// The x and y arguments specify the location of the upper left
     /// corner of the surface relative to the upper left corner of the
     /// parent surface, in surface-local coordinates.
-    pub fn setPopup(self: Self, ctx: *const WaylandContext, seat: deps.wl_seat, serial: u32, parent: deps.wl_surface, x: i32, y: i32, flags: Transient) !void {
+    pub fn setPopup(self: Self, ctx: *const WaylandContext, seat: deps.wl_seat, serial: u32, parent: deps.wl_surface, x: i32, y: i32, flags: Transient) RequestError!void {
         const args = .{ seat.id, serial, parent.id, x, y, @intFromEnum(flags), };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1766,7 +1767,7 @@ pub const wl_shell_surface = struct {
     /// fullscreen shell surface.
     /// 
     /// The details depend on the compositor implementation.
-    pub fn setMaximized(self: Self, ctx: *const WaylandContext, output: ?deps.wl_output) !void {
+    pub fn setMaximized(self: Self, ctx: *const WaylandContext, output: ?deps.wl_output) RequestError!void {
         const args = .{ if (output) |obj| obj.id else 0, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1782,7 +1783,7 @@ pub const wl_shell_surface = struct {
     /// compositor.
     /// 
     /// The string must be encoded in UTF-8.
-    pub fn setTitle(self: Self, ctx: *const WaylandContext, title: [:0]const u8) !void {
+    pub fn setTitle(self: Self, ctx: *const WaylandContext, title: [:0]const u8) RequestError!void {
         const args = .{ title, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1797,7 +1798,7 @@ pub const wl_shell_surface = struct {
     /// to which the surface belongs. A common convention is to use the
     /// file name (or the full path if it is a non-standard location) of
     /// the application's .desktop file as the class.
-    pub fn setClass(self: Self, ctx: *const WaylandContext, class_: [:0]const u8) !void {
+    pub fn setClass(self: Self, ctx: *const WaylandContext, class_: [:0]const u8) RequestError!void {
         const args = .{ class_, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -1952,7 +1953,7 @@ pub const wl_surface = struct {
     };
 
     /// Deletes the surface and invalidates its object ID.
-    pub fn destroy(self: Self, ctx: *const WaylandContext) !void {
+    pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -2025,7 +2026,7 @@ pub const wl_surface = struct {
     /// maximise compatibility should not destroy pending buffers and should
     /// ensure that they explicitly remove content from surfaces, even after
     /// destroying buffers.
-    pub fn attach(self: Self, ctx: *const WaylandContext, buffer: ?deps.wl_buffer, x: i32, y: i32) !void {
+    pub fn attach(self: Self, ctx: *const WaylandContext, buffer: ?deps.wl_buffer, x: i32, y: i32) RequestError!void {
         const args = .{ if (buffer) |obj| obj.id else 0, x, y, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -2055,7 +2056,7 @@ pub const wl_surface = struct {
     /// Note! New clients should not use this request. Instead damage can be
     /// posted with wl_surface.damage_buffer which uses buffer coordinates
     /// instead of surface coordinates.
-    pub fn damage(self: Self, ctx: *const WaylandContext, x: i32, y: i32, width: i32, height: i32) !void {
+    pub fn damage(self: Self, ctx: *const WaylandContext, x: i32, y: i32, width: i32, height: i32) RequestError!void {
         const args = .{ x, y, width, height, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -2096,7 +2097,7 @@ pub const wl_surface = struct {
     /// 
     /// The callback_data passed in the callback is the current time, in
     /// milliseconds, with an undefined base.
-    pub fn frame(self: Self, ctx: *const WaylandContext, callback: u32) !deps.wl_callback {
+    pub fn frame(self: Self, ctx: *const WaylandContext, callback: u32) RequestError!deps.wl_callback {
         const new_obj = deps.wl_callback {
             .id = callback
         };
@@ -2134,7 +2135,7 @@ pub const wl_surface = struct {
     /// opaque region has copy semantics, and the wl_region object can be
     /// destroyed immediately. A NULL wl_region causes the pending opaque
     /// region to be set to empty.
-    pub fn setOpaqueRegion(self: Self, ctx: *const WaylandContext, region: ?deps.wl_region) !void {
+    pub fn setOpaqueRegion(self: Self, ctx: *const WaylandContext, region: ?deps.wl_region) RequestError!void {
         const args = .{ if (region) |obj| obj.id else 0, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -2165,7 +2166,7 @@ pub const wl_surface = struct {
     /// has copy semantics, and the wl_region object can be destroyed
     /// immediately. A NULL wl_region causes the input region to be set
     /// to infinite.
-    pub fn setInputRegion(self: Self, ctx: *const WaylandContext, region: ?deps.wl_region) !void {
+    pub fn setInputRegion(self: Self, ctx: *const WaylandContext, region: ?deps.wl_region) RequestError!void {
         const args = .{ if (region) |obj| obj.id else 0, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -2193,7 +2194,7 @@ pub const wl_surface = struct {
     /// to affect double-buffered state.
     /// 
     /// Other interfaces may add further double-buffered surface state.
-    pub fn commit(self: Self, ctx: *const WaylandContext) !void {
+    pub fn commit(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -2233,7 +2234,7 @@ pub const wl_surface = struct {
     /// If transform is not one of the values from the
     /// wl_output.transform enum the invalid_transform protocol error
     /// is raised.
-    pub fn setBufferTransform(self: Self, ctx: *const WaylandContext, transform: deps.wl_output.Transform) !void {
+    pub fn setBufferTransform(self: Self, ctx: *const WaylandContext, transform: deps.wl_output.Transform) RequestError!void {
         const args = .{ @intFromEnum(transform), };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -2265,7 +2266,7 @@ pub const wl_surface = struct {
     /// 
     /// If scale is not greater than 0 the invalid_scale protocol error is
     /// raised.
-    pub fn setBufferScale(self: Self, ctx: *const WaylandContext, scale: i32) !void {
+    pub fn setBufferScale(self: Self, ctx: *const WaylandContext, scale: i32) RequestError!void {
         const args = .{ scale, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -2306,7 +2307,7 @@ pub const wl_surface = struct {
     /// kinds of damage into account will have to accumulate damage from the
     /// two requests separately and only transform from one to the other
     /// after receiving the wl_surface.commit.
-    pub fn damageBuffer(self: Self, ctx: *const WaylandContext, x: i32, y: i32, width: i32, height: i32) !void {
+    pub fn damageBuffer(self: Self, ctx: *const WaylandContext, x: i32, y: i32, width: i32, height: i32) RequestError!void {
         const args = .{ x, y, width, height, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -2327,7 +2328,7 @@ pub const wl_surface = struct {
     /// This request is semantically equivalent to and the replaces the x and y
     /// arguments in the wl_surface.attach request in wl_surface versions prior
     /// to 5. See wl_surface.attach for details.
-    pub fn offset(self: Self, ctx: *const WaylandContext, x: i32, y: i32) !void {
+    pub fn offset(self: Self, ctx: *const WaylandContext, x: i32, y: i32) RequestError!void {
         const args = .{ x, y, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -2471,7 +2472,7 @@ pub const wl_seat = struct {
     /// It is a protocol violation to issue this request on a seat that has
     /// never had the pointer capability. The missing_capability error will
     /// be sent in this case.
-    pub fn getPointer(self: Self, ctx: *const WaylandContext, id: u32) !deps.wl_pointer {
+    pub fn getPointer(self: Self, ctx: *const WaylandContext, id: u32) RequestError!deps.wl_pointer {
         const new_obj = deps.wl_pointer {
             .id = id
         };
@@ -2493,7 +2494,7 @@ pub const wl_seat = struct {
     /// It is a protocol violation to issue this request on a seat that has
     /// never had the keyboard capability. The missing_capability error will
     /// be sent in this case.
-    pub fn getKeyboard(self: Self, ctx: *const WaylandContext, id: u32) !deps.wl_keyboard {
+    pub fn getKeyboard(self: Self, ctx: *const WaylandContext, id: u32) RequestError!deps.wl_keyboard {
         const new_obj = deps.wl_keyboard {
             .id = id
         };
@@ -2515,7 +2516,7 @@ pub const wl_seat = struct {
     /// It is a protocol violation to issue this request on a seat that has
     /// never had the touch capability. The missing_capability error will
     /// be sent in this case.
-    pub fn getTouch(self: Self, ctx: *const WaylandContext, id: u32) !deps.wl_touch {
+    pub fn getTouch(self: Self, ctx: *const WaylandContext, id: u32) RequestError!deps.wl_touch {
         const new_obj = deps.wl_touch {
             .id = id
         };
@@ -2531,7 +2532,7 @@ pub const wl_seat = struct {
 
     /// Using this request a client can tell the server that it is not going to
     /// use the seat object anymore.
-    pub fn release(self: Self, ctx: *const WaylandContext) !void {
+    pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -2724,7 +2725,7 @@ pub const wl_pointer = struct {
     /// The serial parameter must match the latest wl_pointer.enter
     /// serial number sent to the client. Otherwise the request will be
     /// ignored.
-    pub fn setCursor(self: Self, ctx: *const WaylandContext, serial: u32, surface: ?deps.wl_surface, hotspot_x: i32, hotspot_y: i32) !void {
+    pub fn setCursor(self: Self, ctx: *const WaylandContext, serial: u32, surface: ?deps.wl_surface, hotspot_x: i32, hotspot_y: i32) RequestError!void {
         const args = .{ serial, if (surface) |obj| obj.id else 0, hotspot_x, hotspot_y, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -2738,7 +2739,7 @@ pub const wl_pointer = struct {
     /// 
     /// This request destroys the pointer proxy object, so clients must not call
     /// wl_pointer_destroy() after using this request.
-    pub fn release(self: Self, ctx: *const WaylandContext) !void {
+    pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -3156,7 +3157,7 @@ pub const wl_keyboard = struct {
         pressed = 1, // key is pressed
     };
 
-    pub fn release(self: Self, ctx: *const WaylandContext) !void {
+    pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -3358,7 +3359,7 @@ pub const wl_touch = struct {
         };
     };
 
-    pub fn release(self: Self, ctx: *const WaylandContext) !void {
+    pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -3612,7 +3613,7 @@ pub const wl_output = struct {
 
     /// Using this request a client can tell the server that it is not going to
     /// use the output object anymore.
-    pub fn release(self: Self, ctx: *const WaylandContext) !void {
+    pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -3849,7 +3850,7 @@ pub const wl_region = struct {
     };
 
     /// Destroy the region.  This will invalidate the object ID.
-    pub fn destroy(self: Self, ctx: *const WaylandContext) !void {
+    pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -3859,7 +3860,7 @@ pub const wl_region = struct {
     }
 
     /// Add the specified rectangle to the region.
-    pub fn add(self: Self, ctx: *const WaylandContext, x: i32, y: i32, width: i32, height: i32) !void {
+    pub fn add(self: Self, ctx: *const WaylandContext, x: i32, y: i32, width: i32, height: i32) RequestError!void {
         const args = .{ x, y, width, height, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -3869,7 +3870,7 @@ pub const wl_region = struct {
     }
 
     /// Subtract the specified rectangle from the region.
-    pub fn subtract(self: Self, ctx: *const WaylandContext, x: i32, y: i32, width: i32, height: i32) !void {
+    pub fn subtract(self: Self, ctx: *const WaylandContext, x: i32, y: i32, width: i32, height: i32) RequestError!void {
         const args = .{ x, y, width, height, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -3922,7 +3923,7 @@ pub const wl_subcompositor = struct {
     /// Informs the server that the client will not be using this
     /// protocol object anymore. This does not affect any other
     /// objects, wl_subsurface objects included.
-    pub fn destroy(self: Self, ctx: *const WaylandContext) !void {
+    pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -3950,7 +3951,7 @@ pub const wl_subcompositor = struct {
     /// 
     /// This request modifies the behaviour of wl_surface.commit request on
     /// the sub-surface, see the documentation on wl_subsurface interface.
-    pub fn getSubsurface(self: Self, ctx: *const WaylandContext, id: u32, surface: deps.wl_surface, parent: deps.wl_surface) !deps.wl_subsurface {
+    pub fn getSubsurface(self: Self, ctx: *const WaylandContext, id: u32, surface: deps.wl_surface, parent: deps.wl_surface) RequestError!deps.wl_subsurface {
         const new_obj = deps.wl_subsurface {
             .id = id
         };
@@ -4045,7 +4046,7 @@ pub const wl_subsurface = struct {
     /// that was turned into a sub-surface with a
     /// wl_subcompositor.get_subsurface request. The wl_surface's association
     /// to the parent is deleted. The wl_surface is unmapped immediately.
-    pub fn destroy(self: Self, ctx: *const WaylandContext) !void {
+    pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -4068,7 +4069,7 @@ pub const wl_subsurface = struct {
     /// replaces the scheduled position from any previous request.
     /// 
     /// The initial position is 0, 0.
-    pub fn setPosition(self: Self, ctx: *const WaylandContext, x: i32, y: i32) !void {
+    pub fn setPosition(self: Self, ctx: *const WaylandContext, x: i32, y: i32) RequestError!void {
         const args = .{ x, y, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -4090,7 +4091,7 @@ pub const wl_subsurface = struct {
     /// 
     /// A new sub-surface is initially added as the top-most in the stack
     /// of its siblings and parent.
-    pub fn placeAbove(self: Self, ctx: *const WaylandContext, sibling: deps.wl_surface) !void {
+    pub fn placeAbove(self: Self, ctx: *const WaylandContext, sibling: deps.wl_surface) RequestError!void {
         const args = .{ sibling.id, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -4101,7 +4102,7 @@ pub const wl_subsurface = struct {
 
     /// The sub-surface is placed just below the reference surface.
     /// See wl_subsurface.place_above.
-    pub fn placeBelow(self: Self, ctx: *const WaylandContext, sibling: deps.wl_surface) !void {
+    pub fn placeBelow(self: Self, ctx: *const WaylandContext, sibling: deps.wl_surface) RequestError!void {
         const args = .{ sibling.id, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -4123,7 +4124,7 @@ pub const wl_subsurface = struct {
     /// parent surface commits do not (re-)apply old state.
     /// 
     /// See wl_subsurface for the recursive effect of this mode.
-    pub fn setSync(self: Self, ctx: *const WaylandContext) !void {
+    pub fn setSync(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
@@ -4151,7 +4152,7 @@ pub const wl_subsurface = struct {
     /// 
     /// If a surface's parent surface behaves as desynchronized, then
     /// the cached state is applied on set_desync.
-    pub fn setDesync(self: Self, ctx: *const WaylandContext) !void {
+    pub fn setDesync(self: Self, ctx: *const WaylandContext) RequestError!void {
         const args = .{ };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;

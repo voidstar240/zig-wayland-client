@@ -34,6 +34,7 @@ pub fn generateProtocol(
         \\const FD = deps.FD;
         \\const Object = deps.Object;
         \\const AnonymousEvent = deps.AnonymousEvent;
+        \\const RequestError = deps.RequestError;
         \\const DecodeError = deps.DecodeError;
         \\const decodeEvent = deps.decodeEvent;
         \\const WaylandContext = deps.WaylandContext;
@@ -122,7 +123,7 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
     if (return_arg) |arg| {
         if (arg.type.new_id.interface) |interface| {
             try writer.print(
-                \\) !deps.{s} {{
+                \\) RequestError!deps.{s} {{
                 \\        const new_obj = deps.{s} {{
                 \\            .id = {}
                 \\        }};
@@ -131,7 +132,7 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
                 , .{interface, interface, escBadName(arg.name)});
         } else {
             try writer.print(
-                \\) !{s}_type {{
+                \\) RequestError!{s}_type {{
                 \\        const new_obj = Object {{
                 \\            .id = {}
                 \\        }};
@@ -140,7 +141,7 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
                 , .{arg.name, escBadName(arg.name)});
         }
     } else {
-        try writer.writeAll(") !void {\n");
+        try writer.writeAll(") RequestError!void {\n");
     }
 
     // TODO generate interface type validation for new_id w/o specific interface

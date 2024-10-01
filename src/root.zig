@@ -11,6 +11,7 @@ pub const FD = wire.FD;
 pub const Object = wire.Object;
 pub const AnonymousEvent = wire.AnonymousEvent;
 pub const DecodeError = wire.DecodeError;
+pub const RequestError = wire.RequestError;
 pub const decodeEvent = wire.decodeEvent;
 
 pub const WaylandContext = struct {
