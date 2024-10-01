@@ -36,7 +36,7 @@ pub fn generateProtocol(
         \\const AnonymousEvent = deps.AnonymousEvent;
         \\const DecodeError = deps.DecodeError;
         \\const decodeEvent = deps.decodeEvent;
-        \\const WaylandState = deps.WaylandState;
+        \\const WaylandContext = deps.WaylandContext;
         \\const sendRequestRaw = deps.wire.sendRequestRaw;
         \\
         \\
@@ -115,7 +115,7 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
     }
 
     try writer.print(
-        \\    pub fn {}(self: Self, global: *WaylandState
+        \\    pub fn {}(self: Self, ctx: *const WaylandContext
         , .{camelCase(request.name)});
 
     const return_arg: ?Arg = try generateRequestArgs(request.args, writer);
@@ -154,7 +154,7 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
     try writer.writeAll(";\n");
 
     try writer.print(
-        \\        const socket = global.socket.handle;
+        \\        const socket = ctx.socket.handle;
         \\        const op = Self.opcode.request.{};
         \\        const iov_len = {d};
         \\        try sendRequestRaw(socket, self.id, op, iov_len, args, fds);

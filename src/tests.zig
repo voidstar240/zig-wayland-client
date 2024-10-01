@@ -4,11 +4,11 @@ const zwl = @import("zwayland");
 test "SyncRequestResponse" {
     const socket = try zwl.connectToSocket();
     defer socket.close();
-    var state = zwl.WaylandState.init(socket);
-    const display = zwl.WaylandState.getDisplay();
-    const sync = try display.sync(&state, 2);
+    var ctx = zwl.WaylandContext.init(socket);
+    const display = zwl.WaylandContext.getDisplay();
+    const sync = try display.sync(&ctx, 2);
 
-    const anon_event = try state.readEvent();
+    const anon_event = try ctx.readEvent();
     if (try sync.decodeDoneEvent(anon_event) == null) {
         return error.NotSyncEvent;
     }

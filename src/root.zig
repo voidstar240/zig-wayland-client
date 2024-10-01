@@ -4,7 +4,6 @@ const protocol = @import("protocol.zig");
 pub usingnamespace protocol;
 
 const Stream = std.net.Stream;
-const GenericWriter = std.io.GenericWriter;
 const GenericReader = std.io.GenericReader;
 
 pub const Fixed = wire.Fixed;
@@ -14,66 +13,29 @@ pub const AnonymousEvent = wire.AnonymousEvent;
 pub const DecodeError = wire.DecodeError;
 pub const decodeEvent = wire.decodeEvent;
 
-pub const WaylandState = struct {
+pub const WaylandContext = struct {
     socket: Stream,
-    write_buffer: [4096]u8,
-    write_end: usize,
     read_buffer: [4096]u8 align(@alignOf(*anyopaque)),
-    auto_flush: bool,
 
-    const Writer = GenericWriter(*WaylandState, Stream.WriteError, write);
     const Reader = GenericReader(Stream, Stream.ReadError, Stream.read);
 
     /// Creates a new Wayland global object.
-    pub fn init(socket: Stream) WaylandState {
-        return WaylandState {
+    pub fn init(socket: Stream) WaylandContext {
+        return WaylandContext {
             .socket = socket,
-            .write_buffer = undefined,
-            .write_end = 0,
             .read_buffer = undefined,
-            .auto_flush = true,
         };
     }
 
-    /// Writes the contents of the write_buffer to the socket.
-    pub fn flush(self: *WaylandState) !void {
-        var index: usize = 0;
-        while (index < self.write_end) {
-            index += try self.socket.write(
-                self.write_buffer[index..self.write_end]
-            );
-        }
-        self.write_end = 0;
-    }
-
-    /// Writes bytes to the buffer flushing if needed.
-    pub fn write(self: *WaylandState, bytes: []const u8) !usize {
-        if (self.write_end + bytes.len > self.write_buffer.len) {
-            try self.flush();
-            if (bytes.len > self.write_buffer.len)
-                return self.socket.write(bytes);
-        }
-
-        const new_end = self.write_end + bytes.len;
-        @memcpy(self.write_buffer[self.write_end..new_end], bytes);
-        self.write_end = new_end;
-        return bytes.len;
-    }
-
-    /// Gets a writer to the buffered socket stream.
-    pub fn writer(self: *WaylandState) Writer {
-        return .{ .context = self };
-    }
-
     /// Gets a reader to the socket stream.
-    pub fn reader(self: *WaylandState) Reader {
+    pub fn reader(self: *WaylandContext) Reader {
         return self.socket.reader();
     }
 
     /// Reads one event into the read buffer overwritting what was there
     /// previously. Returns an AnonymousEvent. The contained data slice is a
     /// reference to the internal read buffer and not owned.
-    pub fn readEvent(self: *WaylandState) !AnonymousEvent {
+    pub fn readEvent(self: *WaylandContext) !AnonymousEvent {
         const head = try wire.readEvent(self.reader(), &self.read_buffer);
         return AnonymousEvent {
             .self = Object { .id = head.object_id },
