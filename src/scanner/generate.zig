@@ -18,14 +18,18 @@ pub fn generateProtocol(
         try writer.print("{// }\n", .{parsedText(copyright)});
     }
 
-    try writer.writeAll("const deps = struct {\n");
-    try writer.writeAll("    usingnamespace @import(\"protocol.zig\");\n");
+    try writer.writeAll(
+        \\const std = @import("std");
+        \\const deps = struct {
+        \\    usingnamespace @import("protocol.zig");
+        \\
+    );
     for (dependencies) |dep| {
         try writer.print("    usingnamespace @import(\"{s}\");\n", .{dep});
     }
-    try writer.writeAll("};\n\n");
-
     try writer.writeAll(
+        \\};
+        \\
         \\const Fixed = deps.Fixed;
         \\const FD = deps.FD;
         \\const Object = deps.Object;
@@ -33,6 +37,7 @@ pub fn generateProtocol(
         \\const DecodeError = deps.DecodeError;
         \\const decodeEvent = deps.decodeEvent;
         \\const WaylandState = deps.WaylandState;
+        \\const sendRequestRaw = deps.wire.sendRequestRaw;
         \\
         \\
         \\
@@ -113,20 +118,9 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
         \\    pub fn {}(self: Self, global: *WaylandState
         , .{camelCase(request.name)});
 
-    const return_obj = newIdArgCount(request) == 1;
-    var return_arg: Arg = undefined;
-    for (request.args) |arg| {
-        if (arg.type == .new_id) {
-            if (return_obj) {
-                return_arg = arg;
-            }
-        }
-        try writer.print(", {}: ", .{escBadName(arg.name)});
-        try generateArgType(arg.type, writer);
-    }
-
-    if (return_obj) {
-        if (return_arg.type.new_id.interface) |interface| {
+    const return_arg: ?Arg = try generateRequestArgs(request.args, writer);
+    if (return_arg) |arg| {
+        if (arg.type.new_id.interface) |interface| {
             try writer.print(
                 \\) !deps.{s} {{
                 \\        const new_obj = deps.{s} {{
@@ -134,35 +128,166 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
                 \\        }};
                 \\
                 \\
-                , .{interface, interface, escBadName(return_arg.name)});
+                , .{interface, interface, escBadName(arg.name)});
         } else {
             try writer.print(
-                \\) !Object {{
+                \\) !{s}_type {{
                 \\        const new_obj = Object {{
                 \\            .id = {}
                 \\        }};
                 \\
                 \\
-                , .{escBadName(return_arg.name)});
+                , .{arg.name, escBadName(arg.name)});
         }
     } else {
-        try writer.writeAll(") !void {\n"); // TODO return specific error
+        try writer.writeAll(") !void {\n");
     }
+
+    // TODO generate interface type validation for new_id w/o specific interface
+    
+    try writer.writeAll("        const args = ");
+    try generateRawArgs(request.args, writer);
+    try writer.writeAll(";\n");
+
+    try writer.writeAll("        const fds = ");
+    try generateFDs(request.args, writer);
+    try writer.writeAll(";\n");
 
     try writer.print(
+        \\        const socket = global.socket.handle;
         \\        const op = Self.opcode.request.{};
-        \\        try global.sendRequest(self.id, op, .{{ 
-        , .{escBadName(request.name)});
-    for (request.args) |arg| {
-        try writer.print("{}, ", .{escBadName(arg.name)});
-    }
-    try writer.writeAll("});\n");
+        \\        const iov_len = {d};
+        \\        try sendRequestRaw(socket, self.id, op, iov_len, args, fds);
+        \\
+        , .{escBadName(request.name), calcIOVLen(request.args)});
 
-    if (return_obj) {
+    if (return_arg) |_| {
         try writer.writeAll("        return new_obj;\n");
     }
 
     try writer.writeAll("    }\n\n");
+}
+
+fn generateFDs(args: []Arg, writer: anytype) !void {
+    try writer.writeAll("[_]FD{ ");
+    for (args) |arg| {
+        switch (arg.type) {
+            .fd => try writer.print("{}, ", .{escBadName(arg.name)}),
+            else => {},
+        }
+    }
+    try writer.writeAll("}");
+}
+
+fn generateRawArgs(args: []Arg, writer: anytype) !void {
+    try writer.writeAll(".{ ");
+    for (args) |arg| {
+        switch (arg.type) {
+            .int, .uint, .fixed, .array, .string, => {
+                try writer.print("{}, ", .{escBadName(arg.name)});
+            },
+            .object => |meta| {
+                if (meta.allow_null) {
+                    try writer.print(
+                        "if ({}) |obj| obj.id else 0, ",
+                        .{escBadName(arg.name)});
+                } else {
+                    try writer.print(
+                        "{}.id, ",
+                        .{escBadName(arg.name)});
+                }
+            },
+            .new_id => |meta| {
+                if (meta.interface) |_| {
+                    try writer.print("{}, ", .{escBadName(arg.name)});
+                } else {
+                    try writer.print(
+        "@as([:0]const u8, &{s}_type.interface_str), {s}_type.version, {}, ",
+                        .{arg.name, arg.name, escBadName(arg.name)});
+                }
+            },
+            .enum_ => try writer.print(
+                "@intFromEnum({}), ",
+                .{escBadName(arg.name)}),
+            .fd => {},
+        }
+    }
+    try writer.writeAll("}");
+}
+
+/// Returns the max length needed for the IOVec array given args.
+fn calcIOVLen(args: []Arg) usize {
+    var len: usize = 1;
+    for (args) |arg| {
+        switch (arg.type) {
+            .array => len += 3,
+            .string => len += 3,
+            .new_id => |meta| {
+                if (meta.interface) |_| {
+                    len += 1;
+                } else {
+                    len += 5;
+                }
+            },
+            .fd => {},
+            else => len += 1,
+        }
+    }
+    return len;
+}
+
+/// Writes args for a request returning a possible return argument.
+fn generateRequestArgs(args: []Arg, writer: anytype) !?Arg {
+    var new_id_count: usize = 0;
+    var return_arg: Arg = undefined;
+    for (args) |arg| {
+        switch (arg.type) {
+            .int => try writeArg(arg.name, "i32", writer),
+            .uint => try writeArg(arg.name, "u32", writer),
+            .fixed => try writeArg(arg.name, "Fixed", writer),
+            .fd => try writeArg(arg.name, "FD", writer),
+            .array => try writeArg(arg.name, "[]const u8", writer),
+            .string => |meta| if (meta.allow_null) {
+                try writeArg(arg.name, "?[:0]const u8", writer);
+            } else {
+                try writeArg(arg.name, "[:0]const u8", writer);
+            },
+            .object => |meta| {
+                try writer.print(", {}: ", .{escBadName(arg.name)});
+                if (meta.allow_null) {
+                    try writer.writeByte('?');
+                }
+                if (meta.interface) |interface| {
+                    try writer.print("deps.{s}", .{interface});
+                } else {
+                    try writer.writeAll("Object");
+                }
+            },
+            .new_id => |meta| {
+                new_id_count += 1;
+                return_arg = arg;
+                if (meta.interface) |_| {
+                    try writer.print(", {s}: u32", .{arg.name});
+                } else {
+                    try writer.print(
+                        \\, {s}_type: type, {}: u32
+                        , .{arg.name, escBadName(arg.name)});
+                }
+            },
+            .enum_ => |meta| {
+                try writer.print(
+                    \\, {}: {}
+                , .{escBadName(arg.name), enumType(meta.enum_name)});
+            },
+        }
+    }
+
+    if (new_id_count == 1) return return_arg;
+    return null;
+}
+
+fn writeArg(name: []const u8, type_name: []const u8, writer: anytype) !void {
+    try writer.print(", {}: {s}", .{escBadName(name), type_name});
 }
 
 fn generateEvent(event: *const Method, writer: anytype) !void {
@@ -253,17 +378,6 @@ fn generateEnum(enum_: *const Enum, writer: anytype) !void {
         try writer.print("\n", .{});
     }
     try writer.writeAll("    };\n\n");
-}
-
-fn newIdArgCount(request: *const Method) usize {
-    var count: usize = 0;
-    for (request.args) |arg| {
-        switch (arg.type) {
-            .new_id => count += 1,
-            else => {},
-        }
-    }
-    return count;
 }
 
 fn escBadName(bytes: []const u8) std.fmt.Formatter(escBadNameFormatFn) {

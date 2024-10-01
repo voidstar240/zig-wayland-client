@@ -2,7 +2,6 @@ const std = @import("std");
 const root = @import("root.zig");
 
 const assertObject = root.assertObject;
-const toBytes = std.mem.toBytes;
 
 pub const Fixed = enum(i32) {
     _,
@@ -47,47 +46,6 @@ pub const Header = packed struct(u64) {
     opcode: u16,
     length: u16,
 };
-
-/// Writes a request to `writer` from `object_id` with `opcode` and `args`.
-/// Length is calculated from `args`.
-pub fn writeRequest(
-    writer: anytype,
-    object_id: u32,
-    opcode: u16,
-    args: anytype
-) !void {
-    const ArgsType = @TypeOf(args);
-    const args_info = @typeInfo(ArgsType);
-    if (args_info != .Struct)
-        @compileError("Not tuple or struct, found " ++ @typeName(ArgsType));
-
-    const header = Header {
-        .object_id = object_id,
-        .opcode = opcode,
-        .length = calcRequestLength(args),
-    };
-    try writeHeader(writer, header);
-    const fields = args_info.Struct.fields;
-    inline for (fields) |field| {
-        const info = @typeInfo(field.type);
-        const val = @field(args, field.name);
-        const field_type_name = @typeName(field.type);
-        switch (field.type) {
-            i32 => try writeI32(writer, val),
-            u32 => try writeU32(writer, val),
-            Fixed => try writeFixed(writer, val),
-            []const u8 => try writeArray(writer, val),
-            [:0]const u8 => try writeString(writer, val),
-            ?[:0]const u8 => try writeString(writer, val),
-            else => switch (info) {
-                .Struct => try writeObject(writer, val),
-                .Optional => try writeObject(writer, val),
-                .Enum => try writeEnum(writer, val),
-                else => @compileError("Invalid type, " ++ field_type_name),
-            },
-        }
-    }
-}
 
 /// Reads one event into the provided buffer returning the length of the
 /// message. If the buffer is too small to fit the event error.EventTooBig
@@ -154,101 +112,6 @@ pub fn decodeEvent(
     return out;
 }
 
-/// Gets the length of a request given args.
-fn calcRequestLength(args: anytype) u16 {
-    const ArgsType = @TypeOf(args);
-    const args_info = @typeInfo(ArgsType);
-
-    var len: u16 = 8;
-    const fields = args_info.Struct.fields;
-    inline for (fields) |field| {
-        const val = @field(args, field.name);
-        switch (field.type) {
-            []const u8 => {
-                len += @intCast(val.len);
-                len += @intCast(@subWithOverflow(0, val.len).@"0" % 4);
-            },
-            [:0]const u8 => {
-                len += @intCast(val.len + 1);
-                len += @intCast(@subWithOverflow(0, val.len + 1).@"0" % 4);
-            },
-            ?[:0]const u8 => {
-                if (val == null) continue;
-                len += @intCast(val.len + 1);
-                len += @intCast(@subWithOverflow(0, val.len + 1).@"0" % 4);
-            },
-            else => {},
-        }
-        len += 4;
-    }
-    return len;
-}
-
-fn writeHeader(writer: anytype, header: Header) !void {
-    return writer.writeAll(&toBytes(header));
-}
-
-fn writeI32(writer: anytype, num: i32) !void {
-    return writer.writeAll(&toBytes(num));
-}
-
-fn writeU32(writer: anytype, num: u32) !void {
-    return writer.writeAll(&toBytes(num));
-}
-
-fn writeFixed(writer: anytype, num: Fixed) !void {
-    return writeI32(writer, @intFromEnum(num));
-}
-
-fn writeFD(writer: anytype, fd: FD) !void {
-    // TODO send fd through ancillary data
-    return writeI32(writer, fd);
-}
-
-fn writeArray(writer: anytype, arr: []const u8) !void {
-    try writeU32(writer, @intCast(arr.len));
-    try writer.writeAll(arr);
-    const pad = @subWithOverflow(0, arr.len).@"0" % 4;
-    for (0..pad) |_| {
-        try writer.writeAll(&[_]u8{0});
-    }
-}
-
-fn writeString(writer: anytype, str: ?[:0]const u8) !void {
-    if (str == null) {
-        return writeU32(writer, 0);
-    }
-    var arr: []const u8 = @ptrCast(str.?);
-    arr.len += 1;
-    return writeArray(writer, arr);
-}
-
-fn writeObject(writer: anytype, object: anytype) !void {
-    const ObjType = @TypeOf(object);
-    const type_info = @typeInfo(ObjType);
-    if (type_info == .Optional) {
-        comptime assertObject(type_info.Optional.child);
-        if (object == null)
-            return writeU32(writer, 0);
-        return writeU32(writer, object.?.id);
-    }
-    comptime assertObject(ObjType);
-    return writeU32(writer, object.id);
-}
-
-fn writeEnum(writer: anytype, enum_: anytype) !void {
-    const type_name = @typeName(@TypeOf(enum_));
-    const type_info = @typeInfo(@TypeOf(enum_));
-    if (type_info != .Enum)
-        @compileError(type_name ++ " is not an object. Not a struct.");
-    
-    switch (type_info.Enum.tag_type) {
-        i32 => return writeI32(writer, @intFromEnum(enum_)),
-        u32 => return writeU32(writer, @intFromEnum(enum_)),
-        else => @compileError(type_name ++ " tag must be i32 or u32.")
-    }
-}
-
 fn decodeI32(bytes: []const u8, start: *usize) DecodeError!i32 {
     if (bytes[(start.*)..].len < @sizeOf(i32)) return DecodeError.UnexpectedEnd;
     defer start.* += @sizeOf(i32);
@@ -308,8 +171,137 @@ fn decodeEnum(
         @compileError(type_name ++ " is not an object. Not a struct.");
 
     switch (type_info.Enum.tag_type) {
-        i32 => return @enumFromInt(try writeI32(bytes, start)),
-        u32 => return @enumFromInt(try writeU32(bytes, start)),
+        i32 => return @enumFromInt(try decodeI32(bytes, start)),
+        u32 => return @enumFromInt(try decodeU32(bytes, start)),
         else => @compileError(type_name ++ " tag must be i32 or u32.")
     }
+}
+
+/// Gets the length of array `len` rounded up 4 bytes.
+pub fn arrayLen(len: u32) u32 {
+    return (len + @sizeOf(u32) - 1) & ~(@sizeOf(u32) - 1);
+}
+
+/// Gets the number of padding bytes needed for array of `len`.
+pub fn arrayPad(len: u32) u32 {
+    return (@sizeOf(u32) - (len & @sizeOf(u32) - 1)) & (@sizeOf(u32) - 1);
+}
+
+pub fn sendRequestRaw(
+    socket: std.posix.socket_t,
+    object_id: u32,
+    opcode: u16,
+    comptime N: comptime_int,
+    args: anytype,
+    fds: anytype,
+) !void {
+    comptime if (N < 1) @compileError("N must be at least 1");
+    var iovecs: [N]std.posix.iovec_const = undefined;
+    var i: usize = 1;
+    var zeros: [4]u8 = .{0} ** 4;
+
+    const info = @typeInfo(@TypeOf(args));
+    if (info != .Struct) @compileError("`args` must be struct");
+    inline for (info.Struct.fields) |field| {
+        const val = @field(args, field.name);
+        switch (field.type) {
+            i32, u32, Fixed => {
+                iovecs[i].base = std.mem.asBytes(&val);
+                iovecs[i].len = @sizeOf(i32);
+            },
+            []const u8 => {
+                iovecs[i].base = std.mem.asBytes(&val.len);
+                iovecs[i].len = @sizeOf(u32);
+                i += 1;
+                iovecs[i].base = val.ptr;
+                iovecs[i].len = val.len;
+                i += 1;
+                iovecs[i].base = &zeros;
+                iovecs[i].len = arrayPad(val.len);
+            },
+            [:0]const u8 => {
+                const len = val.len + 1;
+                iovecs[i].base = std.mem.asBytes(&len);
+                iovecs[i].len = @sizeOf(u32);
+                i += 1;
+                iovecs[i].base = val.ptr;
+                iovecs[i].len = len;
+                i += 1;
+                iovecs[i].base = &zeros;
+                iovecs[i].len = arrayPad(len);
+            },
+            ?[:0]const u8 => {
+                if (val == null) {
+                    iovecs[i].base = &zeros;
+                    iovecs[i].len = @sizeOf(u32);
+                    continue;
+                }
+                const len = val.len + 1;
+                iovecs[i].base = std.mem.asBytes(&len);
+                iovecs[i].len = @sizeOf(u32);
+                i += 1;
+                iovecs[i].base = val.ptr;
+                iovecs[i].len = len;
+                i += 1;
+                iovecs[i].base = &zeros;
+                iovecs[i].len = arrayPad(len);
+            },
+            else => {
+                @compileError("Invalid arg type: " ++ @typeName(field.type));
+            }
+        }
+        i += 1;
+    }
+
+    iovecs[0].len = @sizeOf(Header);
+    var length: usize = 0;
+    for (0..i) |n| {
+        length += iovecs[n].len;
+    }
+    const header = Header {
+        .object_id = object_id,
+        .opcode = opcode,
+        .length = @intCast(length),
+    };
+    iovecs[0].base = std.mem.asBytes(&header);
+
+    var msg = std.posix.msghdr_const {
+        .name = null,
+        .namelen = 0,
+        .iov = &iovecs,
+        .iovlen = @intCast(i),
+        .control = null,
+        .controllen = 0,
+        .flags = 0,
+    };
+    const fds_info = @typeInfo(@TypeOf(fds));
+    if (fds_info != .Array) @compileError("`fds` must be an array.");
+    if (fds_info.Array.len != 0) {
+        const cmsg = cmsghdr(@TypeOf(fds)) {
+            .level = std.posix.SOL.SOCKET,
+            .type = 0x01, // SCM_RIGHTS
+            .data = fds,
+        };
+        msg.control = &cmsg; // SAFETY?
+        msg.controllen = @intCast(cmsg.len);
+    }
+    const sent = try std.posix.sendmsg(socket, &msg, 0);
+    if (sent < header.length) {
+        return std.posix.SendMsgError.SocketNotConnected;
+    }
+}
+
+fn cmsghdr(comptime T: type) type {
+    // `__CMSG_PADDING` macro from bits/socket.h
+    const pad_len = (@sizeOf(usize) - (@sizeOf(T) & @sizeOf(usize) - 1))
+                    & (@sizeOf(usize) - 1);
+
+    // `struct cmsghdr` translation from bit/socket.h
+    return extern struct {
+        len: usize = @sizeOf(@This()) - pad_len,
+        level: c_int,
+        type: c_int,
+        data: T,
+        _pad: [pad_len]u8 align(1) = .{0} ** pad_len,
+    };
 }

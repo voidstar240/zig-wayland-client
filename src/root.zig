@@ -65,19 +65,6 @@ pub const WaylandState = struct {
         return .{ .context = self };
     }
 
-    /// Writes a request to the wayland socket stream.
-    pub fn sendRequest(
-        self: *WaylandState,
-        obj_id: u32,
-        opcode: u16,
-        args: anytype,
-    ) !void {
-        try wire.writeRequest(self.writer(), obj_id, opcode, args);
-        if (self.auto_flush) {
-            try self.flush();
-        }
-    }
-
     /// Gets a reader to the socket stream.
     pub fn reader(self: *WaylandState) Reader {
         return self.socket.reader();
