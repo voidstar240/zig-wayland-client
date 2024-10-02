@@ -85,7 +85,9 @@ pub const wl_display = struct {
             .id = callback
         };
 
-        const args = .{ callback, };
+        const args = .{
+            callback,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.sync;
@@ -108,7 +110,9 @@ pub const wl_display = struct {
             .id = registry
         };
 
-        const args = .{ registry, };
+        const args = .{
+            registry,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.get_registry;
@@ -204,7 +208,13 @@ pub const wl_registry = struct {
             .id = id
         };
 
-        const args = .{ name, @as([:0]const u8, id_type.interface_str), id_type.version, id, };
+        const args = .{
+            name,
+            @as(u32, @intCast(id_type.interface_str.len + 1)),
+            @as([:0]const u8, id_type.interface_str),
+            id_type.version,
+            id,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.bind;
@@ -317,7 +327,9 @@ pub const wl_compositor = struct {
             .id = id
         };
 
-        const args = .{ id, };
+        const args = .{
+            id,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.create_surface;
@@ -332,7 +344,9 @@ pub const wl_compositor = struct {
             .id = id
         };
 
-        const args = .{ id, };
+        const args = .{
+            id,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.create_region;
@@ -382,7 +396,14 @@ pub const wl_shm_pool = struct {
             .id = id
         };
 
-        const args = .{ id, offset, width, height, stride, @intFromEnum(format), };
+        const args = .{
+            id,
+            offset,
+            width,
+            height,
+            stride,
+            @intFromEnum(format),
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.create_buffer;
@@ -397,7 +418,8 @@ pub const wl_shm_pool = struct {
     /// buffers that have been created from this pool
     /// are gone.
     pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.destroy;
@@ -416,7 +438,9 @@ pub const wl_shm_pool = struct {
     /// responsibility to ensure that the file is at least as big as
     /// the new pool size.
     pub fn resize(self: Self, ctx: *const WaylandContext, size: i32) RequestError!void {
-        const args = .{ size, };
+        const args = .{
+            size,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.resize;
@@ -608,7 +632,10 @@ pub const wl_shm = struct {
             .id = id
         };
 
-        const args = .{ id, size, };
+        const args = .{
+            id,
+            size,
+        };
         const fds = [_]FD{ fd, };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.create_pool;
@@ -622,7 +649,8 @@ pub const wl_shm = struct {
     /// 
     /// Objects created via this interface remain unaffected.
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.release;
@@ -685,7 +713,8 @@ pub const wl_buffer = struct {
     /// 
     /// For possible side-effects to a surface, see wl_surface.attach.
     pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.destroy;
@@ -770,7 +799,11 @@ pub const wl_data_offer = struct {
     /// wl_data_source.cancelled. Clients may still use this event in
     /// conjunction with wl_data_source.action for feedback.
     pub fn accept(self: Self, ctx: *const WaylandContext, serial: u32, mime_type: ?[:0]const u8) RequestError!void {
-        const args = .{ serial, mime_type, };
+        const args = .{
+            serial,
+            @as(u32, @intCast(if (mime_type) |str| str.len + 1 else 0)),
+            mime_type,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.accept;
@@ -794,7 +827,10 @@ pub const wl_data_offer = struct {
     /// clients may preemptively fetch data or examine it more closely to
     /// determine acceptance.
     pub fn receive(self: Self, ctx: *const WaylandContext, mime_type: [:0]const u8, fd: FD) RequestError!void {
-        const args = .{ mime_type, };
+        const args = .{
+            @as(u32, @intCast(mime_type.len + 1)),
+            mime_type,
+        };
         const fds = [_]FD{ fd, };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.receive;
@@ -804,7 +840,8 @@ pub const wl_data_offer = struct {
 
     /// Destroy the data offer.
     pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.destroy;
@@ -827,7 +864,8 @@ pub const wl_data_offer = struct {
     /// If wl_data_offer.finish request is received for a non drag and drop
     /// operation, the invalid_finish protocol error is raised.
     pub fn finish(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.finish;
@@ -867,7 +905,10 @@ pub const wl_data_offer = struct {
     /// This request can only be made on drag-and-drop offers, a protocol error
     /// will be raised otherwise.
     pub fn setActions(self: Self, ctx: *const WaylandContext, dnd_actions: deps.wl_data_device_manager.DndAction, preferred_action: deps.wl_data_device_manager.DndAction) RequestError!void {
-        const args = .{ @intFromEnum(dnd_actions), @intFromEnum(preferred_action), };
+        const args = .{
+            @intFromEnum(dnd_actions),
+            @intFromEnum(preferred_action),
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_actions;
@@ -994,7 +1035,10 @@ pub const wl_data_source = struct {
     /// advertised to targets.  Can be called several times to offer
     /// multiple types.
     pub fn offer(self: Self, ctx: *const WaylandContext, mime_type: [:0]const u8) RequestError!void {
-        const args = .{ mime_type, };
+        const args = .{
+            @as(u32, @intCast(mime_type.len + 1)),
+            mime_type,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.offer;
@@ -1004,7 +1048,8 @@ pub const wl_data_source = struct {
 
     /// Destroy the data source.
     pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.destroy;
@@ -1026,7 +1071,9 @@ pub const wl_data_source = struct {
     /// wl_data_device.start_drag. Attempting to use the source other than
     /// for drag-and-drop will raise a protocol error.
     pub fn setActions(self: Self, ctx: *const WaylandContext, dnd_actions: deps.wl_data_device_manager.DndAction) RequestError!void {
-        const args = .{ @intFromEnum(dnd_actions), };
+        const args = .{
+            @intFromEnum(dnd_actions),
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_actions;
@@ -1243,7 +1290,12 @@ pub const wl_data_device = struct {
     /// start_drag requests. Attempting to reuse a previously-used source
     /// may send a used_source error.
     pub fn startDrag(self: Self, ctx: *const WaylandContext, source: ?deps.wl_data_source, origin: deps.wl_surface, icon: ?deps.wl_surface, serial: u32) RequestError!void {
-        const args = .{ if (source) |obj| obj.id else 0, origin.id, if (icon) |obj| obj.id else 0, serial, };
+        const args = .{
+            if (source) |obj| obj.id else 0,
+            origin.id,
+            if (icon) |obj| obj.id else 0,
+            serial,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.start_drag;
@@ -1260,7 +1312,10 @@ pub const wl_data_device = struct {
     /// start_drag requests. Attempting to reuse a previously-used source
     /// may send a used_source error.
     pub fn setSelection(self: Self, ctx: *const WaylandContext, source: ?deps.wl_data_source, serial: u32) RequestError!void {
-        const args = .{ if (source) |obj| obj.id else 0, serial, };
+        const args = .{
+            if (source) |obj| obj.id else 0,
+            serial,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_selection;
@@ -1270,7 +1325,8 @@ pub const wl_data_device = struct {
 
     /// This request destroys the data device.
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.release;
@@ -1466,7 +1522,9 @@ pub const wl_data_device_manager = struct {
             .id = id
         };
 
-        const args = .{ id, };
+        const args = .{
+            id,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.create_data_source;
@@ -1481,7 +1539,10 @@ pub const wl_data_device_manager = struct {
             .id = id
         };
 
-        const args = .{ id, seat.id, };
+        const args = .{
+            id,
+            seat.id,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.get_data_device;
@@ -1529,7 +1590,10 @@ pub const wl_shell = struct {
             .id = id
         };
 
-        const args = .{ id, surface.id, };
+        const args = .{
+            id,
+            surface.id,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.get_shell_surface;
@@ -1614,7 +1678,9 @@ pub const wl_shell_surface = struct {
     /// A client must respond to a ping event with a pong request or
     /// the client may be deemed unresponsive.
     pub fn pong(self: Self, ctx: *const WaylandContext, serial: u32) RequestError!void {
-        const args = .{ serial, };
+        const args = .{
+            serial,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.pong;
@@ -1628,7 +1694,10 @@ pub const wl_shell_surface = struct {
     /// The server may ignore move requests depending on the state of
     /// the surface (e.g. fullscreen or maximized).
     pub fn move(self: Self, ctx: *const WaylandContext, seat: deps.wl_seat, serial: u32) RequestError!void {
-        const args = .{ seat.id, serial, };
+        const args = .{
+            seat.id,
+            serial,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.move;
@@ -1642,7 +1711,11 @@ pub const wl_shell_surface = struct {
     /// The server may ignore resize requests depending on the state of
     /// the surface (e.g. fullscreen or maximized).
     pub fn resize(self: Self, ctx: *const WaylandContext, seat: deps.wl_seat, serial: u32, edges: Resize) RequestError!void {
-        const args = .{ seat.id, serial, @intFromEnum(edges), };
+        const args = .{
+            seat.id,
+            serial,
+            @intFromEnum(edges),
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.resize;
@@ -1654,7 +1727,8 @@ pub const wl_shell_surface = struct {
     /// 
     /// A toplevel surface is not fullscreen, maximized or transient.
     pub fn setToplevel(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_toplevel;
@@ -1670,7 +1744,12 @@ pub const wl_shell_surface = struct {
     /// 
     /// The flags argument controls details of the transient behaviour.
     pub fn setTransient(self: Self, ctx: *const WaylandContext, parent: deps.wl_surface, x: i32, y: i32, flags: Transient) RequestError!void {
-        const args = .{ parent.id, x, y, @intFromEnum(flags), };
+        const args = .{
+            parent.id,
+            x,
+            y,
+            @intFromEnum(flags),
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_transient;
@@ -1712,7 +1791,11 @@ pub const wl_shell_surface = struct {
     /// with the dimensions for the output on which the surface will
     /// be made fullscreen.
     pub fn setFullscreen(self: Self, ctx: *const WaylandContext, method: FullscreenMethod, framerate: u32, output: ?deps.wl_output) RequestError!void {
-        const args = .{ @intFromEnum(method), framerate, if (output) |obj| obj.id else 0, };
+        const args = .{
+            @intFromEnum(method),
+            framerate,
+            if (output) |obj| obj.id else 0,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_fullscreen;
@@ -1740,7 +1823,14 @@ pub const wl_shell_surface = struct {
     /// corner of the surface relative to the upper left corner of the
     /// parent surface, in surface-local coordinates.
     pub fn setPopup(self: Self, ctx: *const WaylandContext, seat: deps.wl_seat, serial: u32, parent: deps.wl_surface, x: i32, y: i32, flags: Transient) RequestError!void {
-        const args = .{ seat.id, serial, parent.id, x, y, @intFromEnum(flags), };
+        const args = .{
+            seat.id,
+            serial,
+            parent.id,
+            x,
+            y,
+            @intFromEnum(flags),
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_popup;
@@ -1767,7 +1857,9 @@ pub const wl_shell_surface = struct {
     /// 
     /// The details depend on the compositor implementation.
     pub fn setMaximized(self: Self, ctx: *const WaylandContext, output: ?deps.wl_output) RequestError!void {
-        const args = .{ if (output) |obj| obj.id else 0, };
+        const args = .{
+            if (output) |obj| obj.id else 0,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_maximized;
@@ -1783,7 +1875,10 @@ pub const wl_shell_surface = struct {
     /// 
     /// The string must be encoded in UTF-8.
     pub fn setTitle(self: Self, ctx: *const WaylandContext, title: [:0]const u8) RequestError!void {
-        const args = .{ title, };
+        const args = .{
+            @as(u32, @intCast(title.len + 1)),
+            title,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_title;
@@ -1798,7 +1893,10 @@ pub const wl_shell_surface = struct {
     /// file name (or the full path if it is a non-standard location) of
     /// the application's .desktop file as the class.
     pub fn setClass(self: Self, ctx: *const WaylandContext, class_: [:0]const u8) RequestError!void {
-        const args = .{ class_, };
+        const args = .{
+            @as(u32, @intCast(class_.len + 1)),
+            class_,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_class;
@@ -1953,7 +2051,8 @@ pub const wl_surface = struct {
 
     /// Deletes the surface and invalidates its object ID.
     pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.destroy;
@@ -2026,7 +2125,11 @@ pub const wl_surface = struct {
     /// ensure that they explicitly remove content from surfaces, even after
     /// destroying buffers.
     pub fn attach(self: Self, ctx: *const WaylandContext, buffer: ?deps.wl_buffer, x: i32, y: i32) RequestError!void {
-        const args = .{ if (buffer) |obj| obj.id else 0, x, y, };
+        const args = .{
+            if (buffer) |obj| obj.id else 0,
+            x,
+            y,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.attach;
@@ -2056,7 +2159,12 @@ pub const wl_surface = struct {
     /// posted with wl_surface.damage_buffer which uses buffer coordinates
     /// instead of surface coordinates.
     pub fn damage(self: Self, ctx: *const WaylandContext, x: i32, y: i32, width: i32, height: i32) RequestError!void {
-        const args = .{ x, y, width, height, };
+        const args = .{
+            x,
+            y,
+            width,
+            height,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.damage;
@@ -2101,7 +2209,9 @@ pub const wl_surface = struct {
             .id = callback
         };
 
-        const args = .{ callback, };
+        const args = .{
+            callback,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.frame;
@@ -2135,7 +2245,9 @@ pub const wl_surface = struct {
     /// destroyed immediately. A NULL wl_region causes the pending opaque
     /// region to be set to empty.
     pub fn setOpaqueRegion(self: Self, ctx: *const WaylandContext, region: ?deps.wl_region) RequestError!void {
-        const args = .{ if (region) |obj| obj.id else 0, };
+        const args = .{
+            if (region) |obj| obj.id else 0,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_opaque_region;
@@ -2166,7 +2278,9 @@ pub const wl_surface = struct {
     /// immediately. A NULL wl_region causes the input region to be set
     /// to infinite.
     pub fn setInputRegion(self: Self, ctx: *const WaylandContext, region: ?deps.wl_region) RequestError!void {
-        const args = .{ if (region) |obj| obj.id else 0, };
+        const args = .{
+            if (region) |obj| obj.id else 0,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_input_region;
@@ -2194,7 +2308,8 @@ pub const wl_surface = struct {
     /// 
     /// Other interfaces may add further double-buffered surface state.
     pub fn commit(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.commit;
@@ -2234,7 +2349,9 @@ pub const wl_surface = struct {
     /// wl_output.transform enum the invalid_transform protocol error
     /// is raised.
     pub fn setBufferTransform(self: Self, ctx: *const WaylandContext, transform: deps.wl_output.Transform) RequestError!void {
-        const args = .{ @intFromEnum(transform), };
+        const args = .{
+            @intFromEnum(transform),
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_buffer_transform;
@@ -2266,7 +2383,9 @@ pub const wl_surface = struct {
     /// If scale is not greater than 0 the invalid_scale protocol error is
     /// raised.
     pub fn setBufferScale(self: Self, ctx: *const WaylandContext, scale: i32) RequestError!void {
-        const args = .{ scale, };
+        const args = .{
+            scale,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_buffer_scale;
@@ -2307,7 +2426,12 @@ pub const wl_surface = struct {
     /// two requests separately and only transform from one to the other
     /// after receiving the wl_surface.commit.
     pub fn damageBuffer(self: Self, ctx: *const WaylandContext, x: i32, y: i32, width: i32, height: i32) RequestError!void {
-        const args = .{ x, y, width, height, };
+        const args = .{
+            x,
+            y,
+            width,
+            height,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.damage_buffer;
@@ -2328,7 +2452,10 @@ pub const wl_surface = struct {
     /// arguments in the wl_surface.attach request in wl_surface versions prior
     /// to 5. See wl_surface.attach for details.
     pub fn offset(self: Self, ctx: *const WaylandContext, x: i32, y: i32) RequestError!void {
-        const args = .{ x, y, };
+        const args = .{
+            x,
+            y,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.offset;
@@ -2476,7 +2603,9 @@ pub const wl_seat = struct {
             .id = id
         };
 
-        const args = .{ id, };
+        const args = .{
+            id,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.get_pointer;
@@ -2498,7 +2627,9 @@ pub const wl_seat = struct {
             .id = id
         };
 
-        const args = .{ id, };
+        const args = .{
+            id,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.get_keyboard;
@@ -2520,7 +2651,9 @@ pub const wl_seat = struct {
             .id = id
         };
 
-        const args = .{ id, };
+        const args = .{
+            id,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.get_touch;
@@ -2532,7 +2665,8 @@ pub const wl_seat = struct {
     /// Using this request a client can tell the server that it is not going to
     /// use the seat object anymore.
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.release;
@@ -2725,7 +2859,12 @@ pub const wl_pointer = struct {
     /// serial number sent to the client. Otherwise the request will be
     /// ignored.
     pub fn setCursor(self: Self, ctx: *const WaylandContext, serial: u32, surface: ?deps.wl_surface, hotspot_x: i32, hotspot_y: i32) RequestError!void {
-        const args = .{ serial, if (surface) |obj| obj.id else 0, hotspot_x, hotspot_y, };
+        const args = .{
+            serial,
+            if (surface) |obj| obj.id else 0,
+            hotspot_x,
+            hotspot_y,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_cursor;
@@ -2739,7 +2878,8 @@ pub const wl_pointer = struct {
     /// This request destroys the pointer proxy object, so clients must not call
     /// wl_pointer_destroy() after using this request.
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.release;
@@ -3157,7 +3297,8 @@ pub const wl_keyboard = struct {
     };
 
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.release;
@@ -3359,7 +3500,8 @@ pub const wl_touch = struct {
     };
 
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.release;
@@ -3613,7 +3755,8 @@ pub const wl_output = struct {
     /// Using this request a client can tell the server that it is not going to
     /// use the output object anymore.
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.release;
@@ -3850,7 +3993,8 @@ pub const wl_region = struct {
 
     /// Destroy the region.  This will invalidate the object ID.
     pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.destroy;
@@ -3860,7 +4004,12 @@ pub const wl_region = struct {
 
     /// Add the specified rectangle to the region.
     pub fn add(self: Self, ctx: *const WaylandContext, x: i32, y: i32, width: i32, height: i32) RequestError!void {
-        const args = .{ x, y, width, height, };
+        const args = .{
+            x,
+            y,
+            width,
+            height,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.add;
@@ -3870,7 +4019,12 @@ pub const wl_region = struct {
 
     /// Subtract the specified rectangle from the region.
     pub fn subtract(self: Self, ctx: *const WaylandContext, x: i32, y: i32, width: i32, height: i32) RequestError!void {
-        const args = .{ x, y, width, height, };
+        const args = .{
+            x,
+            y,
+            width,
+            height,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.subtract;
@@ -3923,7 +4077,8 @@ pub const wl_subcompositor = struct {
     /// protocol object anymore. This does not affect any other
     /// objects, wl_subsurface objects included.
     pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.destroy;
@@ -3955,7 +4110,11 @@ pub const wl_subcompositor = struct {
             .id = id
         };
 
-        const args = .{ id, surface.id, parent.id, };
+        const args = .{
+            id,
+            surface.id,
+            parent.id,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.get_subsurface;
@@ -4046,7 +4205,8 @@ pub const wl_subsurface = struct {
     /// wl_subcompositor.get_subsurface request. The wl_surface's association
     /// to the parent is deleted. The wl_surface is unmapped immediately.
     pub fn destroy(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.destroy;
@@ -4069,7 +4229,10 @@ pub const wl_subsurface = struct {
     /// 
     /// The initial position is 0, 0.
     pub fn setPosition(self: Self, ctx: *const WaylandContext, x: i32, y: i32) RequestError!void {
-        const args = .{ x, y, };
+        const args = .{
+            x,
+            y,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_position;
@@ -4091,7 +4254,9 @@ pub const wl_subsurface = struct {
     /// A new sub-surface is initially added as the top-most in the stack
     /// of its siblings and parent.
     pub fn placeAbove(self: Self, ctx: *const WaylandContext, sibling: deps.wl_surface) RequestError!void {
-        const args = .{ sibling.id, };
+        const args = .{
+            sibling.id,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.place_above;
@@ -4102,7 +4267,9 @@ pub const wl_subsurface = struct {
     /// The sub-surface is placed just below the reference surface.
     /// See wl_subsurface.place_above.
     pub fn placeBelow(self: Self, ctx: *const WaylandContext, sibling: deps.wl_surface) RequestError!void {
-        const args = .{ sibling.id, };
+        const args = .{
+            sibling.id,
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.place_below;
@@ -4124,7 +4291,8 @@ pub const wl_subsurface = struct {
     /// 
     /// See wl_subsurface for the recursive effect of this mode.
     pub fn setSync(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_sync;
@@ -4152,7 +4320,8 @@ pub const wl_subsurface = struct {
     /// If a surface's parent surface behaves as desynchronized, then
     /// the cached state is applied on set_desync.
     pub fn setDesync(self: Self, ctx: *const WaylandContext) RequestError!void {
-        const args = .{ };
+        const args = .{
+        };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.set_desync;

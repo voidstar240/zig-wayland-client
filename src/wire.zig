@@ -200,7 +200,7 @@ pub fn sendRequestRaw(
     comptime if (N < 1) @compileError("N must be at least 1");
     var iovecs: [N]std.posix.iovec_const = undefined;
     var i: usize = 1;
-    var zeros: [4]u8 = .{0} ** 4;
+    const zeros: [4]u8 = .{0} ** 4;
 
     const info = @typeInfo(@TypeOf(args));
     if (info != .Struct) @compileError("`args` must be struct");
@@ -210,55 +210,56 @@ pub fn sendRequestRaw(
             i32, u32, Fixed => {
                 iovecs[i].base = std.mem.asBytes(&val);
                 iovecs[i].len = @sizeOf(i32);
+                i += 1;
             },
             []const u8 => {
-                const len: u32 = @intCast(val.len);
-                iovecs[i].base = std.mem.asBytes(&len);
-                iovecs[i].len = @sizeOf(u32);
-                i += 1;
-                iovecs[i].base = val.ptr;
-                iovecs[i].len = len;
-                i += 1;
-                iovecs[i].base = &zeros;
-                iovecs[i].len = arrayPad(len);
+                if (val.len > 0) {
+                    iovecs[i].base = val.ptr;
+                    iovecs[i].len = val.len;
+                    i += 1;
+                }
+                const pad = arrayPad(@intCast(val.len));
+                if (pad > 0) {
+                    iovecs[i].base = &zeros;
+                    iovecs[i].len = pad;
+                    i += 1;
+                }
             },
             [:0]const u8 => {
                 const len: u32 = @intCast(val.len + 1);
-                iovecs[i].base = std.mem.asBytes(&len);
-                iovecs[i].len = @sizeOf(u32);
-                i += 1;
                 iovecs[i].base = val.ptr;
                 iovecs[i].len = len;
                 i += 1;
-                iovecs[i].base = &zeros;
-                iovecs[i].len = arrayPad(len);
+                const pad = arrayPad(len);
+                if (pad > 0) {
+                    iovecs[i].base = &zeros;
+                    iovecs[i].len = pad;
+                    i += 1;
+                }
             },
             ?[:0]const u8 => {
                 if (val == null) {
-                    iovecs[i].base = &zeros;
-                    iovecs[i].len = @sizeOf(u32);
                     continue;
                 }
                 const len: u32 = @intCast(val.len + 1);
-                iovecs[i].base = std.mem.asBytes(&len);
-                iovecs[i].len = @sizeOf(u32);
-                i += 1;
                 iovecs[i].base = val.ptr;
                 iovecs[i].len = @intCast(len);
                 i += 1;
-                iovecs[i].base = &zeros;
-                iovecs[i].len = arrayPad(len);
+                const pad = arrayPad(len);
+                if (pad > 0) {
+                    iovecs[i].base = &zeros;
+                    iovecs[i].len = pad;
+                    i += 1;
+                }
             },
             else => {
                 @compileError("Invalid arg type: " ++ @typeName(field.type));
             }
         }
-        i += 1;
     }
 
-    iovecs[0].len = @sizeOf(Header);
-    var length: usize = 0;
-    for (0..i) |n| {
+    var length: usize = @sizeOf(Header);
+    for (1..i) |n| {
         length += iovecs[n].len;
     }
     const header = Header {
@@ -267,6 +268,7 @@ pub fn sendRequestRaw(
         .length = @intCast(length),
     };
     iovecs[0].base = std.mem.asBytes(&header);
+    iovecs[0].len = @sizeOf(Header);
 
     var msg = std.posix.msghdr_const {
         .name = null,
@@ -277,17 +279,20 @@ pub fn sendRequestRaw(
         .controllen = 0,
         .flags = 0,
     };
+
     const fds_info = @typeInfo(@TypeOf(fds));
     if (fds_info != .Array) @compileError("`fds` must be an array.");
+    var cmsg: cmsghdr(@TypeOf(fds)) = undefined;
     if (fds_info.Array.len != 0) {
-        const cmsg = cmsghdr(@TypeOf(fds)) {
+        cmsg = .{
             .level = std.posix.SOL.SOCKET,
             .type = 0x01, // SCM_RIGHTS
             .data = fds,
         };
-        msg.control = &cmsg; // SAFETY?
+        msg.control = &cmsg;
         msg.controllen = @intCast(cmsg.len);
     }
+
     const sent = try std.posix.sendmsg(socket, &msg, 0);
     if (sent < header.length) {
         return std.posix.SendMsgError.SocketNotConnected;

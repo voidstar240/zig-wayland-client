@@ -180,39 +180,71 @@ fn generateFDs(args: []Arg, writer: anytype) !void {
 }
 
 fn generateRawArgs(args: []Arg, writer: anytype) !void {
-    try writer.writeAll(".{ ");
+    try writer.writeAll(".{\n");
     for (args) |arg| {
         switch (arg.type) {
-            .int, .uint, .fixed, .array, .string, => {
-                try writer.print("{}, ", .{escBadName(arg.name)});
+            .int, .uint, .fixed => {
+                try writer.print(
+                    \\            {},
+                    \\
+                    , .{escBadName(arg.name)});
+            },
+            .array => {
+                try writer.print(
+                    \\            @as(u32, @intCast({}.len)), {},
+                    \\
+                    , .{escBadName(arg.name), escBadName(arg.name)});
+            },
+            .string => |meta| if (meta.allow_null) {
+                try writer.print(
+            \\            @as(u32, @intCast(if ({}) |str| str.len + 1 else 0)),
+            \\            {},
+            \\
+                    , .{escBadName(arg.name), escBadName(arg.name)});
+            } else {
+                try writer.print(
+                    \\            @as(u32, @intCast({}.len + 1)),
+                    \\            {},
+                    \\
+                    , .{escBadName(arg.name), escBadName(arg.name)});
             },
             .object => |meta| {
                 if (meta.allow_null) {
                     try writer.print(
-                        "if ({}) |obj| obj.id else 0, ",
-                        .{escBadName(arg.name)});
+                        \\            if ({}) |obj| obj.id else 0,
+                        \\
+                        , .{escBadName(arg.name)});
                 } else {
                     try writer.print(
-                        "{}.id, ",
-                        .{escBadName(arg.name)});
+                        \\            {}.id,
+                        \\
+                        , .{escBadName(arg.name)});
                 }
             },
             .new_id => |meta| {
                 if (meta.interface) |_| {
-                    try writer.print("{}, ", .{escBadName(arg.name)});
+                    try writer.print(
+                        \\            {},
+                        \\
+                        , .{escBadName(arg.name)});
                 } else {
                     try writer.print(
-            "@as([:0]const u8, {s}_type.interface_str), {s}_type.version, {}, ",
-                        .{arg.name, arg.name, escBadName(arg.name)});
+            \\            @as(u32, @intCast({s}_type.interface_str.len + 1)),
+            \\            @as([:0]const u8, {s}_type.interface_str),
+            \\            {s}_type.version,
+            \\            {},
+            \\
+                    , .{arg.name, arg.name, arg.name, escBadName(arg.name)});
                 }
             },
             .enum_ => try writer.print(
-                "@intFromEnum({}), ",
-                .{escBadName(arg.name)}),
+                \\            @intFromEnum({}),
+                \\
+                , .{escBadName(arg.name)}),
             .fd => {},
         }
     }
-    try writer.writeAll("}");
+    try writer.writeAll("        }");
 }
 
 /// Returns the max length needed for the IOVec array given args.
