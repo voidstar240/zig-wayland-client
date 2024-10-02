@@ -23,7 +23,6 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-const std = @import("std");
 const deps = struct {
     usingnamespace @import("protocol.zig");
     usingnamespace @import("root.zig");
@@ -201,11 +200,11 @@ pub const wl_registry = struct {
     /// Binds a new, client-created object to the server using the
     /// specified name as the identifier.
     pub fn bind(self: Self, ctx: *const WaylandContext, name: u32, id_type: type, id: u32) RequestError!id_type {
-        const new_obj = Object {
+        const new_obj = id_type {
             .id = id
         };
 
-        const args = .{ name, @as([:0]const u8, &id_type.interface_str), id_type.version, id, };
+        const args = .{ name, @as([:0]const u8, id_type.interface_str), id_type.version, id, };
         const fds = [_]FD{ };
         const socket = ctx.socket.handle;
         const op = Self.opcode.request.bind;

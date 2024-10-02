@@ -212,17 +212,18 @@ pub fn sendRequestRaw(
                 iovecs[i].len = @sizeOf(i32);
             },
             []const u8 => {
-                iovecs[i].base = std.mem.asBytes(&val.len);
+                const len: u32 = @intCast(val.len);
+                iovecs[i].base = std.mem.asBytes(&len);
                 iovecs[i].len = @sizeOf(u32);
                 i += 1;
                 iovecs[i].base = val.ptr;
-                iovecs[i].len = val.len;
+                iovecs[i].len = len;
                 i += 1;
                 iovecs[i].base = &zeros;
-                iovecs[i].len = arrayPad(val.len);
+                iovecs[i].len = arrayPad(len);
             },
             [:0]const u8 => {
-                const len = val.len + 1;
+                const len: u32 = @intCast(val.len + 1);
                 iovecs[i].base = std.mem.asBytes(&len);
                 iovecs[i].len = @sizeOf(u32);
                 i += 1;
@@ -238,12 +239,12 @@ pub fn sendRequestRaw(
                     iovecs[i].len = @sizeOf(u32);
                     continue;
                 }
-                const len = val.len + 1;
+                const len: u32 = @intCast(val.len + 1);
                 iovecs[i].base = std.mem.asBytes(&len);
                 iovecs[i].len = @sizeOf(u32);
                 i += 1;
                 iovecs[i].base = val.ptr;
-                iovecs[i].len = len;
+                iovecs[i].len = @intCast(len);
                 i += 1;
                 iovecs[i].base = &zeros;
                 iovecs[i].len = arrayPad(len);

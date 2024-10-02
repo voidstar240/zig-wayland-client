@@ -19,7 +19,6 @@ pub fn generateProtocol(
     }
 
     try writer.writeAll(
-        \\const std = @import("std");
         \\const deps = struct {
         \\    usingnamespace @import("protocol.zig");
         \\
@@ -133,12 +132,12 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
         } else {
             try writer.print(
                 \\) RequestError!{s}_type {{
-                \\        const new_obj = Object {{
+                \\        const new_obj = {s}_type {{
                 \\            .id = {}
                 \\        }};
                 \\
                 \\
-                , .{arg.name, escBadName(arg.name)});
+                , .{arg.name, arg.name, escBadName(arg.name)});
         }
     } else {
         try writer.writeAll(") RequestError!void {\n");
@@ -203,7 +202,7 @@ fn generateRawArgs(args: []Arg, writer: anytype) !void {
                     try writer.print("{}, ", .{escBadName(arg.name)});
                 } else {
                     try writer.print(
-        "@as([:0]const u8, &{s}_type.interface_str), {s}_type.version, {}, ",
+            "@as([:0]const u8, {s}_type.interface_str), {s}_type.version, {}, ",
                         .{arg.name, arg.name, escBadName(arg.name)});
                 }
             },
