@@ -57,14 +57,14 @@ fn generateInterface(interface: *const Interface, writer: anytype) !void {
     try writer.print(
         \\pub const {s} = struct {{
         \\    id: u32,
+        \\    version: u32 = {d},
         \\
         \\    const Self = @This();
         \\
         \\    pub const interface_str = "{s}";
-        \\    pub const version: u32 = {d};
         \\
         \\    pub const opcode = 
-        , .{interface.name, interface.name, interface.version});
+        , .{interface.name, interface.version, interface.name});
     try generateOpcodes(interface, writer);
     for (interface.enums) |*enum_| {
         try generateEnum(enum_, writer);
@@ -133,14 +133,21 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
             try writer.print(
                 \\) RequestError!{s}_type {{
                 \\        const new_obj = {s}_type {{
-                \\            .id = {}
+                \\            .id = {},
+                \\            .version = {s}_version
                 \\        }};
                 \\
                 \\
-                , .{arg.name, arg.name, escBadName(arg.name)});
+                , .{arg.name, arg.name, escBadName(arg.name), arg.name});
         }
     } else {
         try writer.writeAll(") RequestError!void {\n");
+    }
+
+    if (request.since) |v| {
+        try writer.print(
+            "        if (self.version < {d}) return error.VersionError;\n\n"
+            , .{v});
     }
 
     // TODO generate interface type validation for new_id w/o specific interface
@@ -231,7 +238,7 @@ fn generateRawArgs(args: []Arg, writer: anytype) !void {
                     try writer.print(
             \\            @as(u32, @intCast({s}_type.interface_str.len + 1)),
             \\            @as([:0]const u8, {s}_type.interface_str),
-            \\            {s}_type.version,
+            \\            {s}_version,
             \\            {},
             \\
                     , .{arg.name, arg.name, arg.name, escBadName(arg.name)});
@@ -302,8 +309,8 @@ fn generateRequestArgs(args: []Arg, writer: anytype) !?Arg {
                     try writer.print(", {s}: u32", .{arg.name});
                 } else {
                     try writer.print(
-                        \\, {s}_type: type, {}: u32
-                        , .{arg.name, escBadName(arg.name)});
+                        \\, {s}_type: type, {s}_version: u32, {}: u32
+                        , .{arg.name, arg.name, escBadName(arg.name)});
                 }
             },
             .enum_ => |meta| {

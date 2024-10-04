@@ -43,11 +43,11 @@ const sendRequestRaw = deps.wire.sendRequestRaw;
 /// is used for internal Wayland protocol features.
 pub const wl_display = struct {
     id: u32,
+    version: u32 = 1,
 
     const Self = @This();
 
     pub const interface_str = "wl_display";
-    pub const version: u32 = 1;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -185,11 +185,11 @@ pub const wl_display = struct {
 /// the object.
 pub const wl_registry = struct {
     id: u32,
+    version: u32 = 1,
 
     const Self = @This();
 
     pub const interface_str = "wl_registry";
-    pub const version: u32 = 1;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -203,16 +203,17 @@ pub const wl_registry = struct {
 
     /// Binds a new, client-created object to the server using the
     /// specified name as the identifier.
-    pub fn bind(self: Self, ctx: *const WaylandContext, name: u32, id_type: type, id: u32) RequestError!id_type {
+    pub fn bind(self: Self, ctx: *const WaylandContext, name: u32, id_type: type, id_version: u32, id: u32) RequestError!id_type {
         const new_obj = id_type {
-            .id = id
+            .id = id,
+            .version = id_version
         };
 
         const args = .{
             name,
             @as(u32, @intCast(id_type.interface_str.len + 1)),
             @as([:0]const u8, id_type.interface_str),
-            id_type.version,
+            id_version,
             id,
         };
         const fds = [_]FD{ };
@@ -275,11 +276,11 @@ pub const wl_registry = struct {
 /// factory interfaces, the wl_callback interface is frozen at version 1.
 pub const wl_callback = struct {
     id: u32,
+    version: u32 = 1,
 
     const Self = @This();
 
     pub const interface_str = "wl_callback";
-    pub const version: u32 = 1;
 
     pub const opcode = struct {
         pub const event = struct {
@@ -308,11 +309,11 @@ pub const wl_callback = struct {
 /// surfaces into one displayable output.
 pub const wl_compositor = struct {
     id: u32,
+    version: u32 = 6,
 
     const Self = @This();
 
     pub const interface_str = "wl_compositor";
-    pub const version: u32 = 6;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -366,11 +367,11 @@ pub const wl_compositor = struct {
 /// a surface or for many small buffers.
 pub const wl_shm_pool = struct {
     id: u32,
+    version: u32 = 2,
 
     const Self = @This();
 
     pub const interface_str = "wl_shm_pool";
-    pub const version: u32 = 2;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -461,11 +462,11 @@ pub const wl_shm_pool = struct {
 /// that can be used for buffers.
 pub const wl_shm = struct {
     id: u32,
+    version: u32 = 2,
 
     const Self = @This();
 
     pub const interface_str = "wl_shm";
-    pub const version: u32 = 2;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -649,6 +650,8 @@ pub const wl_shm = struct {
     /// 
     /// Objects created via this interface remain unaffected.
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
+        if (self.version < 2) return error.VersionError;
+
         const args = .{
         };
         const fds = [_]FD{ };
@@ -693,11 +696,11 @@ pub const wl_shm = struct {
 /// factory interfaces, the wl_buffer interface is frozen at version 1.
 pub const wl_buffer = struct {
     id: u32,
+    version: u32 = 1,
 
     const Self = @This();
 
     pub const interface_str = "wl_buffer";
-    pub const version: u32 = 1;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -756,11 +759,11 @@ pub const wl_buffer = struct {
 /// data directly from the source client.
 pub const wl_data_offer = struct {
     id: u32,
+    version: u32 = 3,
 
     const Self = @This();
 
     pub const interface_str = "wl_data_offer";
-    pub const version: u32 = 3;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -864,6 +867,8 @@ pub const wl_data_offer = struct {
     /// If wl_data_offer.finish request is received for a non drag and drop
     /// operation, the invalid_finish protocol error is raised.
     pub fn finish(self: Self, ctx: *const WaylandContext) RequestError!void {
+        if (self.version < 3) return error.VersionError;
+
         const args = .{
         };
         const fds = [_]FD{ };
@@ -905,6 +910,8 @@ pub const wl_data_offer = struct {
     /// This request can only be made on drag-and-drop offers, a protocol error
     /// will be raised otherwise.
     pub fn setActions(self: Self, ctx: *const WaylandContext, dnd_actions: deps.wl_data_device_manager.DndAction, preferred_action: deps.wl_data_device_manager.DndAction) RequestError!void {
+        if (self.version < 3) return error.VersionError;
+
         const args = .{
             @intFromEnum(dnd_actions),
             @intFromEnum(preferred_action),
@@ -1004,11 +1011,11 @@ pub const wl_data_offer = struct {
 /// to requests to transfer the data.
 pub const wl_data_source = struct {
     id: u32,
+    version: u32 = 3,
 
     const Self = @This();
 
     pub const interface_str = "wl_data_source";
-    pub const version: u32 = 3;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1071,6 +1078,8 @@ pub const wl_data_source = struct {
     /// wl_data_device.start_drag. Attempting to use the source other than
     /// for drag-and-drop will raise a protocol error.
     pub fn setActions(self: Self, ctx: *const WaylandContext, dnd_actions: deps.wl_data_device_manager.DndAction) RequestError!void {
+        if (self.version < 3) return error.VersionError;
+
         const args = .{
             @intFromEnum(dnd_actions),
         };
@@ -1233,11 +1242,11 @@ pub const wl_data_source = struct {
 /// mechanisms such as copy-and-paste and drag-and-drop.
 pub const wl_data_device = struct {
     id: u32,
+    version: u32 = 3,
 
     const Self = @This();
 
     pub const interface_str = "wl_data_device";
-    pub const version: u32 = 3;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1325,6 +1334,8 @@ pub const wl_data_device = struct {
 
     /// This request destroys the data device.
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
+        if (self.version < 2) return error.VersionError;
+
         const args = .{
         };
         const fds = [_]FD{ };
@@ -1473,11 +1484,11 @@ pub const wl_data_device = struct {
 /// wl_data_offer.accept and wl_data_offer.finish for details.
 pub const wl_data_device_manager = struct {
     id: u32,
+    version: u32 = 3,
 
     const Self = @This();
 
     pub const interface_str = "wl_data_device_manager";
-    pub const version: u32 = 3;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1564,11 +1575,11 @@ pub const wl_data_device_manager = struct {
 /// should not implement this interface.
 pub const wl_shell = struct {
     id: u32,
+    version: u32 = 1,
 
     const Self = @This();
 
     pub const interface_str = "wl_shell";
-    pub const version: u32 = 1;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -1617,11 +1628,11 @@ pub const wl_shell = struct {
 /// the wl_surface object.
 pub const wl_shell_surface = struct {
     id: u32,
+    version: u32 = 1,
 
     const Self = @This();
 
     pub const interface_str = "wl_shell_surface";
-    pub const version: u32 = 1;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -2012,11 +2023,11 @@ pub const wl_shell_surface = struct {
 /// switching is not allowed).
 pub const wl_surface = struct {
     id: u32,
+    version: u32 = 6,
 
     const Self = @This();
 
     pub const interface_str = "wl_surface";
-    pub const version: u32 = 6;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -2349,6 +2360,8 @@ pub const wl_surface = struct {
     /// wl_output.transform enum the invalid_transform protocol error
     /// is raised.
     pub fn setBufferTransform(self: Self, ctx: *const WaylandContext, transform: deps.wl_output.Transform) RequestError!void {
+        if (self.version < 2) return error.VersionError;
+
         const args = .{
             @intFromEnum(transform),
         };
@@ -2383,6 +2396,8 @@ pub const wl_surface = struct {
     /// If scale is not greater than 0 the invalid_scale protocol error is
     /// raised.
     pub fn setBufferScale(self: Self, ctx: *const WaylandContext, scale: i32) RequestError!void {
+        if (self.version < 3) return error.VersionError;
+
         const args = .{
             scale,
         };
@@ -2426,6 +2441,8 @@ pub const wl_surface = struct {
     /// two requests separately and only transform from one to the other
     /// after receiving the wl_surface.commit.
     pub fn damageBuffer(self: Self, ctx: *const WaylandContext, x: i32, y: i32, width: i32, height: i32) RequestError!void {
+        if (self.version < 4) return error.VersionError;
+
         const args = .{
             x,
             y,
@@ -2452,6 +2469,8 @@ pub const wl_surface = struct {
     /// arguments in the wl_surface.attach request in wl_surface versions prior
     /// to 5. See wl_surface.attach for details.
     pub fn offset(self: Self, ctx: *const WaylandContext, x: i32, y: i32) RequestError!void {
+        if (self.version < 5) return error.VersionError;
+
         const args = .{
             x,
             y,
@@ -2558,11 +2577,11 @@ pub const wl_surface = struct {
 /// maintains a keyboard focus and a pointer focus.
 pub const wl_seat = struct {
     id: u32,
+    version: u32 = 9,
 
     const Self = @This();
 
     pub const interface_str = "wl_seat";
-    pub const version: u32 = 9;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -2665,6 +2684,8 @@ pub const wl_seat = struct {
     /// Using this request a client can tell the server that it is not going to
     /// use the seat object anymore.
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
+        if (self.version < 5) return error.VersionError;
+
         const args = .{
         };
         const fds = [_]FD{ };
@@ -2752,11 +2773,11 @@ pub const wl_seat = struct {
 /// and scrolling.
 pub const wl_pointer = struct {
     id: u32,
+    version: u32 = 9,
 
     const Self = @This();
 
     pub const interface_str = "wl_pointer";
-    pub const version: u32 = 9;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -2878,6 +2899,8 @@ pub const wl_pointer = struct {
     /// This request destroys the pointer proxy object, so clients must not call
     /// wl_pointer_destroy() after using this request.
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
+        if (self.version < 3) return error.VersionError;
+
         const args = .{
         };
         const fds = [_]FD{ };
@@ -3263,11 +3286,11 @@ pub const wl_pointer = struct {
 /// are empty, the active modifiers and the active group are 0.
 pub const wl_keyboard = struct {
     id: u32,
+    version: u32 = 9,
 
     const Self = @This();
 
     pub const interface_str = "wl_keyboard";
-    pub const version: u32 = 9;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -3297,6 +3320,8 @@ pub const wl_keyboard = struct {
     };
 
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
+        if (self.version < 3) return error.VersionError;
+
         const args = .{
         };
         const fds = [_]FD{ };
@@ -3478,11 +3503,11 @@ pub const wl_keyboard = struct {
 /// contact point can be identified by the ID of the sequence.
 pub const wl_touch = struct {
     id: u32,
+    version: u32 = 9,
 
     const Self = @This();
 
     pub const interface_str = "wl_touch";
-    pub const version: u32 = 9;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -3500,6 +3525,8 @@ pub const wl_touch = struct {
     };
 
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
+        if (self.version < 3) return error.VersionError;
+
         const args = .{
         };
         const fds = [_]FD{ };
@@ -3693,11 +3720,11 @@ pub const wl_touch = struct {
 /// as global during start up, or when a monitor is hotplugged.
 pub const wl_output = struct {
     id: u32,
+    version: u32 = 4,
 
     const Self = @This();
 
     pub const interface_str = "wl_output";
-    pub const version: u32 = 4;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -3755,6 +3782,8 @@ pub const wl_output = struct {
     /// Using this request a client can tell the server that it is not going to
     /// use the output object anymore.
     pub fn release(self: Self, ctx: *const WaylandContext) RequestError!void {
+        if (self.version < 3) return error.VersionError;
+
         const args = .{
         };
         const fds = [_]FD{ };
@@ -3977,11 +4006,11 @@ pub const wl_output = struct {
 /// regions of a surface.
 pub const wl_region = struct {
     id: u32,
+    version: u32 = 1,
 
     const Self = @This();
 
     pub const interface_str = "wl_region";
-    pub const version: u32 = 1;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -4055,11 +4084,11 @@ pub const wl_region = struct {
 /// processing to dedicated overlay hardware when possible.
 pub const wl_subcompositor = struct {
     id: u32,
+    version: u32 = 1,
 
     const Self = @This();
 
     pub const interface_str = "wl_subcompositor";
-    pub const version: u32 = 1;
 
     pub const opcode = struct {
         pub const request = struct {
@@ -4179,11 +4208,11 @@ pub const wl_subcompositor = struct {
 /// instead to move the sub-surface.
 pub const wl_subsurface = struct {
     id: u32,
+    version: u32 = 1,
 
     const Self = @This();
 
     pub const interface_str = "wl_subsurface";
-    pub const version: u32 = 1;
 
     pub const opcode = struct {
         pub const request = struct {

@@ -35,7 +35,8 @@ pub const AnonymousEvent = struct {
     arg_data: []const u8,
 };
 
-pub const RequestError = std.posix.SendMsgError;
+// TODO make more specific version errors
+pub const RequestError = std.posix.SendMsgError || error.VersionError;
 
 pub const DecodeError = error {
     UnexpectedEnd,
