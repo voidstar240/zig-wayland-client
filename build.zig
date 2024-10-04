@@ -12,12 +12,14 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| {
         if (args.len < 1) @panic("No input file");
         if (args.len > 1) @panic("Too many input args");
-        scanner_step.addArg(args[0]);
+        scanner_step.addArg(args[0]); // specify path to protocol xml file
     }
-    const output = scanner_step.addOutputFileArg("wayland.zig");
+    const output = scanner_step.addOutputFileArg("protcol.zig"); // gen file 
     const wf = b.addWriteFiles();
     wf.addCopyFileToSource(output, "src/protocol.zig");
-    scanner_step.addArg("root.zig");
+    scanner_step.addArg("root"); // where to pull types from
+    scanner_step.addArg("wl_"); // what prefix to use for this library
+    scanner_step.addArg("root.zig root"); // import <1> as <2>
 
     const update_step = b.step("update", "update protocol using system files");
     update_step.dependOn(&wf.step);

@@ -14,12 +14,14 @@ const xml = @import("scanner.zig");
 const decode = @import("decode.zig");
 const generate = @import("generate.zig");
 
+pub var gen_args: GenArgs = undefined;
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const alloc = gpa.allocator();
 
     const args = try std.process.argsAlloc(alloc);
-    if (args.len < 4) { return error.TooFewArgs; }
+    if (args.len < 5) { return error.TooFewArgs; }
 
     const in_path = args[1];
     var in_file = try std.fs.cwd().openFile(in_path, .{});
@@ -41,7 +43,32 @@ pub fn main() !void {
     defer out_file.close();
     const writer = out_file.writer();
 
-    const dependencies = args[3..];
-    try generate.generateProtocol(&protocol, &writer, dependencies);
+    var imports = try std.ArrayList(Import).initCapacity(alloc, args[5..].len);
+    for (args[5..]) |arg| {
+        var it = std.mem.tokenize(u8, arg, &.{' '});
+        const import = Import {
+            .path = it.next() orelse return error.NoImportTokens,
+            .name = it.next() orelse return error.NoImportName,
+            .prefix = it.next(),
+        };
+        try imports.append(import);
+    }
+    gen_args = GenArgs {
+        .types_namespace = args[3],
+        .this_prefix = args[4],
+        .imports = try imports.toOwnedSlice(),
+    };
+    try generate.generateProtocol(&protocol, &writer);
 }
 
+pub const GenArgs = struct {
+    types_namespace: []const u8,
+    this_prefix: []const u8,
+    imports: []Import,
+};
+
+pub const Import = struct {
+    path: []const u8,
+    name: []const u8,
+    prefix: ?[]const u8,
+};

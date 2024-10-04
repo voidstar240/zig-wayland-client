@@ -1,5 +1,6 @@
 const std = @import("std");
 const types = @import("types.zig");
+const main = @import("main.zig");
 
 const Version = types.Version;
 const Protocol = types.Protocol;
@@ -12,36 +13,33 @@ const Entry = types.Entry;
 pub fn generateProtocol(
     protocol: *const Protocol,
     writer: anytype,
-    dependencies: [][]const u8
 ) !void {
     if (protocol.copyright) |copyright| {
         try writer.print("{// }\n", .{parsedText(copyright)});
     }
 
-    try writer.writeAll(
-        \\const deps = struct {
-        \\    usingnamespace @import("protocol.zig");
-        \\
-    );
-    for (dependencies) |dep| {
-        try writer.print("    usingnamespace @import(\"{s}\");\n", .{dep});
+    for (main.gen_args.imports) |import| {
+        try writer.print(
+            "const {s} = @import(\"{s}\");\n",
+            .{import.name, import.path});
     }
-    try writer.writeAll(
-        \\};
+
+    const ns = main.gen_args.types_namespace;
+    try writer.print(
         \\
-        \\const Fixed = deps.Fixed;
-        \\const FD = deps.FD;
-        \\const Object = deps.Object;
-        \\const AnonymousEvent = deps.AnonymousEvent;
-        \\const RequestError = deps.RequestError;
-        \\const DecodeError = deps.DecodeError;
-        \\const decodeEvent = deps.decodeEvent;
-        \\const WaylandContext = deps.WaylandContext;
-        \\const sendRequestRaw = deps.wire.sendRequestRaw;
+        \\const Fixed = {s}.Fixed;
+        \\const FD = {s}.FD;
+        \\const Object = {s}.Object;
+        \\const AnonymousEvent = {s}.AnonymousEvent;
+        \\const RequestError = {s}.RequestError;
+        \\const DecodeError = {s}.DecodeError;
+        \\const decodeEvent = {s}.decodeEvent;
+        \\const WaylandContext = {s}.WaylandContext;
+        \\const sendRequestRaw = {s}.wire.sendRequestRaw;
         \\
         \\
         \\
-    );
+        , .{ns, ns, ns, ns, ns, ns, ns, ns, ns});
 
     for (protocol.interfaces) |*interface| {
         try generateInterface(interface, writer);
@@ -55,7 +53,7 @@ fn generateInterface(interface: *const Interface, writer: anytype) !void {
         }
     }
     try writer.print(
-        \\pub const {s} = struct {{
+        \\pub const {} = struct {{
         \\    id: u32,
         \\    version: u32 = {d},
         \\
@@ -64,7 +62,7 @@ fn generateInterface(interface: *const Interface, writer: anytype) !void {
         \\    pub const interface_str = "{s}";
         \\
         \\    pub const opcode = 
-        , .{interface.name, interface.version, interface.name});
+        , .{interfaceFmt(interface.name), interface.version, interface.name});
     try generateOpcodes(interface, writer);
     for (interface.enums) |*enum_| {
         try generateEnum(enum_, writer);
@@ -122,13 +120,15 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
     if (return_arg) |arg| {
         if (arg.type.new_id.interface) |interface| {
             try writer.print(
-                \\) RequestError!deps.{s} {{
-                \\        const new_obj = deps.{s} {{
+                \\) RequestError!{} {{
+                \\        const new_obj = {} {{
                 \\            .id = {}
                 \\        }};
                 \\
                 \\
-                , .{interface, interface, escBadName(arg.name)});
+                , .{interfaceFmt(interface),
+                    interfaceFmt(interface),
+                    escBadName(arg.name)});
         } else {
             try writer.print(
                 \\) RequestError!{s}_type {{
@@ -297,7 +297,7 @@ fn generateRequestArgs(args: []Arg, writer: anytype) !?Arg {
                     try writer.writeByte('?');
                 }
                 if (meta.interface) |interface| {
-                    try writer.print("deps.{s}", .{interface});
+                    try writer.print("{}", .{interfaceFmt(interface)});
                 } else {
                     try writer.writeAll("Object");
                 }
@@ -385,7 +385,7 @@ fn generateArgType(arg_type: Arg.Type, writer: anytype) !void {
             if (meta.allow_null)
                 try writer.writeAll("?");
             if (meta.interface) |interface| {
-                try writer.print("deps.{s}", .{interface});
+                try writer.print("{}", .{interfaceFmt(interface)});
             } else {
                 try writer.writeAll("Object");
             }
@@ -432,6 +432,10 @@ fn titleCase(bytes: []const u8) std.fmt.Formatter(titleCaseFormatFn) {
 }
 
 fn enumType(bytes: []const u8) std.fmt.Formatter(enumTypeFormatFn) {
+    return .{ .data = bytes };
+}
+
+fn interfaceFmt(bytes: []const u8) std.fmt.Formatter(interfaceFormatFn) {
     return .{ .data = bytes };
 }
 
@@ -500,9 +504,34 @@ fn enumTypeFormatFn(
     if (std.mem.indexOfScalar(u8, bytes, '.')) |i| {
         const interface = bytes[0..i];
         const enum_type = bytes[(i+1)..];
-        try writer.print("deps.{s}.{}", .{interface, titleCase(enum_type)});
+        try writer.print(
+            "{}.{}",
+            .{interfaceFmt(interface), titleCase(enum_type)});
     } else {
         try writer.print("{}", .{titleCase(bytes)});
+    }
+}
+
+fn interfaceFormatFn(
+    bytes: []const u8,
+    comptime _: []const u8,
+    _: std.fmt.FormatOptions,
+    writer: anytype
+) !void {
+    if (std.mem.startsWith(u8, bytes, main.gen_args.this_prefix)) {
+        try writer.print(
+            "{}",
+            .{titleCase(bytes[main.gen_args.this_prefix.len..])});
+        return;
+    }
+    for (main.gen_args.imports) |import| {
+        if (import.prefix == null) continue;
+        if (std.mem.startsWith(u8, bytes, import.prefix.?)) {
+            try writer.print(
+                "{s}.{s}"
+                , .{import.name, titleCase(bytes[import.prefix.?.len..])});
+            return;
+        }
     }
 }
 
