@@ -46,8 +46,9 @@ pub const WaylandContext = struct {
     }
 
     /// Gets the global wl_display object.
-    pub fn getDisplay() protocol.wl_display {
-        return protocol.wl_display {
+    pub fn getDisplay(self: *const WaylandContext) protocol.Display {
+        _ = self; // take self as param for ergonomics
+        return protocol.Display {
             .id = 1,
         };
     }
