@@ -23,6 +23,8 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+const this_protocol = @This();
+const wl = this_protocol;
 const root = @import("root.zig");
 
 const Fixed = root.Fixed;
@@ -77,8 +79,8 @@ pub const Display = struct {
     /// attempt to use it after that point.
     /// 
     /// The callback_data passed in the callback is undefined and should be ignored.
-    pub fn sync(self: Self, ctx: *const WaylandContext, callback: u32) RequestError!Callback {
-        const new_obj = Callback {
+    pub fn sync(self: Self, ctx: *const WaylandContext, callback: u32) RequestError!wl.Callback {
+        const new_obj = wl.Callback {
             .id = callback
         };
 
@@ -102,8 +104,8 @@ pub const Display = struct {
     /// client disconnects, not when the client side proxy is destroyed.
     /// Therefore, clients should invoke get_registry as infrequently as
     /// possible to avoid wasting memory.
-    pub fn getRegistry(self: Self, ctx: *const WaylandContext, registry: u32) RequestError!Registry {
-        const new_obj = Registry {
+    pub fn getRegistry(self: Self, ctx: *const WaylandContext, registry: u32) RequestError!wl.Registry {
+        const new_obj = wl.Registry {
             .id = registry
         };
 
@@ -320,8 +322,8 @@ pub const Compositor = struct {
     };
 
     /// Ask the compositor to create a new surface.
-    pub fn createSurface(self: Self, ctx: *const WaylandContext, id: u32) RequestError!Surface {
-        const new_obj = Surface {
+    pub fn createSurface(self: Self, ctx: *const WaylandContext, id: u32) RequestError!wl.Surface {
+        const new_obj = wl.Surface {
             .id = id
         };
 
@@ -337,8 +339,8 @@ pub const Compositor = struct {
     }
 
     /// Ask the compositor to create a new region.
-    pub fn createRegion(self: Self, ctx: *const WaylandContext, id: u32) RequestError!Region {
-        const new_obj = Region {
+    pub fn createRegion(self: Self, ctx: *const WaylandContext, id: u32) RequestError!wl.Region {
+        const new_obj = wl.Region {
             .id = id
         };
 
@@ -389,8 +391,8 @@ pub const ShmPool = struct {
     /// A buffer will keep a reference to the pool it was created from
     /// so it is valid to destroy the pool immediately after creating
     /// a buffer from it.
-    pub fn createBuffer(self: Self, ctx: *const WaylandContext, id: u32, offset: i32, width: i32, height: i32, stride: i32, format: Shm.Format) RequestError!Buffer {
-        const new_obj = Buffer {
+    pub fn createBuffer(self: Self, ctx: *const WaylandContext, id: u32, offset: i32, width: i32, height: i32, stride: i32, format: wl.Shm.Format) RequestError!wl.Buffer {
+        const new_obj = wl.Buffer {
             .id = id
         };
 
@@ -625,8 +627,8 @@ pub const Shm = struct {
     /// The pool can be used to create shared memory based buffer
     /// objects.  The server will mmap size bytes of the passed file
     /// descriptor, to use as backing memory for the pool.
-    pub fn createPool(self: Self, ctx: *const WaylandContext, id: u32, fd: FD, size: i32) RequestError!ShmPool {
-        const new_obj = ShmPool {
+    pub fn createPool(self: Self, ctx: *const WaylandContext, id: u32, fd: FD, size: i32) RequestError!wl.ShmPool {
+        const new_obj = wl.ShmPool {
             .id = id
         };
 
@@ -906,7 +908,7 @@ pub const DataOffer = struct {
     /// 
     /// This request can only be made on drag-and-drop offers, a protocol error
     /// will be raised otherwise.
-    pub fn setActions(self: Self, ctx: *const WaylandContext, dnd_actions: DataDeviceManager.DndAction, preferred_action: DataDeviceManager.DndAction) RequestError!void {
+    pub fn setActions(self: Self, ctx: *const WaylandContext, dnd_actions: wl.DataDeviceManager.DndAction, preferred_action: wl.DataDeviceManager.DndAction) RequestError!void {
         if (self.version < 3) return error.VersionError;
 
         const args = .{
@@ -941,7 +943,7 @@ pub const DataOffer = struct {
     /// wl_data_source.set_actions.
     pub const SourceActionsEvent = struct {
         self: Self,
-        source_actions: DataDeviceManager.DndAction,
+        source_actions: wl.DataDeviceManager.DndAction,
     };
     pub fn decodeSourceActionsEvent(self: Self, event: AnonymousEvent) DecodeError!?SourceActionsEvent {
         if (event.self.id != self.id) return null;
@@ -989,7 +991,7 @@ pub const DataOffer = struct {
     /// must happen before the call to wl_data_offer.finish.
     pub const ActionEvent = struct {
         self: Self,
-        dnd_action: DataDeviceManager.DndAction,
+        dnd_action: wl.DataDeviceManager.DndAction,
     };
     pub fn decodeActionEvent(self: Self, event: AnonymousEvent) DecodeError!?ActionEvent {
         if (event.self.id != self.id) return null;
@@ -1074,7 +1076,7 @@ pub const DataSource = struct {
     /// used in drag-and-drop, so it must be performed before
     /// wl_data_device.start_drag. Attempting to use the source other than
     /// for drag-and-drop will raise a protocol error.
-    pub fn setActions(self: Self, ctx: *const WaylandContext, dnd_actions: DataDeviceManager.DndAction) RequestError!void {
+    pub fn setActions(self: Self, ctx: *const WaylandContext, dnd_actions: wl.DataDeviceManager.DndAction) RequestError!void {
         if (self.version < 3) return error.VersionError;
 
         const args = .{
@@ -1219,7 +1221,7 @@ pub const DataSource = struct {
     /// they reflect the current action.
     pub const ActionEvent = struct {
         self: Self,
-        dnd_action: DataDeviceManager.DndAction,
+        dnd_action: wl.DataDeviceManager.DndAction,
     };
     pub fn decodeActionEvent(self: Self, event: AnonymousEvent) DecodeError!?ActionEvent {
         if (event.self.id != self.id) return null;
@@ -1295,7 +1297,7 @@ pub const DataDevice = struct {
     /// The given source may not be used in any further set_selection or
     /// start_drag requests. Attempting to reuse a previously-used source
     /// may send a used_source error.
-    pub fn startDrag(self: Self, ctx: *const WaylandContext, source: ?DataSource, origin: Surface, icon: ?Surface, serial: u32) RequestError!void {
+    pub fn startDrag(self: Self, ctx: *const WaylandContext, source: ?wl.DataSource, origin: wl.Surface, icon: ?wl.Surface, serial: u32) RequestError!void {
         const args = .{
             if (source) |obj| obj.id else 0,
             origin.id,
@@ -1317,7 +1319,7 @@ pub const DataDevice = struct {
     /// The given source may not be used in any further set_selection or
     /// start_drag requests. Attempting to reuse a previously-used source
     /// may send a used_source error.
-    pub fn setSelection(self: Self, ctx: *const WaylandContext, source: ?DataSource, serial: u32) RequestError!void {
+    pub fn setSelection(self: Self, ctx: *const WaylandContext, source: ?wl.DataSource, serial: u32) RequestError!void {
         const args = .{
             if (source) |obj| obj.id else 0,
             serial,
@@ -1369,10 +1371,10 @@ pub const DataDevice = struct {
     pub const EnterEvent = struct {
         self: Self,
         serial: u32,
-        surface: Surface,
+        surface: wl.Surface,
         x: Fixed,
         y: Fixed,
-        id: ?DataOffer,
+        id: ?wl.DataOffer,
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
         if (event.self.id != self.id) return null;
@@ -1456,7 +1458,7 @@ pub const DataDevice = struct {
     /// data_offer, if any, upon receiving this event.
     pub const SelectionEvent = struct {
         self: Self,
-        id: ?DataOffer,
+        id: ?wl.DataOffer,
     };
     pub fn decodeSelectionEvent(self: Self, event: AnonymousEvent) DecodeError!?SelectionEvent {
         if (event.self.id != self.id) return null;
@@ -1525,8 +1527,8 @@ pub const DataDeviceManager = struct {
     };
 
     /// Create a new data source.
-    pub fn createDataSource(self: Self, ctx: *const WaylandContext, id: u32) RequestError!DataSource {
-        const new_obj = DataSource {
+    pub fn createDataSource(self: Self, ctx: *const WaylandContext, id: u32) RequestError!wl.DataSource {
+        const new_obj = wl.DataSource {
             .id = id
         };
 
@@ -1542,8 +1544,8 @@ pub const DataDeviceManager = struct {
     }
 
     /// Create a new data device for a given seat.
-    pub fn getDataDevice(self: Self, ctx: *const WaylandContext, id: u32, seat: Seat) RequestError!DataDevice {
-        const new_obj = DataDevice {
+    pub fn getDataDevice(self: Self, ctx: *const WaylandContext, id: u32, seat: wl.Seat) RequestError!wl.DataDevice {
+        const new_obj = wl.DataDevice {
             .id = id
         };
 
@@ -1593,8 +1595,8 @@ pub const Shell = struct {
     /// already has another role, it raises a protocol error.
     /// 
     /// Only one shell surface can be associated with a given surface.
-    pub fn getShellSurface(self: Self, ctx: *const WaylandContext, id: u32, surface: Surface) RequestError!ShellSurface {
-        const new_obj = ShellSurface {
+    pub fn getShellSurface(self: Self, ctx: *const WaylandContext, id: u32, surface: wl.Surface) RequestError!wl.ShellSurface {
+        const new_obj = wl.ShellSurface {
             .id = id
         };
 
@@ -1701,7 +1703,7 @@ pub const ShellSurface = struct {
     /// This request must be used in response to a button press event.
     /// The server may ignore move requests depending on the state of
     /// the surface (e.g. fullscreen or maximized).
-    pub fn move(self: Self, ctx: *const WaylandContext, seat: Seat, serial: u32) RequestError!void {
+    pub fn move(self: Self, ctx: *const WaylandContext, seat: wl.Seat, serial: u32) RequestError!void {
         const args = .{
             seat.id,
             serial,
@@ -1718,7 +1720,7 @@ pub const ShellSurface = struct {
     /// This request must be used in response to a button press event.
     /// The server may ignore resize requests depending on the state of
     /// the surface (e.g. fullscreen or maximized).
-    pub fn resize(self: Self, ctx: *const WaylandContext, seat: Seat, serial: u32, edges: Resize) RequestError!void {
+    pub fn resize(self: Self, ctx: *const WaylandContext, seat: wl.Seat, serial: u32, edges: Resize) RequestError!void {
         const args = .{
             seat.id,
             serial,
@@ -1751,7 +1753,7 @@ pub const ShellSurface = struct {
     /// parent surface, in surface-local coordinates.
     /// 
     /// The flags argument controls details of the transient behaviour.
-    pub fn setTransient(self: Self, ctx: *const WaylandContext, parent: Surface, x: i32, y: i32, flags: Transient) RequestError!void {
+    pub fn setTransient(self: Self, ctx: *const WaylandContext, parent: wl.Surface, x: i32, y: i32, flags: Transient) RequestError!void {
         const args = .{
             parent.id,
             x,
@@ -1798,7 +1800,7 @@ pub const ShellSurface = struct {
     /// The compositor must reply to this request with a configure event
     /// with the dimensions for the output on which the surface will
     /// be made fullscreen.
-    pub fn setFullscreen(self: Self, ctx: *const WaylandContext, method: FullscreenMethod, framerate: u32, output: ?Output) RequestError!void {
+    pub fn setFullscreen(self: Self, ctx: *const WaylandContext, method: FullscreenMethod, framerate: u32, output: ?wl.Output) RequestError!void {
         const args = .{
             @intFromEnum(method),
             framerate,
@@ -1830,7 +1832,7 @@ pub const ShellSurface = struct {
     /// The x and y arguments specify the location of the upper left
     /// corner of the surface relative to the upper left corner of the
     /// parent surface, in surface-local coordinates.
-    pub fn setPopup(self: Self, ctx: *const WaylandContext, seat: Seat, serial: u32, parent: Surface, x: i32, y: i32, flags: Transient) RequestError!void {
+    pub fn setPopup(self: Self, ctx: *const WaylandContext, seat: wl.Seat, serial: u32, parent: wl.Surface, x: i32, y: i32, flags: Transient) RequestError!void {
         const args = .{
             seat.id,
             serial,
@@ -1864,7 +1866,7 @@ pub const ShellSurface = struct {
     /// fullscreen shell surface.
     /// 
     /// The details depend on the compositor implementation.
-    pub fn setMaximized(self: Self, ctx: *const WaylandContext, output: ?Output) RequestError!void {
+    pub fn setMaximized(self: Self, ctx: *const WaylandContext, output: ?wl.Output) RequestError!void {
         const args = .{
             if (output) |obj| obj.id else 0,
         };
@@ -2132,7 +2134,7 @@ pub const Surface = struct {
     /// maximise compatibility should not destroy pending buffers and should
     /// ensure that they explicitly remove content from surfaces, even after
     /// destroying buffers.
-    pub fn attach(self: Self, ctx: *const WaylandContext, buffer: ?Buffer, x: i32, y: i32) RequestError!void {
+    pub fn attach(self: Self, ctx: *const WaylandContext, buffer: ?wl.Buffer, x: i32, y: i32) RequestError!void {
         const args = .{
             if (buffer) |obj| obj.id else 0,
             x,
@@ -2212,8 +2214,8 @@ pub const Surface = struct {
     /// 
     /// The callback_data passed in the callback is the current time, in
     /// milliseconds, with an undefined base.
-    pub fn frame(self: Self, ctx: *const WaylandContext, callback: u32) RequestError!Callback {
-        const new_obj = Callback {
+    pub fn frame(self: Self, ctx: *const WaylandContext, callback: u32) RequestError!wl.Callback {
+        const new_obj = wl.Callback {
             .id = callback
         };
 
@@ -2252,7 +2254,7 @@ pub const Surface = struct {
     /// opaque region has copy semantics, and the wl_region object can be
     /// destroyed immediately. A NULL wl_region causes the pending opaque
     /// region to be set to empty.
-    pub fn setOpaqueRegion(self: Self, ctx: *const WaylandContext, region: ?Region) RequestError!void {
+    pub fn setOpaqueRegion(self: Self, ctx: *const WaylandContext, region: ?wl.Region) RequestError!void {
         const args = .{
             if (region) |obj| obj.id else 0,
         };
@@ -2285,7 +2287,7 @@ pub const Surface = struct {
     /// has copy semantics, and the wl_region object can be destroyed
     /// immediately. A NULL wl_region causes the input region to be set
     /// to infinite.
-    pub fn setInputRegion(self: Self, ctx: *const WaylandContext, region: ?Region) RequestError!void {
+    pub fn setInputRegion(self: Self, ctx: *const WaylandContext, region: ?wl.Region) RequestError!void {
         const args = .{
             if (region) |obj| obj.id else 0,
         };
@@ -2356,7 +2358,7 @@ pub const Surface = struct {
     /// If transform is not one of the values from the
     /// wl_output.transform enum the invalid_transform protocol error
     /// is raised.
-    pub fn setBufferTransform(self: Self, ctx: *const WaylandContext, transform: Output.Transform) RequestError!void {
+    pub fn setBufferTransform(self: Self, ctx: *const WaylandContext, transform: wl.Output.Transform) RequestError!void {
         if (self.version < 2) return error.VersionError;
 
         const args = .{
@@ -2486,7 +2488,7 @@ pub const Surface = struct {
     /// Note that a surface may be overlapping with zero or more outputs.
     pub const EnterEvent = struct {
         self: Self,
-        output: Output,
+        output: wl.Output,
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
         if (event.self.id != self.id) return null;
@@ -2508,7 +2510,7 @@ pub const Surface = struct {
     /// used instead.
     pub const LeaveEvent = struct {
         self: Self,
-        output: Output,
+        output: wl.Output,
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
         if (event.self.id != self.id) return null;
@@ -2555,7 +2557,7 @@ pub const Surface = struct {
     /// surface buffer more efficiently.
     pub const PreferredBufferTransformEvent = struct {
         self: Self,
-        transform: Output.Transform,
+        transform: wl.Output.Transform,
     };
     pub fn decodePreferredBufferTransformEvent(self: Self, event: AnonymousEvent) DecodeError!?PreferredBufferTransformEvent {
         if (event.self.id != self.id) return null;
@@ -2614,8 +2616,8 @@ pub const Seat = struct {
     /// It is a protocol violation to issue this request on a seat that has
     /// never had the pointer capability. The missing_capability error will
     /// be sent in this case.
-    pub fn getPointer(self: Self, ctx: *const WaylandContext, id: u32) RequestError!Pointer {
-        const new_obj = Pointer {
+    pub fn getPointer(self: Self, ctx: *const WaylandContext, id: u32) RequestError!wl.Pointer {
+        const new_obj = wl.Pointer {
             .id = id
         };
 
@@ -2638,8 +2640,8 @@ pub const Seat = struct {
     /// It is a protocol violation to issue this request on a seat that has
     /// never had the keyboard capability. The missing_capability error will
     /// be sent in this case.
-    pub fn getKeyboard(self: Self, ctx: *const WaylandContext, id: u32) RequestError!Keyboard {
-        const new_obj = Keyboard {
+    pub fn getKeyboard(self: Self, ctx: *const WaylandContext, id: u32) RequestError!wl.Keyboard {
+        const new_obj = wl.Keyboard {
             .id = id
         };
 
@@ -2662,8 +2664,8 @@ pub const Seat = struct {
     /// It is a protocol violation to issue this request on a seat that has
     /// never had the touch capability. The missing_capability error will
     /// be sent in this case.
-    pub fn getTouch(self: Self, ctx: *const WaylandContext, id: u32) RequestError!Touch {
-        const new_obj = Touch {
+    pub fn getTouch(self: Self, ctx: *const WaylandContext, id: u32) RequestError!wl.Touch {
+        const new_obj = wl.Touch {
             .id = id
         };
 
@@ -2876,7 +2878,7 @@ pub const Pointer = struct {
     /// The serial parameter must match the latest wl_pointer.enter
     /// serial number sent to the client. Otherwise the request will be
     /// ignored.
-    pub fn setCursor(self: Self, ctx: *const WaylandContext, serial: u32, surface: ?Surface, hotspot_x: i32, hotspot_y: i32) RequestError!void {
+    pub fn setCursor(self: Self, ctx: *const WaylandContext, serial: u32, surface: ?wl.Surface, hotspot_x: i32, hotspot_y: i32) RequestError!void {
         const args = .{
             serial,
             if (surface) |obj| obj.id else 0,
@@ -2916,7 +2918,7 @@ pub const Pointer = struct {
     pub const EnterEvent = struct {
         self: Self,
         serial: u32,
-        surface: Surface,
+        surface: wl.Surface,
         surface_x: Fixed,
         surface_y: Fixed,
     };
@@ -2937,7 +2939,7 @@ pub const Pointer = struct {
     pub const LeaveEvent = struct {
         self: Self,
         serial: u32,
-        surface: Surface,
+        surface: wl.Surface,
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
         if (event.self.id != self.id) return null;
@@ -3362,7 +3364,7 @@ pub const Keyboard = struct {
     pub const EnterEvent = struct {
         self: Self,
         serial: u32,
-        surface: Surface,
+        surface: wl.Surface,
         keys: []const u8,
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
@@ -3387,7 +3389,7 @@ pub const Keyboard = struct {
     pub const LeaveEvent = struct {
         self: Self,
         serial: u32,
-        surface: Surface,
+        surface: wl.Surface,
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
         if (event.self.id != self.id) return null;
@@ -3541,7 +3543,7 @@ pub const Touch = struct {
         self: Self,
         serial: u32,
         time: u32,
-        surface: Surface,
+        surface: wl.Surface,
         id: i32,
         x: Fixed,
         y: Fixed,
@@ -4131,8 +4133,8 @@ pub const Subcompositor = struct {
     /// 
     /// This request modifies the behaviour of wl_surface.commit request on
     /// the sub-surface, see the documentation on wl_subsurface interface.
-    pub fn getSubsurface(self: Self, ctx: *const WaylandContext, id: u32, surface: Surface, parent: Surface) RequestError!Subsurface {
-        const new_obj = Subsurface {
+    pub fn getSubsurface(self: Self, ctx: *const WaylandContext, id: u32, surface: wl.Surface, parent: wl.Surface) RequestError!wl.Subsurface {
+        const new_obj = wl.Subsurface {
             .id = id
         };
 
@@ -4279,7 +4281,7 @@ pub const Subsurface = struct {
     /// 
     /// A new sub-surface is initially added as the top-most in the stack
     /// of its siblings and parent.
-    pub fn placeAbove(self: Self, ctx: *const WaylandContext, sibling: Surface) RequestError!void {
+    pub fn placeAbove(self: Self, ctx: *const WaylandContext, sibling: wl.Surface) RequestError!void {
         const args = .{
             sibling.id,
         };
@@ -4292,7 +4294,7 @@ pub const Subsurface = struct {
 
     /// The sub-surface is placed just below the reference surface.
     /// See wl_subsurface.place_above.
-    pub fn placeBelow(self: Self, ctx: *const WaylandContext, sibling: Surface) RequestError!void {
+    pub fn placeBelow(self: Self, ctx: *const WaylandContext, sibling: wl.Surface) RequestError!void {
         const args = .{
             sibling.id,
         };

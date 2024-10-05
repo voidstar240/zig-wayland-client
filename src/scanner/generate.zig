@@ -18,10 +18,31 @@ pub fn generateProtocol(
         try writer.print("{// }\n", .{parsedText(copyright)});
     }
 
+    try writer.writeAll("const this_protocol = @This();\n");
     for (main.gen_args.imports) |import| {
-        try writer.print(
-            "const {s} = @import(\"{s}\");\n",
-            .{import.name, import.path});
+        if (import.paths.len > 1) {
+            try writer.print("const {s} = struct {{\n", .{import.name});
+            for (import.paths) |path| {
+                if (std.mem.eql(u8, path, "@This()")) {
+                    try writer.writeAll("    usingnamespace this_protocol;\n");
+                } else {
+                    try writer.print(
+                        "    usingnamespace @import(\"{s}\");\n",
+                        .{path});
+                }
+            }
+            try writer.writeAll("};\n");
+        } else {
+            if (std.mem.eql(u8, import.paths[0], "@This()")) {
+                try writer.print(
+                    "const {s} = this_protocol;\n",
+                    .{import.name});
+            } else {
+                try writer.print(
+                    "const {s} = @import(\"{s}\");\n",
+                    .{import.name, import.paths[0]});
+            }
+        }
     }
 
     const ns = main.gen_args.types_namespace;
@@ -62,7 +83,7 @@ fn generateInterface(interface: *const Interface, writer: anytype) !void {
         \\    pub const interface_str = "{s}";
         \\
         \\    pub const opcode = 
-        , .{interfaceFmt(interface.name), interface.version, interface.name});
+        , .{interfaceDecl(interface.name), interface.version, interface.name});
     try generateOpcodes(interface, writer);
     for (interface.enums) |*enum_| {
         try generateEnum(enum_, writer);
@@ -439,6 +460,10 @@ fn interfaceFmt(bytes: []const u8) std.fmt.Formatter(interfaceFormatFn) {
     return .{ .data = bytes };
 }
 
+fn interfaceDecl(bytes: []const u8) std.fmt.Formatter(interfaceDeclFormatFn) {
+    return .{ .data = bytes };
+}
+
 fn singleLine(bytes: []const u8) std.fmt.Formatter(singleLineFormatFn) {
     return .{ .data = bytes };
 }
@@ -518,21 +543,30 @@ fn interfaceFormatFn(
     _: std.fmt.FormatOptions,
     writer: anytype
 ) !void {
-    if (std.mem.startsWith(u8, bytes, main.gen_args.this_prefix)) {
-        try writer.print(
-            "{}",
-            .{titleCase(bytes[main.gen_args.this_prefix.len..])});
-        return;
-    }
-    for (main.gen_args.imports) |import| {
-        if (import.prefix == null) continue;
-        if (std.mem.startsWith(u8, bytes, import.prefix.?)) {
+    for (main.gen_args.replaces) |replace| {
+        if (std.mem.startsWith(u8, bytes, replace.prefix)) {
             try writer.print(
-                "{s}.{s}"
-                , .{import.name, titleCase(bytes[import.prefix.?.len..])});
+                "{s}.{}"
+                , .{replace.name, titleCase(bytes[replace.prefix.len..])});
             return;
         }
     }
+    try writer.print("{}", .{titleCase(bytes)});
+}
+
+fn interfaceDeclFormatFn(
+    bytes: []const u8,
+    comptime _: []const u8,
+    _: std.fmt.FormatOptions,
+    writer: anytype
+) !void {
+    for (main.gen_args.replaces) |replace| {
+        if (std.mem.startsWith(u8, bytes, replace.prefix)) {
+            try writer.print("{}", .{titleCase(bytes[replace.prefix.len..])});
+            return;
+        }
+    }
+    try writer.print("{}", .{titleCase(bytes)});
 }
 
 fn singleLineFormatFn(

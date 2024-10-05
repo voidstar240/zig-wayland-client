@@ -43,32 +43,56 @@ pub fn main() !void {
     defer out_file.close();
     const writer = out_file.writer();
 
-    var imports = try std.ArrayList(Import).initCapacity(alloc, args[5..].len);
-    for (args[5..]) |arg| {
-        var it = std.mem.tokenize(u8, arg, &.{' '});
-        const import = Import {
-            .path = it.next() orelse return error.NoImportTokens,
-            .name = it.next() orelse return error.NoImportName,
-            .prefix = it.next(),
-        };
-        try imports.append(import);
+    var imports = std.ArrayList(Import).init(alloc);
+    var replaces = std.ArrayList(Replace).init(alloc);
+    outer: for (args[4..]) |arg| {
+        var it = std.mem.tokenizeAny(u8, arg, &.{' ', ':'});
+        const cmd = it.next() orelse return error.EmptyArg;
+        if (std.mem.eql(u8, cmd, "-I")) {
+            const name = it.next() orelse return error.NoName;
+            const path = it.next() orelse return error.NoPath;
+            for (imports.items) |*import| {
+                if (std.mem.eql(u8, import.name, name)) {
+                    const new_len = import.paths.len + 1;
+                    const new_paths = try alloc.alloc([]const u8, new_len);
+                    for (0..(new_len - 1)) |i| {
+                        new_paths[i] = import.paths[i];
+                    }
+                    new_paths[new_len - 1] = path;
+                    import.paths = new_paths;
+                    continue :outer;
+                }
+            }
+            const paths = try alloc.alloc([]const u8, 1);
+            paths[0] = path;
+            try imports.append(Import { .name = name, .paths = paths });
+        } else if (std.mem.eql(u8, cmd, "-R")) {
+            try replaces.append(Replace {
+                .prefix = it.next() orelse return error.NoPrefix,
+                .name = it.next() orelse return error.NoName,
+            });
+        } else return error.InvalidCommand;
     }
     gen_args = GenArgs {
         .types_namespace = args[3],
-        .this_prefix = args[4],
         .imports = try imports.toOwnedSlice(),
+        .replaces = try replaces.toOwnedSlice(),
     };
     try generate.generateProtocol(&protocol, &writer);
 }
 
 pub const GenArgs = struct {
     types_namespace: []const u8,
-    this_prefix: []const u8,
     imports: []Import,
+    replaces: []Replace,
 };
 
 pub const Import = struct {
-    path: []const u8,
     name: []const u8,
-    prefix: ?[]const u8,
+    paths: [][]const u8,
+};
+
+pub const Replace = struct {
+    prefix: []const u8,
+    name: []const u8,
 };
