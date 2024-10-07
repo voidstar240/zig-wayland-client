@@ -8,7 +8,6 @@ const GenericReader = std.io.GenericReader;
 
 pub const Fixed = wire.Fixed;
 pub const FD = wire.FD;
-pub const Object = wire.Object;
 pub const AnonymousEvent = wire.AnonymousEvent;
 pub const DecodeError = wire.DecodeError;
 pub const RequestError = wire.RequestError;
@@ -39,7 +38,7 @@ pub const WaylandContext = struct {
     pub fn readEvent(self: *WaylandContext) !AnonymousEvent {
         const head = try wire.readEvent(self.reader(), &self.read_buffer);
         return AnonymousEvent {
-            .self = Object { .id = head.object_id },
+            .self_id = head.object_id,
             .opcode = head.opcode,
             .arg_data = self.read_buffer[@sizeOf(wire.Header)..head.length],
         };
@@ -80,40 +79,35 @@ pub fn connectToSocket() !std.net.Stream {
     return std.net.connectUnixSocket(path[0..len]);
 }
 
-/// Throws a compile error if `ObjType` is not an object/interface.
-pub fn assertObject(comptime ObjType: type) void {
+/// Throws a compile error if `Interface` is not an interface.
+pub fn assertInterface(comptime InterfaceType: type) void {
     comptime {
-        const name = @typeName(ObjType);
-        const info = @typeInfo(ObjType);
+        const name = @typeName(InterfaceType);
+        const info = @typeInfo(InterfaceType);
         if (info != .Struct)
-            @compileError(name ++ " is not an object. Not a struct.");
+            @compileError(name ++ " is not an interface. Not a struct.");
 
         var has_id = false;
+        var has_version = false;
         for (info.Struct.fields) |field| {
             if (std.mem.eql(u8, field.name, "id")) {
                 has_id = true;
                 if (field.type != u32)
-                    @compileError(name ++ " is not an object. `id` not u32.");
+                    @compileError(
+                        name ++ " is not an interface. `id` is not u32.");
+            } else if (std.mem.eql(u8, field.name, "version")) {
+                has_version = true;
+                if (field.type != u32)
+                    @compileError(
+                        name ++ " is not an interface. `version` is not u32");
             }
         }
 
         if (has_id == false)
-            @compileError(name ++ " is not an object. Has no `id` field.");
+            @compileError(name ++ " is not an interface. Has no `id` field.");
+
+        if (has_version == false)
+            @compileError(
+                name ++ " is not an interface. Has no `version` field.");
     }
-}
-
-/// Converts `interface` into an Object.
-pub fn objectFromInterface(interface: anytype) Object {
-    comptime assertObject(@TypeOf(interface));
-    return Object {
-        .id = interface.id,
-    };
-}
-
-/// Converts `object` to an interface with type `InterfaceType`.
-pub fn interfaceFromObject(InterfaceType: type, object: Object) InterfaceType {
-    comptime assertObject(InterfaceType);
-    return InterfaceType {
-        .id = object.id,
-    };
 }

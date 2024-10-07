@@ -1,7 +1,7 @@
 const std = @import("std");
 const root = @import("root.zig");
 
-const assertObject = root.assertObject;
+const assertInterface = root.assertInterface;
 
 pub const Fixed = enum(i32) {
     _,
@@ -25,12 +25,8 @@ pub const Fixed = enum(i32) {
 
 pub const FD = std.posix.fd_t;
 
-pub const Object = struct {
-    id: u32,
-};
-
 pub const AnonymousEvent = struct {
-    self: Object,
+    self_id: u32,
     opcode: u16,
     arg_data: []const u8,
 };
@@ -53,7 +49,7 @@ pub const Header = packed struct(u64) {
 /// Reads one event into the provided buffer returning the length of the
 /// message. If the buffer is too small to fit the event error.EventTooBig
 /// is returned.
-pub fn readEvent(
+pub fn readEvent( // TODO refactor to read file descriptors
     reader: anytype,
     buffer: []align(@alignOf(*anyopaque)) u8
 ) !Header {
@@ -86,8 +82,8 @@ pub fn decodeEvent(
         if (i == 0) {
             if (info != .Struct)
                 @compileError("First field must be an object.");
-            if (event.self.id == 0) return DecodeError.NullNonNullObject;
-            val_ptr.id = event.self.id; 
+            if (event.self_id == 0) return DecodeError.NullNonNullObject;
+            val_ptr.id = event.self_id;
             continue;
         }
         switch (field.type) {
@@ -102,10 +98,10 @@ pub fn decodeEvent(
                 try decodeString(event.arg_data, &index),
             else => switch (info) {
                 .Struct => val_ptr.* =
-                    (try decodeObject(event.arg_data, &index, field.type))
+                    (try decodeInterface(event.arg_data, &index, field.type))
                         orelse return DecodeError.NullNonNullObject, 
                 .Optional => val_ptr.* =
-                    try decodeObject(event.arg_data, &index, field.type),
+                    try decodeInterface(event.arg_data, &index, field.type),
                 .Enum => val_ptr.* =
                     try decodeEnum(event.arg_data, &index, field.type),
                 else => @compileError("Invalid type, " ++ field.type),
@@ -150,15 +146,15 @@ fn decodeString(
     return str;
 }
 
-fn decodeObject(
+fn decodeInterface(
     bytes: []const u8,
     start: *usize,
-    ObjType: type
-) DecodeError!?ObjType {
-    comptime assertObject(ObjType);
+    InterfaceType: type
+) DecodeError!?InterfaceType {
+    comptime assertInterface(InterfaceType);
     const id = try decodeU32(bytes, start);
     if (id == 0) return null;
-    return ObjType {
+    return InterfaceType {
         .id = id,
     };
 }
@@ -197,7 +193,7 @@ pub fn sendRequestRaw(
     comptime N: comptime_int,
     args: anytype,
     fds: anytype,
-) RequestError!void {
+) RequestError!void { // TODO Refactor this
     comptime if (N < 1) @compileError("N must be at least 1");
     var iovecs: [N]std.posix.iovec_const = undefined;
     var i: usize = 1;

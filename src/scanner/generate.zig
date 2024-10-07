@@ -50,7 +50,6 @@ pub fn generateProtocol(
         \\
         \\const Fixed = {s}.Fixed;
         \\const FD = {s}.FD;
-        \\const Object = {s}.Object;
         \\const AnonymousEvent = {s}.AnonymousEvent;
         \\const RequestError = {s}.RequestError;
         \\const DecodeError = {s}.DecodeError;
@@ -60,7 +59,7 @@ pub fn generateProtocol(
         \\
         \\
         \\
-        , .{ns, ns, ns, ns, ns, ns, ns, ns, ns});
+        , .{ns, ns, ns, ns, ns, ns, ns, ns});
 
     for (protocol.interfaces) |*interface| {
         try generateInterface(interface, writer);
@@ -238,15 +237,29 @@ fn generateRawArgs(args: []Arg, writer: anytype) !void {
             },
             .object => |meta| {
                 if (meta.allow_null) {
-                    try writer.print(
-                        \\            if ({}) |obj| obj.id else 0,
-                        \\
-                        , .{escBadName(arg.name)});
+                    if (meta.interface != null) {
+                        try writer.print(
+                            \\            if ({}) |obj| obj.id else 0,
+                            \\
+                            , .{escBadName(arg.name)});
+                    } else {
+                        try writer.print(
+                            \\            {} orelse 0,
+                            \\
+                            , .{escBadName(arg.name)});
+                    }
                 } else {
-                    try writer.print(
-                        \\            {}.id,
-                        \\
-                        , .{escBadName(arg.name)});
+                    if (meta.interface != null) {
+                        try writer.print(
+                            \\            {}.id,
+                            \\
+                            , .{escBadName(arg.name)});
+                    } else {
+                        try writer.print(
+                            \\            {},
+                            \\
+                            , .{escBadName(arg.name)});
+                    }
                 }
             },
             .new_id => |meta| {
@@ -320,7 +333,7 @@ fn generateRequestArgs(args: []Arg, writer: anytype) !?Arg {
                 if (meta.interface) |interface| {
                     try writer.print("{}", .{interfaceFmt(interface)});
                 } else {
-                    try writer.writeAll("Object");
+                    try writer.writeAll("u32");
                 }
             },
             .new_id => |meta| {
@@ -359,7 +372,7 @@ fn generateEvent(event: *const Method, writer: anytype) !void {
     try generateEventStruct(event, writer);
     try writer.print(
         \\    pub fn decode{}Event(self: Self, event: AnonymousEvent) DecodeError!?{}Event {{
-        \\        if (event.self.id != self.id) return null;
+        \\        if (event.self_id != self.id) return null;
         \\
         \\        const op = Self.opcode.event.{};
         \\        if (event.opcode != op) return null;
@@ -408,7 +421,7 @@ fn generateArgType(arg_type: Arg.Type, writer: anytype) !void {
             if (meta.interface) |interface| {
                 try writer.print("{}", .{interfaceFmt(interface)});
             } else {
-                try writer.writeAll("Object");
+                try writer.writeAll("u32");
             }
         },
         .new_id => try writer.writeAll("u32"),

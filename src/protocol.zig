@@ -29,7 +29,6 @@ const root = @import("root.zig");
 
 const Fixed = root.Fixed;
 const FD = root.FD;
-const Object = root.Object;
 const AnonymousEvent = root.AnonymousEvent;
 const RequestError = root.RequestError;
 const DecodeError = root.DecodeError;
@@ -129,12 +128,12 @@ pub const Display = struct {
     /// of the error, for (debugging) convenience.
     pub const ErrorEvent = struct {
         self: Self,
-        object_id: Object,
+        object_id: u32,
         code: u32,
         message: [:0]const u8,
     };
     pub fn decodeErrorEvent(self: Self, event: AnonymousEvent) DecodeError!?ErrorEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.@"error";
         if (event.opcode != op) return null;
@@ -152,7 +151,7 @@ pub const Display = struct {
         id: u32,
     };
     pub fn decodeDeleteIdEvent(self: Self, event: AnonymousEvent) DecodeError!?DeleteIdEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.delete_id;
         if (event.opcode != op) return null;
@@ -235,7 +234,7 @@ pub const Registry = struct {
         version: u32,
     };
     pub fn decodeGlobalEvent(self: Self, event: AnonymousEvent) DecodeError!?GlobalEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.global;
         if (event.opcode != op) return null;
@@ -258,7 +257,7 @@ pub const Registry = struct {
         name: u32,
     };
     pub fn decodeGlobalRemoveEvent(self: Self, event: AnonymousEvent) DecodeError!?GlobalRemoveEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.global_remove;
         if (event.opcode != op) return null;
@@ -293,7 +292,7 @@ pub const Callback = struct {
         callback_data: u32,
     };
     pub fn decodeDoneEvent(self: Self, event: AnonymousEvent) DecodeError!?DoneEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.done;
         if (event.opcode != op) return null;
@@ -668,7 +667,7 @@ pub const Shm = struct {
         format: Format,
     };
     pub fn decodeFormatEvent(self: Self, event: AnonymousEvent) DecodeError!?FormatEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.format;
         if (event.opcode != op) return null;
@@ -740,7 +739,7 @@ pub const Buffer = struct {
         self: Self,
     };
     pub fn decodeReleaseEvent(self: Self, event: AnonymousEvent) DecodeError!?ReleaseEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.release;
         if (event.opcode != op) return null;
@@ -929,7 +928,7 @@ pub const DataOffer = struct {
         mime_type: [:0]const u8,
     };
     pub fn decodeOfferEvent(self: Self, event: AnonymousEvent) DecodeError!?OfferEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.offer;
         if (event.opcode != op) return null;
@@ -946,7 +945,7 @@ pub const DataOffer = struct {
         source_actions: wl.DataDeviceManager.DndAction,
     };
     pub fn decodeSourceActionsEvent(self: Self, event: AnonymousEvent) DecodeError!?SourceActionsEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.source_actions;
         if (event.opcode != op) return null;
@@ -994,7 +993,7 @@ pub const DataOffer = struct {
         dnd_action: wl.DataDeviceManager.DndAction,
     };
     pub fn decodeActionEvent(self: Self, event: AnonymousEvent) DecodeError!?ActionEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.action;
         if (event.opcode != op) return null;
@@ -1098,7 +1097,7 @@ pub const DataSource = struct {
         mime_type: ?[:0]const u8,
     };
     pub fn decodeTargetEvent(self: Self, event: AnonymousEvent) DecodeError!?TargetEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.target;
         if (event.opcode != op) return null;
@@ -1115,7 +1114,7 @@ pub const DataSource = struct {
         fd: FD,
     };
     pub fn decodeSendEvent(self: Self, event: AnonymousEvent) DecodeError!?SendEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.send;
         if (event.opcode != op) return null;
@@ -1147,7 +1146,7 @@ pub const DataSource = struct {
         self: Self,
     };
     pub fn decodeCancelledEvent(self: Self, event: AnonymousEvent) DecodeError!?CancelledEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.cancelled;
         if (event.opcode != op) return null;
@@ -1168,7 +1167,7 @@ pub const DataSource = struct {
         self: Self,
     };
     pub fn decodeDndDropPerformedEvent(self: Self, event: AnonymousEvent) DecodeError!?DndDropPerformedEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.dnd_drop_performed;
         if (event.opcode != op) return null;
@@ -1186,7 +1185,7 @@ pub const DataSource = struct {
         self: Self,
     };
     pub fn decodeDndFinishedEvent(self: Self, event: AnonymousEvent) DecodeError!?DndFinishedEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.dnd_finished;
         if (event.opcode != op) return null;
@@ -1224,7 +1223,7 @@ pub const DataSource = struct {
         dnd_action: wl.DataDeviceManager.DndAction,
     };
     pub fn decodeActionEvent(self: Self, event: AnonymousEvent) DecodeError!?ActionEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.action;
         if (event.opcode != op) return null;
@@ -1356,7 +1355,7 @@ pub const DataDevice = struct {
         id: u32,
     };
     pub fn decodeDataOfferEvent(self: Self, event: AnonymousEvent) DecodeError!?DataOfferEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.data_offer;
         if (event.opcode != op) return null;
@@ -1377,7 +1376,7 @@ pub const DataDevice = struct {
         id: ?wl.DataOffer,
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.enter;
         if (event.opcode != op) return null;
@@ -1392,7 +1391,7 @@ pub const DataDevice = struct {
         self: Self,
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.leave;
         if (event.opcode != op) return null;
@@ -1411,7 +1410,7 @@ pub const DataDevice = struct {
         y: Fixed,
     };
     pub fn decodeMotionEvent(self: Self, event: AnonymousEvent) DecodeError!?MotionEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.motion;
         if (event.opcode != op) return null;
@@ -1436,7 +1435,7 @@ pub const DataDevice = struct {
         self: Self,
     };
     pub fn decodeDropEvent(self: Self, event: AnonymousEvent) DecodeError!?DropEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.drop;
         if (event.opcode != op) return null;
@@ -1461,7 +1460,7 @@ pub const DataDevice = struct {
         id: ?wl.DataOffer,
     };
     pub fn decodeSelectionEvent(self: Self, event: AnonymousEvent) DecodeError!?SelectionEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.selection;
         if (event.opcode != op) return null;
@@ -1921,7 +1920,7 @@ pub const ShellSurface = struct {
         serial: u32,
     };
     pub fn decodePingEvent(self: Self, event: AnonymousEvent) DecodeError!?PingEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.ping;
         if (event.opcode != op) return null;
@@ -1953,7 +1952,7 @@ pub const ShellSurface = struct {
         height: i32,
     };
     pub fn decodeConfigureEvent(self: Self, event: AnonymousEvent) DecodeError!?ConfigureEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.configure;
         if (event.opcode != op) return null;
@@ -1968,7 +1967,7 @@ pub const ShellSurface = struct {
         self: Self,
     };
     pub fn decodePopupDoneEvent(self: Self, event: AnonymousEvent) DecodeError!?PopupDoneEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.popup_done;
         if (event.opcode != op) return null;
@@ -2491,7 +2490,7 @@ pub const Surface = struct {
         output: wl.Output,
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.enter;
         if (event.opcode != op) return null;
@@ -2513,7 +2512,7 @@ pub const Surface = struct {
         output: wl.Output,
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.leave;
         if (event.opcode != op) return null;
@@ -2538,7 +2537,7 @@ pub const Surface = struct {
         factor: i32,
     };
     pub fn decodePreferredBufferScaleEvent(self: Self, event: AnonymousEvent) DecodeError!?PreferredBufferScaleEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.preferred_buffer_scale;
         if (event.opcode != op) return null;
@@ -2560,7 +2559,7 @@ pub const Surface = struct {
         transform: wl.Output.Transform,
     };
     pub fn decodePreferredBufferTransformEvent(self: Self, event: AnonymousEvent) DecodeError!?PreferredBufferTransformEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.preferred_buffer_transform;
         if (event.opcode != op) return null;
@@ -2723,7 +2722,7 @@ pub const Seat = struct {
         capabilities: Capability,
     };
     pub fn decodeCapabilitiesEvent(self: Self, event: AnonymousEvent) DecodeError!?CapabilitiesEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.capabilities;
         if (event.opcode != op) return null;
@@ -2752,7 +2751,7 @@ pub const Seat = struct {
         name: [:0]const u8,
     };
     pub fn decodeNameEvent(self: Self, event: AnonymousEvent) DecodeError!?NameEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.name;
         if (event.opcode != op) return null;
@@ -2923,7 +2922,7 @@ pub const Pointer = struct {
         surface_y: Fixed,
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.enter;
         if (event.opcode != op) return null;
@@ -2942,7 +2941,7 @@ pub const Pointer = struct {
         surface: wl.Surface,
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.leave;
         if (event.opcode != op) return null;
@@ -2960,7 +2959,7 @@ pub const Pointer = struct {
         surface_y: Fixed,
     };
     pub fn decodeMotionEvent(self: Self, event: AnonymousEvent) DecodeError!?MotionEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.motion;
         if (event.opcode != op) return null;
@@ -2990,7 +2989,7 @@ pub const Pointer = struct {
         state: ButtonState,
     };
     pub fn decodeButtonEvent(self: Self, event: AnonymousEvent) DecodeError!?ButtonEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.button;
         if (event.opcode != op) return null;
@@ -3021,7 +3020,7 @@ pub const Pointer = struct {
         value: Fixed,
     };
     pub fn decodeAxisEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.axis;
         if (event.opcode != op) return null;
@@ -3067,7 +3066,7 @@ pub const Pointer = struct {
         self: Self,
     };
     pub fn decodeFrameEvent(self: Self, event: AnonymousEvent) DecodeError!?FrameEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.frame;
         if (event.opcode != op) return null;
@@ -3105,7 +3104,7 @@ pub const Pointer = struct {
         axis_source: AxisSource,
     };
     pub fn decodeAxisSourceEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisSourceEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.axis_source;
         if (event.opcode != op) return null;
@@ -3133,7 +3132,7 @@ pub const Pointer = struct {
         axis: Axis,
     };
     pub fn decodeAxisStopEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisStopEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.axis_stop;
         if (event.opcode != op) return null;
@@ -3177,7 +3176,7 @@ pub const Pointer = struct {
         discrete: i32,
     };
     pub fn decodeAxisDiscreteEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisDiscreteEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.axis_discrete;
         if (event.opcode != op) return null;
@@ -3212,7 +3211,7 @@ pub const Pointer = struct {
         value120: i32,
     };
     pub fn decodeAxisValue120Event(self: Self, event: AnonymousEvent) DecodeError!?AxisValue120Event {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.axis_value120;
         if (event.opcode != op) return null;
@@ -3261,7 +3260,7 @@ pub const Pointer = struct {
         direction: AxisRelativeDirection,
     };
     pub fn decodeAxisRelativeDirectionEvent(self: Self, event: AnonymousEvent) DecodeError!?AxisRelativeDirectionEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.axis_relative_direction;
         if (event.opcode != op) return null;
@@ -3343,7 +3342,7 @@ pub const Keyboard = struct {
         size: u32,
     };
     pub fn decodeKeymapEvent(self: Self, event: AnonymousEvent) DecodeError!?KeymapEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.keymap;
         if (event.opcode != op) return null;
@@ -3368,7 +3367,7 @@ pub const Keyboard = struct {
         keys: []const u8,
     };
     pub fn decodeEnterEvent(self: Self, event: AnonymousEvent) DecodeError!?EnterEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.enter;
         if (event.opcode != op) return null;
@@ -3392,7 +3391,7 @@ pub const Keyboard = struct {
         surface: wl.Surface,
     };
     pub fn decodeLeaveEvent(self: Self, event: AnonymousEvent) DecodeError!?LeaveEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.leave;
         if (event.opcode != op) return null;
@@ -3426,7 +3425,7 @@ pub const Keyboard = struct {
         state: KeyState,
     };
     pub fn decodeKeyEvent(self: Self, event: AnonymousEvent) DecodeError!?KeyEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.key;
         if (event.opcode != op) return null;
@@ -3456,7 +3455,7 @@ pub const Keyboard = struct {
         group: u32,
     };
     pub fn decodeModifiersEvent(self: Self, event: AnonymousEvent) DecodeError!?ModifiersEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.modifiers;
         if (event.opcode != op) return null;
@@ -3482,7 +3481,7 @@ pub const Keyboard = struct {
         delay: i32,
     };
     pub fn decodeRepeatInfoEvent(self: Self, event: AnonymousEvent) DecodeError!?RepeatInfoEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.repeat_info;
         if (event.opcode != op) return null;
@@ -3549,7 +3548,7 @@ pub const Touch = struct {
         y: Fixed,
     };
     pub fn decodeDownEvent(self: Self, event: AnonymousEvent) DecodeError!?DownEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.down;
         if (event.opcode != op) return null;
@@ -3567,7 +3566,7 @@ pub const Touch = struct {
         id: i32,
     };
     pub fn decodeUpEvent(self: Self, event: AnonymousEvent) DecodeError!?UpEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.up;
         if (event.opcode != op) return null;
@@ -3584,7 +3583,7 @@ pub const Touch = struct {
         y: Fixed,
     };
     pub fn decodeMotionEvent(self: Self, event: AnonymousEvent) DecodeError!?MotionEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.motion;
         if (event.opcode != op) return null;
@@ -3604,7 +3603,7 @@ pub const Touch = struct {
         self: Self,
     };
     pub fn decodeFrameEvent(self: Self, event: AnonymousEvent) DecodeError!?FrameEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.frame;
         if (event.opcode != op) return null;
@@ -3624,7 +3623,7 @@ pub const Touch = struct {
         self: Self,
     };
     pub fn decodeCancelEvent(self: Self, event: AnonymousEvent) DecodeError!?CancelEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.cancel;
         if (event.opcode != op) return null;
@@ -3664,7 +3663,7 @@ pub const Touch = struct {
         minor: Fixed,
     };
     pub fn decodeShapeEvent(self: Self, event: AnonymousEvent) DecodeError!?ShapeEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.shape;
         if (event.opcode != op) return null;
@@ -3701,7 +3700,7 @@ pub const Touch = struct {
         orientation: Fixed,
     };
     pub fn decodeOrientationEvent(self: Self, event: AnonymousEvent) DecodeError!?OrientationEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.orientation;
         if (event.opcode != op) return null;
@@ -3824,7 +3823,7 @@ pub const Output = struct {
         transform: Transform,
     };
     pub fn decodeGeometryEvent(self: Self, event: AnonymousEvent) DecodeError!?GeometryEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.geometry;
         if (event.opcode != op) return null;
@@ -3873,7 +3872,7 @@ pub const Output = struct {
         refresh: i32,
     };
     pub fn decodeModeEvent(self: Self, event: AnonymousEvent) DecodeError!?ModeEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.mode;
         if (event.opcode != op) return null;
@@ -3890,7 +3889,7 @@ pub const Output = struct {
         self: Self,
     };
     pub fn decodeDoneEvent(self: Self, event: AnonymousEvent) DecodeError!?DoneEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.done;
         if (event.opcode != op) return null;
@@ -3921,7 +3920,7 @@ pub const Output = struct {
         factor: i32,
     };
     pub fn decodeScaleEvent(self: Self, event: AnonymousEvent) DecodeError!?ScaleEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.scale;
         if (event.opcode != op) return null;
@@ -3962,7 +3961,7 @@ pub const Output = struct {
         name: [:0]const u8,
     };
     pub fn decodeNameEvent(self: Self, event: AnonymousEvent) DecodeError!?NameEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.name;
         if (event.opcode != op) return null;
@@ -3989,7 +3988,7 @@ pub const Output = struct {
         description: [:0]const u8,
     };
     pub fn decodeDescriptionEvent(self: Self, event: AnonymousEvent) DecodeError!?DescriptionEvent {
-        if (event.self.id != self.id) return null;
+        if (event.self_id != self.id) return null;
 
         const op = Self.opcode.event.description;
         if (event.opcode != op) return null;
