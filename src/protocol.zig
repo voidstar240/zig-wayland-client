@@ -35,6 +35,7 @@ const DecodeError = root.DecodeError;
 const decodeEvent = root.decodeEvent;
 const WaylandContext = root.WaylandContext;
 const sendRequestRaw = root.wire.sendRequestRaw;
+const EventField = root.wire.EventField;
 
 
 /// The core global object.  This is a special singleton object.  It
@@ -138,7 +139,12 @@ pub const Display = struct {
         const op = Self.opcode.event.@"error";
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, ErrorEvent);
+        const args = [_]EventField{
+            .{ .name = "object_id", .field_type = .uint },
+            .{ .name = "code", .field_type = .uint },
+            .{ .name = "message", .field_type = .string },
+        };
+        return try decodeEvent(event, ErrorEvent, &args);
     }
 
     /// This event is used internally by the object ID management
@@ -156,7 +162,10 @@ pub const Display = struct {
         const op = Self.opcode.event.delete_id;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, DeleteIdEvent);
+        const args = [_]EventField{
+            .{ .name = "id", .field_type = .uint },
+        };
+        return try decodeEvent(event, DeleteIdEvent, &args);
     }
 
 };
@@ -239,7 +248,12 @@ pub const Registry = struct {
         const op = Self.opcode.event.global;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, GlobalEvent);
+        const args = [_]EventField{
+            .{ .name = "name", .field_type = .uint },
+            .{ .name = "interface", .field_type = .string },
+            .{ .name = "version", .field_type = .uint },
+        };
+        return try decodeEvent(event, GlobalEvent, &args);
     }
 
     /// Notify the client of removed global objects.
@@ -262,7 +276,10 @@ pub const Registry = struct {
         const op = Self.opcode.event.global_remove;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, GlobalRemoveEvent);
+        const args = [_]EventField{
+            .{ .name = "name", .field_type = .uint },
+        };
+        return try decodeEvent(event, GlobalRemoveEvent, &args);
     }
 
 };
@@ -297,7 +314,10 @@ pub const Callback = struct {
         const op = Self.opcode.event.done;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, DoneEvent);
+        const args = [_]EventField{
+            .{ .name = "callback_data", .field_type = .uint },
+        };
+        return try decodeEvent(event, DoneEvent, &args);
     }
 
 };
@@ -672,7 +692,10 @@ pub const Shm = struct {
         const op = Self.opcode.event.format;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, FormatEvent);
+        const args = [_]EventField{
+            .{ .name = "format", .field_type = .enum_ },
+        };
+        return try decodeEvent(event, FormatEvent, &args);
     }
 
 };
@@ -744,7 +767,9 @@ pub const Buffer = struct {
         const op = Self.opcode.event.release;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, ReleaseEvent);
+        const args = [_]EventField{
+        };
+        return try decodeEvent(event, ReleaseEvent, &args);
     }
 
 };
@@ -933,7 +958,10 @@ pub const DataOffer = struct {
         const op = Self.opcode.event.offer;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, OfferEvent);
+        const args = [_]EventField{
+            .{ .name = "mime_type", .field_type = .string },
+        };
+        return try decodeEvent(event, OfferEvent, &args);
     }
 
     /// This event indicates the actions offered by the data source. It
@@ -950,7 +978,10 @@ pub const DataOffer = struct {
         const op = Self.opcode.event.source_actions;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, SourceActionsEvent);
+        const args = [_]EventField{
+            .{ .name = "source_actions", .field_type = .enum_ },
+        };
+        return try decodeEvent(event, SourceActionsEvent, &args);
     }
 
     /// This event indicates the action selected by the compositor after
@@ -998,7 +1029,10 @@ pub const DataOffer = struct {
         const op = Self.opcode.event.action;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, ActionEvent);
+        const args = [_]EventField{
+            .{ .name = "dnd_action", .field_type = .enum_ },
+        };
+        return try decodeEvent(event, ActionEvent, &args);
     }
 
 };
@@ -1102,7 +1136,10 @@ pub const DataSource = struct {
         const op = Self.opcode.event.target;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, TargetEvent);
+        const args = [_]EventField{
+            .{ .name = "mime_type", .field_type = .string_opt },
+        };
+        return try decodeEvent(event, TargetEvent, &args);
     }
 
     /// Request for data from the client.  Send the data as the
@@ -1119,7 +1156,11 @@ pub const DataSource = struct {
         const op = Self.opcode.event.send;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, SendEvent);
+        const args = [_]EventField{
+            .{ .name = "mime_type", .field_type = .string },
+            .{ .name = "fd", .field_type = .fd },
+        };
+        return try decodeEvent(event, SendEvent, &args);
     }
 
     /// This data source is no longer valid. There are several reasons why
@@ -1151,7 +1192,9 @@ pub const DataSource = struct {
         const op = Self.opcode.event.cancelled;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, CancelledEvent);
+        const args = [_]EventField{
+        };
+        return try decodeEvent(event, CancelledEvent, &args);
     }
 
     /// The user performed the drop action. This event does not indicate
@@ -1172,7 +1215,9 @@ pub const DataSource = struct {
         const op = Self.opcode.event.dnd_drop_performed;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, DndDropPerformedEvent);
+        const args = [_]EventField{
+        };
+        return try decodeEvent(event, DndDropPerformedEvent, &args);
     }
 
     /// The drop destination finished interoperating with this data
@@ -1190,7 +1235,9 @@ pub const DataSource = struct {
         const op = Self.opcode.event.dnd_finished;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, DndFinishedEvent);
+        const args = [_]EventField{
+        };
+        return try decodeEvent(event, DndFinishedEvent, &args);
     }
 
     /// This event indicates the action selected by the compositor after
@@ -1228,7 +1275,10 @@ pub const DataSource = struct {
         const op = Self.opcode.event.action;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, ActionEvent);
+        const args = [_]EventField{
+            .{ .name = "dnd_action", .field_type = .enum_ },
+        };
+        return try decodeEvent(event, ActionEvent, &args);
     }
 
 };
@@ -1352,7 +1402,7 @@ pub const DataDevice = struct {
     /// mime types it offers.
     pub const DataOfferEvent = struct {
         self: Self,
-        id: u32,
+        id: wl.DataOffer,
     };
     pub fn decodeDataOfferEvent(self: Self, event: AnonymousEvent) DecodeError!?DataOfferEvent {
         if (event.self_id != self.id) return null;
@@ -1360,7 +1410,10 @@ pub const DataDevice = struct {
         const op = Self.opcode.event.data_offer;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, DataOfferEvent);
+        const args = [_]EventField{
+            .{ .name = "id", .field_type = .uint },
+        };
+        return try decodeEvent(event, DataOfferEvent, &args);
     }
 
     /// This event is sent when an active drag-and-drop pointer enters
@@ -1381,7 +1434,14 @@ pub const DataDevice = struct {
         const op = Self.opcode.event.enter;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, EnterEvent);
+        const args = [_]EventField{
+            .{ .name = "serial", .field_type = .uint },
+            .{ .name = "surface", .field_type = .object },
+            .{ .name = "x", .field_type = .fixed },
+            .{ .name = "y", .field_type = .fixed },
+            .{ .name = "id", .field_type = .object_opt },
+        };
+        return try decodeEvent(event, EnterEvent, &args);
     }
 
     /// This event is sent when the drag-and-drop pointer leaves the
@@ -1396,7 +1456,9 @@ pub const DataDevice = struct {
         const op = Self.opcode.event.leave;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, LeaveEvent);
+        const args = [_]EventField{
+        };
+        return try decodeEvent(event, LeaveEvent, &args);
     }
 
     /// This event is sent when the drag-and-drop pointer moves within
@@ -1415,7 +1477,12 @@ pub const DataDevice = struct {
         const op = Self.opcode.event.motion;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, MotionEvent);
+        const args = [_]EventField{
+            .{ .name = "time", .field_type = .uint },
+            .{ .name = "x", .field_type = .fixed },
+            .{ .name = "y", .field_type = .fixed },
+        };
+        return try decodeEvent(event, MotionEvent, &args);
     }
 
     /// The event is sent when a drag-and-drop operation is ended
@@ -1440,7 +1507,9 @@ pub const DataDevice = struct {
         const op = Self.opcode.event.drop;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, DropEvent);
+        const args = [_]EventField{
+        };
+        return try decodeEvent(event, DropEvent, &args);
     }
 
     /// The selection event is sent out to notify the client of a new
@@ -1465,7 +1534,10 @@ pub const DataDevice = struct {
         const op = Self.opcode.event.selection;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, SelectionEvent);
+        const args = [_]EventField{
+            .{ .name = "id", .field_type = .object_opt },
+        };
+        return try decodeEvent(event, SelectionEvent, &args);
     }
 
 };
@@ -1925,7 +1997,10 @@ pub const ShellSurface = struct {
         const op = Self.opcode.event.ping;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, PingEvent);
+        const args = [_]EventField{
+            .{ .name = "serial", .field_type = .uint },
+        };
+        return try decodeEvent(event, PingEvent, &args);
     }
 
     /// The configure event asks the client to resize its surface.
@@ -1957,7 +2032,12 @@ pub const ShellSurface = struct {
         const op = Self.opcode.event.configure;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, ConfigureEvent);
+        const args = [_]EventField{
+            .{ .name = "edges", .field_type = .enum_ },
+            .{ .name = "width", .field_type = .int },
+            .{ .name = "height", .field_type = .int },
+        };
+        return try decodeEvent(event, ConfigureEvent, &args);
     }
 
     /// The popup_done event is sent out when a popup grab is broken,
@@ -1972,7 +2052,9 @@ pub const ShellSurface = struct {
         const op = Self.opcode.event.popup_done;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, PopupDoneEvent);
+        const args = [_]EventField{
+        };
+        return try decodeEvent(event, PopupDoneEvent, &args);
     }
 
 };
@@ -2495,7 +2577,10 @@ pub const Surface = struct {
         const op = Self.opcode.event.enter;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, EnterEvent);
+        const args = [_]EventField{
+            .{ .name = "output", .field_type = .object },
+        };
+        return try decodeEvent(event, EnterEvent, &args);
     }
 
     /// This is emitted whenever a surface's creation, movement, or resizing
@@ -2517,7 +2602,10 @@ pub const Surface = struct {
         const op = Self.opcode.event.leave;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, LeaveEvent);
+        const args = [_]EventField{
+            .{ .name = "output", .field_type = .object },
+        };
+        return try decodeEvent(event, LeaveEvent, &args);
     }
 
     /// This event indicates the preferred buffer scale for this surface. It is
@@ -2542,7 +2630,10 @@ pub const Surface = struct {
         const op = Self.opcode.event.preferred_buffer_scale;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, PreferredBufferScaleEvent);
+        const args = [_]EventField{
+            .{ .name = "factor", .field_type = .int },
+        };
+        return try decodeEvent(event, PreferredBufferScaleEvent, &args);
     }
 
     /// This event indicates the preferred buffer transform for this surface.
@@ -2564,7 +2655,10 @@ pub const Surface = struct {
         const op = Self.opcode.event.preferred_buffer_transform;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, PreferredBufferTransformEvent);
+        const args = [_]EventField{
+            .{ .name = "transform", .field_type = .enum_ },
+        };
+        return try decodeEvent(event, PreferredBufferTransformEvent, &args);
     }
 
 };
@@ -2727,7 +2821,10 @@ pub const Seat = struct {
         const op = Self.opcode.event.capabilities;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, CapabilitiesEvent);
+        const args = [_]EventField{
+            .{ .name = "capabilities", .field_type = .enum_ },
+        };
+        return try decodeEvent(event, CapabilitiesEvent, &args);
     }
 
     /// In a multi-seat configuration the seat name can be used by clients to
@@ -2756,7 +2853,10 @@ pub const Seat = struct {
         const op = Self.opcode.event.name;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, NameEvent);
+        const args = [_]EventField{
+            .{ .name = "name", .field_type = .string },
+        };
+        return try decodeEvent(event, NameEvent, &args);
     }
 
 };
@@ -2927,7 +3027,13 @@ pub const Pointer = struct {
         const op = Self.opcode.event.enter;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, EnterEvent);
+        const args = [_]EventField{
+            .{ .name = "serial", .field_type = .uint },
+            .{ .name = "surface", .field_type = .object },
+            .{ .name = "surface_x", .field_type = .fixed },
+            .{ .name = "surface_y", .field_type = .fixed },
+        };
+        return try decodeEvent(event, EnterEvent, &args);
     }
 
     /// Notification that this seat's pointer is no longer focused on
@@ -2946,7 +3052,11 @@ pub const Pointer = struct {
         const op = Self.opcode.event.leave;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, LeaveEvent);
+        const args = [_]EventField{
+            .{ .name = "serial", .field_type = .uint },
+            .{ .name = "surface", .field_type = .object },
+        };
+        return try decodeEvent(event, LeaveEvent, &args);
     }
 
     /// Notification of pointer location change. The arguments
@@ -2964,7 +3074,12 @@ pub const Pointer = struct {
         const op = Self.opcode.event.motion;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, MotionEvent);
+        const args = [_]EventField{
+            .{ .name = "time", .field_type = .uint },
+            .{ .name = "surface_x", .field_type = .fixed },
+            .{ .name = "surface_y", .field_type = .fixed },
+        };
+        return try decodeEvent(event, MotionEvent, &args);
     }
 
     /// Mouse button click and release notifications.
@@ -2994,7 +3109,13 @@ pub const Pointer = struct {
         const op = Self.opcode.event.button;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, ButtonEvent);
+        const args = [_]EventField{
+            .{ .name = "serial", .field_type = .uint },
+            .{ .name = "time", .field_type = .uint },
+            .{ .name = "button", .field_type = .uint },
+            .{ .name = "state", .field_type = .enum_ },
+        };
+        return try decodeEvent(event, ButtonEvent, &args);
     }
 
     /// Scroll and other axis notifications.
@@ -3025,7 +3146,12 @@ pub const Pointer = struct {
         const op = Self.opcode.event.axis;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, AxisEvent);
+        const args = [_]EventField{
+            .{ .name = "time", .field_type = .uint },
+            .{ .name = "axis", .field_type = .enum_ },
+            .{ .name = "value", .field_type = .fixed },
+        };
+        return try decodeEvent(event, AxisEvent, &args);
     }
 
     /// Indicates the end of a set of events that logically belong together.
@@ -3071,7 +3197,9 @@ pub const Pointer = struct {
         const op = Self.opcode.event.frame;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, FrameEvent);
+        const args = [_]EventField{
+        };
+        return try decodeEvent(event, FrameEvent, &args);
     }
 
     /// Source information for scroll and other axes.
@@ -3109,7 +3237,10 @@ pub const Pointer = struct {
         const op = Self.opcode.event.axis_source;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, AxisSourceEvent);
+        const args = [_]EventField{
+            .{ .name = "axis_source", .field_type = .enum_ },
+        };
+        return try decodeEvent(event, AxisSourceEvent, &args);
     }
 
     /// Stop notification for scroll and other axes.
@@ -3137,7 +3268,11 @@ pub const Pointer = struct {
         const op = Self.opcode.event.axis_stop;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, AxisStopEvent);
+        const args = [_]EventField{
+            .{ .name = "time", .field_type = .uint },
+            .{ .name = "axis", .field_type = .enum_ },
+        };
+        return try decodeEvent(event, AxisStopEvent, &args);
     }
 
     /// Discrete step information for scroll and other axes.
@@ -3181,7 +3316,11 @@ pub const Pointer = struct {
         const op = Self.opcode.event.axis_discrete;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, AxisDiscreteEvent);
+        const args = [_]EventField{
+            .{ .name = "axis", .field_type = .enum_ },
+            .{ .name = "discrete", .field_type = .int },
+        };
+        return try decodeEvent(event, AxisDiscreteEvent, &args);
     }
 
     /// Discrete high-resolution scroll information.
@@ -3216,7 +3355,11 @@ pub const Pointer = struct {
         const op = Self.opcode.event.axis_value120;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, AxisValue120Event);
+        const args = [_]EventField{
+            .{ .name = "axis", .field_type = .enum_ },
+            .{ .name = "value120", .field_type = .int },
+        };
+        return try decodeEvent(event, AxisValue120Event, &args);
     }
 
     /// Relative directional information of the entity causing the axis
@@ -3265,7 +3408,11 @@ pub const Pointer = struct {
         const op = Self.opcode.event.axis_relative_direction;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, AxisRelativeDirectionEvent);
+        const args = [_]EventField{
+            .{ .name = "axis", .field_type = .enum_ },
+            .{ .name = "direction", .field_type = .enum_ },
+        };
+        return try decodeEvent(event, AxisRelativeDirectionEvent, &args);
     }
 
 };
@@ -3347,7 +3494,12 @@ pub const Keyboard = struct {
         const op = Self.opcode.event.keymap;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, KeymapEvent);
+        const args = [_]EventField{
+            .{ .name = "format", .field_type = .enum_ },
+            .{ .name = "fd", .field_type = .fd },
+            .{ .name = "size", .field_type = .uint },
+        };
+        return try decodeEvent(event, KeymapEvent, &args);
     }
 
     /// Notification that this seat's keyboard focus is on a certain
@@ -3372,7 +3524,12 @@ pub const Keyboard = struct {
         const op = Self.opcode.event.enter;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, EnterEvent);
+        const args = [_]EventField{
+            .{ .name = "serial", .field_type = .uint },
+            .{ .name = "surface", .field_type = .object },
+            .{ .name = "keys", .field_type = .array },
+        };
+        return try decodeEvent(event, EnterEvent, &args);
     }
 
     /// Notification that this seat's keyboard focus is no longer on
@@ -3396,7 +3553,11 @@ pub const Keyboard = struct {
         const op = Self.opcode.event.leave;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, LeaveEvent);
+        const args = [_]EventField{
+            .{ .name = "serial", .field_type = .uint },
+            .{ .name = "surface", .field_type = .object },
+        };
+        return try decodeEvent(event, LeaveEvent, &args);
     }
 
     /// A key was pressed or released.
@@ -3430,7 +3591,13 @@ pub const Keyboard = struct {
         const op = Self.opcode.event.key;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, KeyEvent);
+        const args = [_]EventField{
+            .{ .name = "serial", .field_type = .uint },
+            .{ .name = "time", .field_type = .uint },
+            .{ .name = "key", .field_type = .uint },
+            .{ .name = "state", .field_type = .enum_ },
+        };
+        return try decodeEvent(event, KeyEvent, &args);
     }
 
     /// Notifies clients that the modifier and/or group state has
@@ -3460,7 +3627,14 @@ pub const Keyboard = struct {
         const op = Self.opcode.event.modifiers;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, ModifiersEvent);
+        const args = [_]EventField{
+            .{ .name = "serial", .field_type = .uint },
+            .{ .name = "mods_depressed", .field_type = .uint },
+            .{ .name = "mods_latched", .field_type = .uint },
+            .{ .name = "mods_locked", .field_type = .uint },
+            .{ .name = "group", .field_type = .uint },
+        };
+        return try decodeEvent(event, ModifiersEvent, &args);
     }
 
     /// Informs the client about the keyboard's repeat rate and delay.
@@ -3486,7 +3660,11 @@ pub const Keyboard = struct {
         const op = Self.opcode.event.repeat_info;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, RepeatInfoEvent);
+        const args = [_]EventField{
+            .{ .name = "rate", .field_type = .int },
+            .{ .name = "delay", .field_type = .int },
+        };
+        return try decodeEvent(event, RepeatInfoEvent, &args);
     }
 
 };
@@ -3553,7 +3731,15 @@ pub const Touch = struct {
         const op = Self.opcode.event.down;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, DownEvent);
+        const args = [_]EventField{
+            .{ .name = "serial", .field_type = .uint },
+            .{ .name = "time", .field_type = .uint },
+            .{ .name = "surface", .field_type = .object },
+            .{ .name = "id", .field_type = .int },
+            .{ .name = "x", .field_type = .fixed },
+            .{ .name = "y", .field_type = .fixed },
+        };
+        return try decodeEvent(event, DownEvent, &args);
     }
 
     /// The touch point has disappeared. No further events will be sent for
@@ -3571,7 +3757,12 @@ pub const Touch = struct {
         const op = Self.opcode.event.up;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, UpEvent);
+        const args = [_]EventField{
+            .{ .name = "serial", .field_type = .uint },
+            .{ .name = "time", .field_type = .uint },
+            .{ .name = "id", .field_type = .int },
+        };
+        return try decodeEvent(event, UpEvent, &args);
     }
 
     /// A touch point has changed coordinates.
@@ -3588,7 +3779,13 @@ pub const Touch = struct {
         const op = Self.opcode.event.motion;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, MotionEvent);
+        const args = [_]EventField{
+            .{ .name = "time", .field_type = .uint },
+            .{ .name = "id", .field_type = .int },
+            .{ .name = "x", .field_type = .fixed },
+            .{ .name = "y", .field_type = .fixed },
+        };
+        return try decodeEvent(event, MotionEvent, &args);
     }
 
     /// Indicates the end of a set of events that logically belong together.
@@ -3608,7 +3805,9 @@ pub const Touch = struct {
         const op = Self.opcode.event.frame;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, FrameEvent);
+        const args = [_]EventField{
+        };
+        return try decodeEvent(event, FrameEvent, &args);
     }
 
     /// Sent if the compositor decides the touch stream is a global
@@ -3628,7 +3827,9 @@ pub const Touch = struct {
         const op = Self.opcode.event.cancel;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, CancelEvent);
+        const args = [_]EventField{
+        };
+        return try decodeEvent(event, CancelEvent, &args);
     }
 
     /// Sent when a touchpoint has changed its shape.
@@ -3668,7 +3869,12 @@ pub const Touch = struct {
         const op = Self.opcode.event.shape;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, ShapeEvent);
+        const args = [_]EventField{
+            .{ .name = "id", .field_type = .int },
+            .{ .name = "major", .field_type = .fixed },
+            .{ .name = "minor", .field_type = .fixed },
+        };
+        return try decodeEvent(event, ShapeEvent, &args);
     }
 
     /// Sent when a touchpoint has changed its orientation.
@@ -3705,7 +3911,11 @@ pub const Touch = struct {
         const op = Self.opcode.event.orientation;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, OrientationEvent);
+        const args = [_]EventField{
+            .{ .name = "id", .field_type = .int },
+            .{ .name = "orientation", .field_type = .fixed },
+        };
+        return try decodeEvent(event, OrientationEvent, &args);
     }
 
 };
@@ -3828,7 +4038,17 @@ pub const Output = struct {
         const op = Self.opcode.event.geometry;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, GeometryEvent);
+        const args = [_]EventField{
+            .{ .name = "x", .field_type = .int },
+            .{ .name = "y", .field_type = .int },
+            .{ .name = "physical_width", .field_type = .int },
+            .{ .name = "physical_height", .field_type = .int },
+            .{ .name = "subpixel", .field_type = .enum_ },
+            .{ .name = "make", .field_type = .string },
+            .{ .name = "model", .field_type = .string },
+            .{ .name = "transform", .field_type = .enum_ },
+        };
+        return try decodeEvent(event, GeometryEvent, &args);
     }
 
     /// The mode event describes an available mode for the output.
@@ -3877,7 +4097,13 @@ pub const Output = struct {
         const op = Self.opcode.event.mode;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, ModeEvent);
+        const args = [_]EventField{
+            .{ .name = "flags", .field_type = .enum_ },
+            .{ .name = "width", .field_type = .int },
+            .{ .name = "height", .field_type = .int },
+            .{ .name = "refresh", .field_type = .int },
+        };
+        return try decodeEvent(event, ModeEvent, &args);
     }
 
     /// This event is sent after all other properties have been
@@ -3894,7 +4120,9 @@ pub const Output = struct {
         const op = Self.opcode.event.done;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, DoneEvent);
+        const args = [_]EventField{
+        };
+        return try decodeEvent(event, DoneEvent, &args);
     }
 
     /// This event contains scaling geometry information
@@ -3925,7 +4153,10 @@ pub const Output = struct {
         const op = Self.opcode.event.scale;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, ScaleEvent);
+        const args = [_]EventField{
+            .{ .name = "factor", .field_type = .int },
+        };
+        return try decodeEvent(event, ScaleEvent, &args);
     }
 
     /// Many compositors will assign user-friendly names to their outputs, show
@@ -3966,7 +4197,10 @@ pub const Output = struct {
         const op = Self.opcode.event.name;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, NameEvent);
+        const args = [_]EventField{
+            .{ .name = "name", .field_type = .string },
+        };
+        return try decodeEvent(event, NameEvent, &args);
     }
 
     /// Many compositors can produce human-readable descriptions of their
@@ -3993,7 +4227,10 @@ pub const Output = struct {
         const op = Self.opcode.event.description;
         if (event.opcode != op) return null;
 
-        return try decodeEvent(event, DescriptionEvent);
+        const args = [_]EventField{
+            .{ .name = "description", .field_type = .string },
+        };
+        return try decodeEvent(event, DescriptionEvent, &args);
     }
 
 };

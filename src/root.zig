@@ -16,6 +16,7 @@ pub const decodeEvent = wire.decodeEvent;
 pub const WaylandContext = struct {
     socket: Stream,
     read_buffer: [4096]u8 align(@alignOf(*anyopaque)),
+    fd_read_buf: [8]FD,
 
     const Reader = GenericReader(Stream, Stream.ReadError, Stream.read);
 
@@ -24,6 +25,7 @@ pub const WaylandContext = struct {
         return WaylandContext {
             .socket = socket,
             .read_buffer = undefined,
+            .fd_read_buf = undefined,
         };
     }
 
@@ -36,10 +38,14 @@ pub const WaylandContext = struct {
     /// previously. Returns an AnonymousEvent. The contained data slice is a
     /// reference to the internal read buffer and not owned.
     pub fn readEvent(self: *WaylandContext) !AnonymousEvent {
-        const head = try wire.readEvent(self.reader(), &self.read_buffer);
+        var fd_num: usize = 0;
+        var fd_buf: [4]FD = undefined;
+        const head = try wire.readEvent(self.socket.handle, &self.read_buffer, &fd_buf, &fd_num);
         return AnonymousEvent {
             .self_id = head.object_id,
             .opcode = head.opcode,
+            .fds_len = @intCast(fd_num),
+            .fds = fd_buf,
             .arg_data = self.read_buffer[@sizeOf(wire.Header)..head.length],
         };
     }

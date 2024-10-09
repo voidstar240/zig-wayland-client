@@ -28,6 +28,8 @@ pub const FD = std.posix.fd_t;
 pub const AnonymousEvent = struct {
     self_id: u32,
     opcode: u16,
+    fds_len: u8,
+    fds: [4]FD,
     arg_data: []const u8,
 };
 
@@ -38,6 +40,7 @@ pub const DecodeError = error {
     UnexpectedEnd,
     NullNonNullString,
     NullNonNullObject,
+    ExpectedFD,
 };
 
 pub const Header = packed struct(u64) {
@@ -46,27 +49,30 @@ pub const Header = packed struct(u64) {
     length: u16,
 };
 
-/// Reads one event into the provided buffer returning the length of the
-/// message. If the buffer is too small to fit the event error.EventTooBig
-/// is returned.
-pub fn readEvent( // TODO refactor to read file descriptors
-    reader: anytype,
-    buffer: []align(@alignOf(*anyopaque)) u8
-) !Header {
-    if (buffer.len < 8) return error.EventTooBig;
-    try reader.readNoEof(buffer[0..@sizeOf(Header)]);
-    const header = @as(*const Header, @ptrCast(buffer));
-    const len = header.length;
-    if (buffer.len < len) return error.EventTooBig;
-    try reader.readNoEof(buffer[@sizeOf(Header)..len]);
-    return header.*;
-}
+pub const EventField = struct {
+    name: []const u8,
+    field_type: Type,
+    
+    pub const Type = enum {
+        int,
+        uint,
+        fixed,
+        array,
+        fd,
+        string,
+        string_opt,
+        object,
+        object_opt,
+        enum_,
+    };
+};
 
 /// Decodes the event into the passed struct Type. Note any slices in the struct
 /// are not owned.
 pub fn decodeEvent(
     event: AnonymousEvent,
-    Type: type
+    Type: type,
+    comptime fields: []const EventField,
 ) DecodeError!Type {
     const type_info = @typeInfo(Type);
     if (type_info != .Struct) {
@@ -74,38 +80,37 @@ pub fn decodeEvent(
     }
 
     var out: Type = undefined;
-    var index: usize = 0;
-    const fields = type_info.Struct.fields;
-    inline for (fields, 0..) |field, i| {
-        const info = @typeInfo(field.type);
-        const val_ptr = &@field(out, field.name);
-        if (i == 0) {
-            if (info != .Struct)
-                @compileError("First field must be an object.");
-            if (event.self_id == 0) return DecodeError.NullNonNullObject;
-            val_ptr.id = event.self_id;
-            continue;
-        }
-        switch (field.type) {
-            i32 => val_ptr.* = try decodeI32(event.arg_data, &index),
-            u32 => val_ptr.* = try decodeU32(event.arg_data, &index),
-            Fixed => val_ptr.* = try decodeFixed(event.arg_data, &index),
-            []const u8 => val_ptr.* = try decodeArray(event.arg_data, &index),
-            [:0]const u8 => val_ptr.* =
-                (try decodeString(event.arg_data, &index))
-                    orelse return DecodeError.NullNonNullString,
-            ?[:0]const u8 => val_ptr.* =
-                try decodeString(event.arg_data, &index),
-            else => switch (info) {
-                .Struct => val_ptr.* =
-                    (try decodeInterface(event.arg_data, &index, field.type))
-                        orelse return DecodeError.NullNonNullObject, 
-                .Optional => val_ptr.* =
-                    try decodeInterface(event.arg_data, &index, field.type),
-                .Enum => val_ptr.* =
-                    try decodeEnum(event.arg_data, &index, field.type),
-                else => @compileError("Invalid type, " ++ field.type),
-            }
+
+    if (event.self_id == 0) return DecodeError.NullNonNullObject;
+    assertInterface(@TypeOf(out.self));
+    out.self = .{ .id = event.self_id, };
+
+    const data = event.arg_data;
+    var i: usize = 0;
+    var fd_n: usize = 0;
+    inline for (fields) |field| {
+        const ptr = &@field(out, field.name);
+        switch (field.field_type) {
+            .int => ptr.* = try decodeI32(data, &i),
+            .uint => ptr.* = try decodeU32(data, &i),
+            .fixed => ptr.* = try decodeFixed(data, &i),
+            .array => ptr.* = try decodeArray(data, &i),
+            .fd => {
+                if (fd_n >= event.fds_len) return DecodeError.ExpectedFD;
+                ptr.* = event.fds[fd_n];
+                fd_n += 1;
+            },
+            .string => ptr.* = try decodeString(data, &i) orelse
+                return DecodeError.NullNonNullString,
+            .string_opt => ptr.* = try decodeString(data, &i),
+            .object => ptr.* = try decodeInterface(data, &i, @TypeOf(ptr.*))
+                orelse return DecodeError.NullNonNullObject,
+            .object_opt => ptr.* = try decodeInterface(
+                data,
+                &i,
+                @typeInfo(@TypeOf(ptr.*)).Optional.child
+            ),
+            .enum_ => ptr.* = try decodeEnum(data, &i, @TypeOf(ptr.*)),
         }
     }
     return out;
@@ -309,4 +314,89 @@ fn cmsghdr(comptime T: type) type {
         data: T,
         _pad: [pad_len]u8 align(1) = .{0} ** pad_len,
     };
+}
+
+/// Returns the number of bytes read into buffer. `fd_n` will contian the number
+/// of FDs read.
+pub fn readEvent(
+    socket: std.posix.socket_t,
+    buffer: []u8,
+    fd_buf: []FD,
+    fd_n: *usize,
+) !Header {
+    fd_n.* = 0;
+    var header_buf: []u8 = buffer[0..@sizeOf(Header)];
+    var read_n: usize = 0;
+    while (read_n < header_buf.len) {
+        read_n += try readPartial(socket, header_buf[read_n..], fd_buf, fd_n);
+    }
+    const header = std.mem.bytesToValue(Header, header_buf);
+    var data_buffer = buffer[0..header.length];
+    while (read_n < header.length) {
+        read_n += try readPartial(socket, data_buffer[read_n..], fd_buf, fd_n);
+    }
+    return header;
+}
+
+fn readPartial(
+    socket: std.posix.socket_t,
+    buffer: []u8,
+    fd_buf: []FD,
+    fd_offset: *usize
+) !usize {
+    var iov: std.posix.iovec = .{
+        .base = buffer.ptr,
+        .len = buffer.len,
+    };
+    var cmsg = cmsghdr([4]FD) {
+        .level = 0,
+        .type = 0,
+        .data = .{0}**4,
+    };
+    var msg: std.posix.msghdr = .{
+        .name = null,
+        .namelen = 0,
+        .iov = @ptrCast(&iov),
+        .iovlen = 1,
+        .control = &cmsg,
+        .controllen = @intCast(cmsg.len),
+        .flags = 0,
+    };
+
+    const n: usize = try recvmsg(socket, &msg, 0);
+
+    //                              SCM_RIGHTS  vvv
+    if ((msg.controllen > 16) and (cmsg.type == 0x01)) {
+        const fds: usize = (msg.controllen - 16) / @sizeOf(FD);
+        if (fds + fd_offset.* > fd_buf.len) return error.FDBufOverflow;
+        @memcpy(fd_buf[fd_offset.*..fd_offset.* + fds], cmsg.data[0..fds]);
+        fd_offset.* += fds;
+    }
+    return n;
+}
+
+// Wrapper for linux.recvmsg with error handling
+pub fn recvmsg(
+    fd: i32,
+    msg: *std.posix.msghdr,
+    flags: u32
+) !usize {
+    while (true) {
+        const rc = std.os.linux.recvmsg(fd, msg, flags);
+        switch (std.posix.errno(rc)) {
+            .SUCCESS => return @intCast(rc),
+            .BADF => unreachable, // always a race condition
+            .FAULT => unreachable,
+            .INVAL => unreachable,
+            .NOTCONN => return error.SocketNotConnected,
+            .NOTSOCK => unreachable,
+            .INTR => continue,
+            .AGAIN => return error.WouldBlock,
+            .NOMEM => return error.SystemResources,
+            .CONNREFUSED => return error.ConnectionRefused,
+            .CONNRESET => return error.ConnectionResetByPeer,
+            .TIMEDOUT => return error.ConnectionTimedOut,
+            else => |err| return std.posix.unexpectedErrno(err),
+        }
+    }
 }

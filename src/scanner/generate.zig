@@ -56,10 +56,11 @@ pub fn generateProtocol(
         \\const decodeEvent = {s}.decodeEvent;
         \\const WaylandContext = {s}.WaylandContext;
         \\const sendRequestRaw = {s}.wire.sendRequestRaw;
+        \\const EventField = {s}.wire.EventField;
         \\
         \\
         \\
-        , .{ns, ns, ns, ns, ns, ns, ns, ns});
+        , .{ns, ns, ns, ns, ns, ns, ns, ns, ns});
 
     for (protocol.interfaces) |*interface| {
         try generateInterface(interface, writer);
@@ -377,16 +378,19 @@ fn generateEvent(event: *const Method, writer: anytype) !void {
         \\        const op = Self.opcode.event.{};
         \\        if (event.opcode != op) return null;
         \\
-        \\        return try decodeEvent(event, {}Event);
-        \\    }}
-        \\
         \\
         , .{
             titleCase(event.name),
             titleCase(event.name),
             escBadName(event.name),
-            titleCase(event.name)
         });
+    try generateEventFieldArray(event.args, writer);
+    try writer.print(
+        \\        return try decodeEvent(event, {}Event, &args);
+        \\    }}
+        \\
+        \\
+        , .{titleCase(event.name)});
 }
 
 fn generateEventStruct(event: *const Method, writer: anytype) !void {
@@ -396,39 +400,100 @@ fn generateEventStruct(event: *const Method, writer: anytype) !void {
         \\
         , .{titleCase(event.name)});
     for (event.args) |arg| {
-        try writer.print("        {}: ", .{escBadName(arg.name)});
-        try generateArgType(arg.type, writer);
-        try writer.writeAll(",\n");
+        try generateEventField(arg, writer);
     }
     try writer.writeAll("    };\n");
 }
 
-fn generateArgType(arg_type: Arg.Type, writer: anytype) !void {
-    switch (arg_type) {
-        .int => try writer.writeAll("i32"),
-        .uint => try writer.writeAll("u32"),
-        .fixed => try writer.writeAll("Fixed"),
-        .array => try writer.writeAll("[]const u8"),
-        .fd => try writer.writeAll("FD"),
-        .string => |meta| {
-            if (meta.allow_null)
-                try writer.writeAll("?");
-            try writer.writeAll("[:0]const u8");
+fn generateEventField(arg: Arg, writer: anytype) !void {
+    switch (arg.type) {
+        .int => try writeField(arg.name, "i32", writer),
+        .uint => try writeField(arg.name, "u32", writer),
+        .fixed => try writeField(arg.name, "Fixed", writer),
+        .array => try writeField(arg.name, "[]const u8", writer),
+        .fd => try writeField(arg.name, "FD", writer),
+        .string => |meta| if (meta.allow_null) {
+            try writeField(arg.name, "?[:0]const u8", writer);
+        } else {
+            try writeField(arg.name, "[:0]const u8", writer);
         },
-        .object => |meta| {
-            if (meta.allow_null)
-                try writer.writeAll("?");
-            if (meta.interface) |interface| {
-                try writer.print("{}", .{interfaceFmt(interface)});
+        .object => |meta| if (meta.interface) |interface| {
+            if (meta.allow_null) {
+                try writer.print("        {}: ?{},\n",
+                    .{escBadName(arg.name), interfaceFmt(interface)});
             } else {
-                try writer.writeAll("u32");
+                try writer.print("        {}: {},\n",
+                    .{escBadName(arg.name), interfaceFmt(interface)});
             }
+        } else try writeField(arg.name, "u32", writer),
+        .new_id => |meta| if (meta.interface) |interface| {
+            try writer.print("        {}: {},\n",
+                .{escBadName(arg.name), interfaceFmt(interface)});
+        } else {
+            try writer.print(
+                \\        {s}_interface: [:0]const u8,
+                \\        {s}_version: u32,
+                \\        {}: u32,
+                \\
+                , .{arg.name, arg.name, escBadName(arg.name)});
         },
-        .new_id => try writer.writeAll("u32"),
         .enum_ => |meta| {
-            try writer.print("{}", .{enumType(meta.enum_name)});
+            try writer.print("        {}: {},\n",
+                .{escBadName(arg.name), enumType(meta.enum_name)});
         },
     }
+}
+
+fn writeField(name: []const u8, type_name: []const u8, writer: anytype) !void {
+    try writer.print("        {}: {s},\n", .{escBadName(name), type_name});
+}
+
+fn generateEventFieldArray(args: []Arg, writer: anytype) !void {
+    try writer.writeAll("        const args = [_]EventField{\n");
+    for (args) |arg| {
+        switch (arg.type) {
+            .int => try writeEventField(arg.name, "int", writer),
+            .uint => try writeEventField(arg.name, "uint", writer),
+            .fixed => try writeEventField(arg.name, "fixed", writer),
+            .fd => try writeEventField(arg.name, "fd", writer),
+            .array => try writeEventField(arg.name, "array", writer),
+            .enum_ => try writeEventField(arg.name, "enum_", writer),
+            .string => |meta| if (meta.allow_null) {
+                try writeEventField(arg.name, "string_opt", writer);
+            } else {
+                try writeEventField(arg.name, "string", writer);
+            },
+            .object => |meta| if (meta.interface != null) {
+                if (meta.allow_null) {
+                    try writeEventField(arg.name, "object_opt", writer);
+                } else {
+                    try writeEventField(arg.name, "object", writer);
+                }
+            } else {
+                try writeEventField(arg.name, "uint", writer);
+            },
+            .new_id => |meta| if (meta.interface == null) {
+                try writer.print(
+                    \\            .{{ .name = "{s}_interface", .field_type = .string }},
+                    \\            .{{ .name = "{s}_version", .field_type = .uint }},
+                    \\            .{{ .name = "{}", .field_type = .uint }},
+                    \\
+                    , .{arg.name, arg.name, escBadName(arg.name)});
+            } else {
+                try writeEventField(arg.name, "uint", writer);
+            },
+        }
+    }
+    try writer.writeAll("        };\n");
+}
+
+fn writeEventField(
+    name: []const u8,
+    type_val: []const u8,
+    writer: anytype
+) !void {
+    try writer.print("            .{{ .name = \"{}\", .field_type = .{s} }},\n",
+        .{escBadName(name), type_val});
 }
 
 fn generateEnum(enum_: *const Enum, writer: anytype) !void {
