@@ -14,6 +14,13 @@ pub fn generateProtocol(
     protocol: *const Protocol,
     writer: anytype,
 ) !void {
+    try writer.writeAll(
+    \\// THIS FILE IS GENERATED FROM A WAYLAND PROTOCOL XML FILE. ANY CHANGES
+    \\// MADE TO THIS FILE WILL BE ERASED NEXT TIME THE PROTOCOL IS UPDATED.
+    \\
+    \\
+    );
+
     if (protocol.copyright) |copyright| {
         try writer.print("{// }\n", .{parsedText(copyright)});
     }
