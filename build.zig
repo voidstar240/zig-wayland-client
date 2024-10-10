@@ -26,7 +26,7 @@ pub fn build(b: *std.Build) void {
     update_step.dependOn(&wf.step);
 
     // Export Root Module
-    const zwayland = b.addModule("zwayland", .{
+    const zwl_mod = b.addModule("zwayland", .{
         .root_source_file = b.path("src/root.zig"),
     });
 
@@ -39,7 +39,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    lib_unit_tests.root_module.addImport("zwayland", zwayland);
+    lib_unit_tests.root_module.addImport("zwayland", zwl_mod);
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_lib_unit_tests.step);

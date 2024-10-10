@@ -1,6 +1,6 @@
 .{
-    .name = "zwayland",
-    .version = "0.0.0",
+    .name = "zig-wayland-client",
+    .version = "0.1.0",
     .paths = .{
         "build.zig",
         "build.zig.zon",
