@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
-//   This is the main file for the zwayland scanner. The main file for the    //
-//   zwayland library is src/root.zig. All files in the src/scanner/          //
+//   This is the main file for the wayland scanner. The main file for the     //
+//   wayland-client library is src/root.zig. All files in the src/scanner/    //
 //   directory are used by the scanner only. The scanner is used during the   //
 //   `update` build step to regenerate the wayland protocol files.            //
 //                                                                            //

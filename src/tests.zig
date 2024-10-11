@@ -1,10 +1,10 @@
 const std = @import("std");
-const zwl = @import("zwayland");
+const wl = @import("wayland-client");
 
 test "SyncRequestResponse" {
-    const socket = try zwl.connectToSocket();
+    const socket = try wl.connectToSocket();
     defer socket.close();
-    var ctx = zwl.WaylandContext.init(socket);
+    var ctx = wl.WaylandContext.init(socket);
     const display = ctx.getDisplay();
     const sync = try display.sync(&ctx, 2);
 
