@@ -1,0 +1,23 @@
+.{
+    .name = "window_app",
+    .version = "0.0.0",
+    .dependencies = .{
+        .@"wayland-client" = .{
+            .url = "../../",
+            .hash = "1220a8e82e9be47e14064fab6a2c6970967c6b8bab66af215ba64624c0bc14cff009",
+        },
+        .@"wayland-xdg_shell-client" = .{
+            .url = "git+https://github.com/voidstar240/zig-wayland-xdg_shell-client#66a5e9f989d31ff43c9de28d32203de1abfda405",
+            .hash = "122082fec7400e0c28117cb14a76f67eaf5f0e742196d455de10a61c4a039802f9b2",
+        },
+        .@"wayland-xdg_decoration-client" = .{
+            .url = "git+https://github.com/voidstar240/zig-wayland-xdg_decoration-client#445411ade381b3a1f9c52a30df3965807d444a49",
+            .hash = "1220e3b422f60257d73d3669fd6e1331ecc4bccf465fb9ddfc8e3d468866d70bb660",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
