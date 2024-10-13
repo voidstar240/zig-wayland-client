@@ -150,7 +150,8 @@ fn generateRequest(request: *const Method, writer: anytype) !void {
             try writer.print(
                 \\) RequestError!{} {{
                 \\        const new_obj = {} {{
-                \\            .id = {}
+                \\            .id = {},
+                \\            .version = self.version,
                 \\        }};
                 \\
                 \\

@@ -84,7 +84,8 @@ pub const Display = struct {
     /// The callback_data passed in the callback is undefined and should be ignored.
     pub fn sync(self: Self, ctx: *const WaylandContext, callback: u32) RequestError!wl.Callback {
         const new_obj = wl.Callback {
-            .id = callback
+            .id = callback,
+            .version = self.version,
         };
 
         const args = .{
@@ -109,7 +110,8 @@ pub const Display = struct {
     /// possible to avoid wasting memory.
     pub fn getRegistry(self: Self, ctx: *const WaylandContext, registry: u32) RequestError!wl.Registry {
         const new_obj = wl.Registry {
-            .id = registry
+            .id = registry,
+            .version = self.version,
         };
 
         const args = .{
@@ -346,7 +348,8 @@ pub const Compositor = struct {
     /// Ask the compositor to create a new surface.
     pub fn createSurface(self: Self, ctx: *const WaylandContext, id: u32) RequestError!wl.Surface {
         const new_obj = wl.Surface {
-            .id = id
+            .id = id,
+            .version = self.version,
         };
 
         const args = .{
@@ -363,7 +366,8 @@ pub const Compositor = struct {
     /// Ask the compositor to create a new region.
     pub fn createRegion(self: Self, ctx: *const WaylandContext, id: u32) RequestError!wl.Region {
         const new_obj = wl.Region {
-            .id = id
+            .id = id,
+            .version = self.version,
         };
 
         const args = .{
@@ -415,7 +419,8 @@ pub const ShmPool = struct {
     /// a buffer from it.
     pub fn createBuffer(self: Self, ctx: *const WaylandContext, id: u32, offset: i32, width: i32, height: i32, stride: i32, format: wl.Shm.Format) RequestError!wl.Buffer {
         const new_obj = wl.Buffer {
-            .id = id
+            .id = id,
+            .version = self.version,
         };
 
         const args = .{
@@ -651,7 +656,8 @@ pub const Shm = struct {
     /// descriptor, to use as backing memory for the pool.
     pub fn createPool(self: Self, ctx: *const WaylandContext, id: u32, fd: FD, size: i32) RequestError!wl.ShmPool {
         const new_obj = wl.ShmPool {
-            .id = id
+            .id = id,
+            .version = self.version,
         };
 
         const args = .{
@@ -1603,7 +1609,8 @@ pub const DataDeviceManager = struct {
     /// Create a new data source.
     pub fn createDataSource(self: Self, ctx: *const WaylandContext, id: u32) RequestError!wl.DataSource {
         const new_obj = wl.DataSource {
-            .id = id
+            .id = id,
+            .version = self.version,
         };
 
         const args = .{
@@ -1620,7 +1627,8 @@ pub const DataDeviceManager = struct {
     /// Create a new data device for a given seat.
     pub fn getDataDevice(self: Self, ctx: *const WaylandContext, id: u32, seat: wl.Seat) RequestError!wl.DataDevice {
         const new_obj = wl.DataDevice {
-            .id = id
+            .id = id,
+            .version = self.version,
         };
 
         const args = .{
@@ -1671,7 +1679,8 @@ pub const Shell = struct {
     /// Only one shell surface can be associated with a given surface.
     pub fn getShellSurface(self: Self, ctx: *const WaylandContext, id: u32, surface: wl.Surface) RequestError!wl.ShellSurface {
         const new_obj = wl.ShellSurface {
-            .id = id
+            .id = id,
+            .version = self.version,
         };
 
         const args = .{
@@ -2300,7 +2309,8 @@ pub const Surface = struct {
     /// milliseconds, with an undefined base.
     pub fn frame(self: Self, ctx: *const WaylandContext, callback: u32) RequestError!wl.Callback {
         const new_obj = wl.Callback {
-            .id = callback
+            .id = callback,
+            .version = self.version,
         };
 
         const args = .{
@@ -2714,7 +2724,8 @@ pub const Seat = struct {
     /// be sent in this case.
     pub fn getPointer(self: Self, ctx: *const WaylandContext, id: u32) RequestError!wl.Pointer {
         const new_obj = wl.Pointer {
-            .id = id
+            .id = id,
+            .version = self.version,
         };
 
         const args = .{
@@ -2738,7 +2749,8 @@ pub const Seat = struct {
     /// be sent in this case.
     pub fn getKeyboard(self: Self, ctx: *const WaylandContext, id: u32) RequestError!wl.Keyboard {
         const new_obj = wl.Keyboard {
-            .id = id
+            .id = id,
+            .version = self.version,
         };
 
         const args = .{
@@ -2762,7 +2774,8 @@ pub const Seat = struct {
     /// be sent in this case.
     pub fn getTouch(self: Self, ctx: *const WaylandContext, id: u32) RequestError!wl.Touch {
         const new_obj = wl.Touch {
-            .id = id
+            .id = id,
+            .version = self.version,
         };
 
         const args = .{
@@ -4374,7 +4387,8 @@ pub const Subcompositor = struct {
     /// the sub-surface, see the documentation on wl_subsurface interface.
     pub fn getSubsurface(self: Self, ctx: *const WaylandContext, id: u32, surface: wl.Surface, parent: wl.Surface) RequestError!wl.Subsurface {
         const new_obj = wl.Subsurface {
-            .id = id
+            .id = id,
+            .version = self.version,
         };
 
         const args = .{
